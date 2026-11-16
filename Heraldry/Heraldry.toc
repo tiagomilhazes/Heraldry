@@ -13,4 +13,5 @@ Core\Combat.lua
 Core\Database.lua
 Core\Profiles.lua
 Core\Options.lua
+Core\GameMenu.lua
 Core\Commands.lua

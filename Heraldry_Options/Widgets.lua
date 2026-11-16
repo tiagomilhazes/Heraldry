@@ -193,7 +193,9 @@ function UI.OpenMenu(anchor, items, current, onPick)
 	if not menu then
 		menu = CreateFrame("Frame", nil, UI.root)
 		menu:SetFrameStrata("FULLSCREEN_DIALOG")
-		menu:EnableMouse(true)
+		-- The list frame itself takes no clicks: only its items do. If it took
+		-- clicks and ended above its items, they would look disabled.
+		menu:EnableMouse(false)
 		menu:Hide()
 		UI.Fill(menu, C.menu)
 		UI.Border(menu, C.borderStrong)
@@ -231,6 +233,7 @@ function UI.OpenMenu(anchor, items, current, onPick)
 			it:SetScript("OnLeave", function(self) self.hl:Hide() end)
 			menu.items[i] = it
 		end
+		it:SetFrameLevel(menu:GetFrameLevel() + 2)
 		local data = items[i]
 		if data then
 			it.text:SetText(data.text)
@@ -253,7 +256,6 @@ function UI.OpenMenu(anchor, items, current, onPick)
 	menu:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -2)
 	menu:SetSize(anchor:GetWidth(), n * ITEM_H + 4)
 	menu:Show()
-	menu:Raise()
 end
 
 function Page:Dropdown(o)
