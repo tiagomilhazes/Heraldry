@@ -30,7 +30,7 @@ Each top-level folder is one addon. Copy them into `Interface\AddOns\`.
 | M1 | Action bars: layout, size, spacing, fading, movable | done (vehicle untested) |
 | M1.1 | Stance bar and pet bar | done (pet, vehicle untested) |
 | M1.5 | Theme system (Standard + Paladin), the block | done |
-| M2 | Orbs | testing |
+| M2 | Orbs | done |
 
 ## Commands
 
