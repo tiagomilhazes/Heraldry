@@ -25,6 +25,7 @@ end
 
 local function help()
 	H:Print("commands:")
+	print(W .. "/hui|r " .. G .. "- open or close the settings|r")
 	print(W .. "/hui status|r " .. G .. "- version, character, profile|r")
 	print(W .. "/hui debug|r " .. G .. "- toggle debug messages|r")
 	print(W .. "/hui profile list|r")
@@ -119,7 +120,9 @@ SlashCmdList.HERALDRY = function(msg)
 		return
 	end
 	local cmd, rest = split(msg)
-	if cmd == "" or cmd == "help" then
+	if cmd == "" or cmd == "config" or cmd == "options" then
+		H:ToggleOptions()
+	elseif cmd == "help" then
 		help()
 	elseif cmd == "status" or cmd == "version" then
 		status()

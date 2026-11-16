@@ -3,11 +3,21 @@
 All-in-one immersive UI for **World of Warcraft: Forever** (Midnight client, `## Interface: 16001`).
 A core addon plus optional modules (`Heraldry_<Module>`), each one a separate addon folder.
 
+## Repository layout
+
+Each top-level folder is one addon. Copy them into `Interface\AddOns\`.
+
+| Folder | What it is |
+|---|---|
+| `Heraldry` | Core: database, profiles, events, commands, settings registry |
+| `Heraldry_Options` | Settings panel, load on demand (opens with `/hui`) |
+
 ## Status
 
 | Step | Content | State |
 |---|---|---|
-| C1 | Skeleton, database, profiles, profiles per spec, slash commands, debug | testing |
+| C1 | Skeleton, database, profiles, profiles per spec, slash commands, debug | done |
+| C1.5 | Settings panel (General, Profiles) | testing |
 | C2 | Module system | - |
 | C3 | Settings layers (profile / class / spec) | - |
 | C4 | Movers and edit mode | - |
@@ -17,7 +27,7 @@ A core addon plus optional modules (`Heraldry_<Module>`), each one a separate ad
 
 ## Commands
 
-`/hui` or `/heraldry`. Type `/hui` for the list.
+`/hui` or `/heraldry` opens the settings. `/hui help` lists the commands.
 
 ## Rules
 

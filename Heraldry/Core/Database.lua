@@ -105,7 +105,7 @@ local function onLogin(event)
 	H.Profiles:ApplySpec()
 	H.ready = true
 	H:Fire("READY")
-	H:Print(("v%s loaded. Type |cffffffff/hui|r for commands."):format(H.version))
+	H:Print(("v%s loaded. Type |cffffffff/hui|r for settings, |cffffffff/hui help|r for commands."):format(H.version))
 end
 
 H:RegisterEvent("ADDON_LOADED", onAddonLoaded)
