@@ -112,40 +112,27 @@ end)
 
 --[[ Installed modules, loaded or not ]]
 
--- Enable state for this character: 0 off, above 0 on.
+-- Enable state: 0 off, 1 on for some characters, 2 on for all.
+-- Read without a character: on WoW Forever the per-character read always
+-- answers 2, whatever the real state is.
 local function stateOf(addon)
-	return C_AddOns.GetAddOnEnableState(addon, UnitName("player")) or 0
+	return C_AddOns.GetAddOnEnableState(addon) or 0
 end
 
 function M:IsAddonEnabled(addon)
 	return stateOf(addon) > 0
 end
 
--- Turns a module addon on or off for this character (applies after a reload).
--- If the client ignores the per-character form, the all-characters form is used.
+-- Turns a module addon on or off for every character (applies after a reload).
 function M:SetAddonEnabled(addon, on)
 	local before = stateOf(addon)
-	local char = UnitName("player")
 	if on then
-		C_AddOns.EnableAddOn(addon, char)
+		C_AddOns.EnableAddOn(addon)
 	else
-		C_AddOns.DisableAddOn(addon, char)
+		C_AddOns.DisableAddOn(addon)
 	end
 	local after = stateOf(addon)
-	local fallback = false
-	if (after > 0) ~= on then
-		fallback = true
-		if on then
-			C_AddOns.EnableAddOn(addon)
-		else
-			C_AddOns.DisableAddOn(addon)
-		end
-		after = stateOf(addon)
-	end
-	local ok, all = pcall(C_AddOns.GetAddOnEnableState, addon)
-	H:Debug(("Module %s -> %s. State %s -> %s (all characters: %s)%s"):format(
-		addon, on and "on" or "off", tostring(before), tostring(after),
-		ok and tostring(all) or "?", fallback and ", used the all-characters form" or ""))
+	H:Debug(("Module %s -> %s. State %s -> %s"):format(addon, on and "on" or "off", tostring(before), tostring(after)))
 	if (after > 0) ~= on then
 		H:Error(("Couldn't turn %s %s. Use the AddOns list in the game menu."):format(addon, on and "on" or "off"))
 	end
