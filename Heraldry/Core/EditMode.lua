@@ -2,8 +2,10 @@
 	Heraldry - Core/EditMode.lua
 	Edit mode: a box over every mover.
 
-	Drag a box to move it. It snaps to the screen edges and centre and to the
-	other boxes (hold Alt to place freely). Arrow keys nudge the selected box by
+	Drag a box to move it. When you let go it snaps to the screen edges and
+	centre and to the other boxes; gold guide lines show where while you drag
+	(hold Alt to place freely). The box itself follows the mouse with the
+	game's own movement, so dragging is smooth. Arrow keys nudge the selected box by
 	1 (Shift: 10). Right click puts it back at its default place. The mouse wheel
 	changes its scale. Escape or "Done" closes edit mode, and so does combat.
 
@@ -33,17 +35,62 @@ end
 
 -- Moves lo (a left or bottom edge) so that one of its edges or its centre
 -- lands on the closest target, if one is within SNAP.
+-- Returns the new edge and the line it snapped to (nil when none was close).
 local function snap(lo, size, targets)
-	local best, bestD
+	local bestD, line
 	for _, t in ipairs(targets) do
 		for _, e in ipairs({ 0, size / 2, size }) do
 			local d = t - (lo + e)
 			if math.abs(d) <= SNAP and (not bestD or math.abs(d) < math.abs(bestD)) then
-				bestD = d
+				bestD, line = d, t
 			end
 		end
 	end
-	return bestD and (lo + bestD) or lo
+	if bestD then return lo + bestD, line end
+	return lo
+end
+
+-- Gold lines showing where a dragged box will snap.
+local guideX, guideY
+local function guides(x, y)
+	if not guideX then
+		-- On their own frame above the boxes (UIParent's own textures draw
+		-- under every frame).
+		local f = CreateFrame("Frame", nil, UIParent)
+		f:SetAllPoints(UIParent)
+		f:SetFrameStrata("FULLSCREEN")
+		guideX = f:CreateTexture(nil, "OVERLAY")
+		guideY = f:CreateTexture(nil, "OVERLAY")
+		for _, t in ipairs({ guideX, guideY }) do
+			t:SetColorTexture(ACCENT[1], ACCENT[2], ACCENT[3], 0.9)
+		end
+	end
+	if x then
+		guideX:ClearAllPoints()
+		guideX:SetPoint("TOP", UIParent, "TOPLEFT", x, 0)
+		guideX:SetPoint("BOTTOM", UIParent, "BOTTOMLEFT", x, 0)
+		guideX:SetWidth(1)
+		guideX:Show()
+	else
+		guideX:Hide()
+	end
+	if y then
+		guideY:ClearAllPoints()
+		guideY:SetPoint("LEFT", UIParent, "BOTTOMLEFT", 0, y)
+		guideY:SetPoint("RIGHT", UIParent, "BOTTOMRIGHT", 0, y)
+		guideY:SetHeight(1)
+		guideY:Show()
+	else
+		guideY:Hide()
+	end
+end
+
+-- Where a box at (l, b) would land once snapped; also the guide lines.
+local function snapped(o, l, b)
+	if IsAltKeyDown() then return l, b end
+	local sl, lx = snap(l, o.w, o.xs)
+	local sb, ly = snap(b, o.h, o.ys)
+	return sl, sb, lx, ly
 end
 
 local function snapTargets(except)
@@ -108,20 +155,15 @@ local function onUpdate(o, elapsed)
 		sync(o)
 		return
 	end
-	local scale = UIParent:GetEffectiveScale()
-	local cx, cy = GetCursorPosition()
-	cx, cy = cx / scale, cy / scale
-	-- Only work when the mouse moved by a pixel.
-	local rx, ry = math.floor(cx + 0.5), math.floor(cy + 0.5)
-	if rx == o.lastX and ry == o.lastY then return end
-	o.lastX, o.lastY = rx, ry
-	local w, h = o.w, o.h
-	local l, b = cx - o.dx, cy - o.dy
-	if not IsAltKeyDown() then
-		l, b = snap(l, w, o.xs), snap(b, h, o.ys)
-	end
-	place(o, l, b, w, h)
-	Movers:Preview(o.mover, l, b, w, h)
+	-- The game moves the box (StartMoving); the frame follows it, unsnapped.
+	local l, b = o:GetLeft(), o:GetBottom()
+	if not l then return end
+	local rx, ry = math.floor(l + 0.5), math.floor(b + 0.5)
+	if rx == o.lastX and ry == o.lastY and IsAltKeyDown() == o.lastAlt then return end
+	o.lastX, o.lastY, o.lastAlt = rx, ry, IsAltKeyDown()
+	Movers:Preview(o.mover, l, b, o.w, o.h)
+	local _, _, gx, gy = snapped(o, l, b)
+	guides(gx, gy)
 end
 
 local function createOverlay(m)
@@ -129,6 +171,7 @@ local function createOverlay(m)
 	o.mover = m
 	o:SetFrameStrata("DIALOG")
 	o:SetClampedToScreen(true)
+	o:SetMovable(true)
 	o:EnableMouse(true)
 	o:EnableMouseWheel(true)
 	o:RegisterForClicks("RightButtonUp")
@@ -148,11 +191,9 @@ local function createOverlay(m)
 	o:SetScript("OnMouseDown", function(self, button)
 		if button ~= "LeftButton" then return end
 		selectBox(self)
-		local scale = UIParent:GetEffectiveScale()
-		local cx, cy = GetCursorPosition()
-		local l, b, w, h = self:GetRect()
-		self.dx, self.dy = cx / scale - l, cy / scale - b
+		local _, _, w, h = self:GetRect()
 		self.w, self.h = w, h
+		self:StartMoving()
 		self.lastX, self.lastY = nil, nil
 		-- The other boxes don't move during the drag: snap targets once.
 		self.xs, self.ys = snapTargets(self)
@@ -161,8 +202,12 @@ local function createOverlay(m)
 	end)
 	o:SetScript("OnMouseUp", function(self, button)
 		if button == "LeftButton" and self.dragging then
+			self:StopMovingOrSizing()
 			self.dragging = false
 			dragging = nil
+			guides(nil, nil)
+			local l, b = snapped(self, self:GetLeft(), self:GetBottom())
+			place(self, l, b, self.w, self.h)
 			save(self)
 		end
 	end)
@@ -328,10 +373,12 @@ function H:SetEditMode(on)
 		if #Movers.list == 0 then self:Print("Nothing to move yet: no module has registered a frame.") end
 	else
 		for _, o in pairs(overlays) do
+			if o.dragging then o:StopMovingOrSizing() end
 			o.dragging = false
 			o:Hide()
 		end
 		dragging = nil
+		guides(nil, nil)
 		selectBox(nil)
 		keys:EnableKeyboard(false)
 		keys:Hide()
