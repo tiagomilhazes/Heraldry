@@ -31,5 +31,19 @@ H:RegisterOptionsPage({
 		page:Text(function()
 			return ("Active now: |cffffffff%s|r"):format(Themes:Active().label)
 		end, 20)
+		page:Dropdown({
+			label = "Finish",
+			desc = "Tones the art so it sits in the game. Per character.",
+			values = function()
+				local def = Themes:Active().finish or "none"
+				local t = { { value = false, text = ("Theme default (%s)"):format(Themes.FINISHES[def].label) } }
+				for _, k in ipairs(Themes.FINISH_ORDER) do
+					t[#t + 1] = { value = k, text = Themes.FINISHES[k].label }
+				end
+				return t
+			end,
+			get = function() return H.char.finish or false end,
+			set = function(v) Themes:SetFinish(v or nil) end,
+		})
 	end,
 })

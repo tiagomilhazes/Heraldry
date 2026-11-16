@@ -57,14 +57,19 @@ for _, def in ipairs(BARS) do
 	defaults[k .. "alpha"] = 1
 	defaults[k .. "mouseover"] = false
 	defaults[k .. "fadeAlpha"] = 0
-	-- Look (Art.lua): theme frames on every button, the plate only on bar 1.
-	defaults[k .. "frame"] = "slim"
+	-- Look (Art.lua): thin metal borders on the buttons, the plate on bar 1
+	-- (with bars 1 and 2 joined it covers both: the block).
+	defaults[k .. "frame"] = "simple"
 	defaults[k .. "plate"] = def.n == 1
 	defaults[k .. "rails"] = true
-	defaults[k .. "caps"] = true
-	defaults[k .. "pad"] = 6
-	defaults[k .. "railSize"] = 10
+	defaults[k .. "caps"] = false
+	defaults[k .. "pad"] = 8
+	defaults[k .. "railSize"] = 12
+	defaults[k .. "railExtend"] = 30
 end
+-- The block: bar 2 docked on top of bar 1, one plate around both.
+defaults.join = true
+defaults.joinGap = 4
 
 local AB = H:NewModule("ActionBars", { label = "Action bars", defaults = defaults })
 AB.BARS = BARS
@@ -81,6 +86,11 @@ end
 
 function AB:Set(n, field, value)
 	self.db["bar" .. n .. "_" .. field] = value
+end
+
+-- Bars 1 and 2 form the block (one plate, move together).
+function AB:IsJoined()
+	return self.db.join and self.bars[1] and self.bars[2] and self:IsBarEnabled(1) and self:IsBarEnabled(2)
 end
 
 function AB:IsBarEnabled(n)
@@ -158,6 +168,15 @@ function AB:LayoutBar(bar)
 		UnregisterStateDriver(bar, "visibility")
 		RegisterStateDriver(bar, "visibility", driver)
 		bar.driver = driver
+	end
+
+	-- Bar 2 sits on top of bar 1 while they are joined.
+	if n == 2 and bar.mover then
+		if self:IsJoined() then
+			bar.mover.dock = { target = "ActionBars.bar1", point = "BOTTOM", relPoint = "TOP", x = 0, y = self.db.joinGap }
+		else
+			bar.mover.dock = nil
+		end
 	end
 
 	if self.ApplyBarArt then self:ApplyBarArt(bar) end

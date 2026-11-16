@@ -17,10 +17,9 @@ H:RegisterOptionsPage({
 	build = function(page)
 		local UI = H.UI
 
+		-- Bars 1 and 2 share the block's plate: lay out everything.
 		local function apply()
-			local bar = AB.bars[selected]
-			if bar then AB:LayoutBar(bar) end
-			H:RefreshEditMode()
+			AB:LayoutAll()
 		end
 		local function field(name)
 			return function() return AB:Get(selected, name) end, function(v)
@@ -28,6 +27,26 @@ H:RegisterOptionsPage({
 				apply()
 			end
 		end
+
+		page:Section("Block")
+		page:Toggle({
+			label = "Join bars 1 and 2",
+			desc = "Bar 2 sits on top of bar 1, one plate around both, they move together.",
+			get = function() return AB.db.join end,
+			set = function(v)
+				AB.db.join = v
+				AB:LayoutAll()
+			end,
+		})
+		page:Slider({
+			label = "Gap between bars 1 and 2",
+			min = 0, max = 20, step = 1,
+			get = function() return AB.db.joinGap end,
+			set = function(v)
+				AB.db.joinGap = v
+				AB:LayoutAll()
+			end,
+		})
 
 		page:Section("Bar")
 		page:Dropdown({
@@ -91,6 +110,8 @@ H:RegisterOptionsPage({
 		page:Slider({ label = "Plate margin", desc = "Space between the buttons and the edge of the plate.", min = 0, max = 24, step = 1, get = get, set = set })
 		get, set = field("railSize")
 		page:Slider({ label = "Rail thickness", min = 4, max = 30, step = 1, get = get, set = set })
+		get, set = field("railExtend")
+		page:Slider({ label = "Rails past the plate", desc = "How far the rails run past each end (under the orbs).", min = 0, max = 120, step = 2, get = get, set = set })
 
 		page:Section("Visibility")
 		local pct = function(v) return math.floor(v * 100 + 0.5) .. "%" end

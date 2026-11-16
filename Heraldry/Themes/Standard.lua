@@ -9,5 +9,6 @@ Heraldry:RegisterTheme("STANDARD", {
 	label = "Standard",
 	pieces = {
 		["bar.plate"] = { color = { 0.04, 0.04, 0.04, 0.55 } },
+		["block.plate"] = { color = { 0.04, 0.04, 0.04, 0.55 } },
 	},
 })

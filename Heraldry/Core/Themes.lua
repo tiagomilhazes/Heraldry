@@ -13,7 +13,7 @@
 	      file, size = { w, h }, hole = { left, top, right, bottom }
 	      The hole is where the icon shows: the art is scaled so the hole
 	      matches the button exactly, and the rest spills outside.
-	  bar.plate                         backdrop behind a bar
+	  bar.plate / block.plate           backdrop behind one bar / behind bars 1 and 2 joined
 	      file + size, or color = { r, g, b, a }
 	  bar.rail                          strip along the top and bottom of a plate,
 	                                    repeated sideways (file must be power of 2 wide)
@@ -23,12 +23,19 @@
 	      (x, y) is the middle of the edge that meets the plate, h is how tall
 	      the plate is there: the crest is scaled so h matches the plate.
 
+	A theme can also give:
+	  accent = { r, g, b }               metal colour for thin lines (button borders)
+	  finish = "bronze"                  default finish (see FINISHES): tones the art down
+	                                     so it sits in the game; the player can change it
+
 	A piece that is missing or breaks the contract is dropped (with a debug
 	message), and the Standard theme's piece is used instead, if it has one.
 
 	H:RegisterTheme(key, { label, class, pieces = { [type] = piece } })
 	H.Themes:Piece(type)   piece of the active theme, or Standard's, or nil
 	H.Themes:Set(key)      "auto", "STANDARD", "PALADIN", ...
+	H.Themes:Paint(tex)    applies the finish to a texture showing theme art
+	H.Themes:Accent()      r, g, b of the accent, with the finish applied
 	Fires THEME_CHANGED (activeKey).
 ]]
 
@@ -68,6 +75,16 @@ local TYPES = {
 	end,
 }
 TYPES["button.frameSlim"] = TYPES["button.frame"]
+TYPES["block.plate"] = TYPES["bar.plate"]
+
+-- desaturation (0-1), colour multiplied over the art
+Themes.FINISHES = {
+	none   = { label = "None (original colours)", desat = 0,    color = { 1, 1, 1 } },
+	aged   = { label = "Aged",                    desat = 0.45, color = { 0.78, 0.70, 0.55 } },
+	bronze = { label = "Bronze",                  desat = 0.60, color = { 0.62, 0.52, 0.40 } },
+	iron   = { label = "Iron",                    desat = 0.80, color = { 0.62, 0.60, 0.56 } },
+}
+Themes.FINISH_ORDER = { "none", "aged", "bronze", "iron" }
 
 function H:RegisterTheme(key, def)
 	assert(type(key) == "string" and type(def) == "table", "RegisterTheme: key and definition required")
@@ -83,7 +100,8 @@ function H:RegisterTheme(key, def)
 			table.insert(Themes.problems, ("Theme %s: piece %s dropped (%s)"):format(key, kind, check and ok or "unknown type"))
 		end
 	end
-	local theme = { key = key, label = def.label or key, class = def.class, pieces = pieces }
+	local theme = { key = key, label = def.label or key, class = def.class, pieces = pieces,
+		accent = def.accent, finish = def.finish }
 	if not Themes.byKey[key] then Themes.list[#Themes.list + 1] = theme end
 	Themes.byKey[key] = theme
 	return theme
@@ -111,6 +129,36 @@ function Themes:Piece(kind)
 	if p then return p end
 	local std = self.byKey.STANDARD
 	return std and std.pieces[kind]
+end
+
+-- Finish key in use: the character's choice, or the theme's default.
+function Themes:FinishKey()
+	local choice = H.char and H.char.finish
+	if choice and self.FINISHES[choice] then return choice end
+	local t = self:Active()
+	return t and self.FINISHES[t.finish or "none"] and t.finish or "none"
+end
+
+function Themes:SetFinish(key)
+	H.char.finish = key   -- nil: back to the theme's default
+	H:Fire("THEME_CHANGED", self:ActiveKey())
+end
+
+function Themes:Paint(tex)
+	local f = self.FINISHES[self:FinishKey()]
+	tex:SetDesaturation(f.desat)
+	tex:SetVertexColor(f.color[1], f.color[2], f.color[3])
+end
+
+function Themes:Accent()
+	local t = self:Active()
+	local a = t and t.accent
+	if not a then return nil end
+	local f = self.FINISHES[self:FinishKey()]
+	-- the same toning as the art: towards grey, then multiplied
+	local grey = (a[1] + a[2] + a[3]) / 3
+	local function tone(c, i) return (c + (grey - c) * f.desat) * f.color[i] end
+	return tone(a[1], 1), tone(a[2], 2), tone(a[3], 3)
 end
 
 function Themes:Set(key)

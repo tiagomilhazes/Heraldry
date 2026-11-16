@@ -304,7 +304,7 @@ function H:SetEditMode(on)
 			local o = overlays[m.key] or createOverlay(m)
 			sync(o)
 			paint(o)
-			o:SetShown(not m.isShown or m.isShown())
+			o:SetShown(Movers:IsMovable(m))
 		end
 		bar:Show()
 		keys:EnableKeyboard(true)
@@ -331,7 +331,7 @@ function H:RefreshEditMode()
 	if not self.editMode then return end
 	for _, m in ipairs(Movers.list) do
 		local o = overlays[m.key]
-		if o then o:SetShown(not m.isShown or m.isShown()) end
+		if o then o:SetShown(Movers:IsMovable(m)) end
 	end
 end
 
@@ -341,7 +341,7 @@ end
 
 -- A mover registered while edit mode is open gets its box right away.
 H:On("MOVER_ADDED", function(_, m)
-	if H.editMode then createOverlay(m):SetShown(not m.isShown or m.isShown()) end
+	if H.editMode then createOverlay(m):SetShown(Movers:IsMovable(m)) end
 end)
 
 H:On("PROFILE_CHANGED", function()

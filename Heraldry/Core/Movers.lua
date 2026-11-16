@@ -13,6 +13,13 @@
 	})
 	H.Movers:Reset(key)   H.Movers:ResetAll()
 
+	Docking: a module can pin one mover to another (bar 2 on top of bar 1,
+	the orbs at the ends of the block). A docked frame follows its target,
+	ignores its own saved position and has no box in edit mode. Docking is
+	decided by the module from its own settings, so it is not saved here.
+	H.Movers:Dock(key, targetKey, point, relPoint, x, y)   (x, y in screen units)
+	H.Movers:Undock(key)
+
 	A saved position is { point, x, y, scale }. The point is picked from the
 	part of the screen the frame sits in (a frame near the top right corner is
 	anchored TOPRIGHT), so positions survive resolution and UI scale changes.
@@ -50,8 +57,33 @@ function Movers:Apply(m)
 		if m.scalable then f:SetScale(s) end
 		local r = ratio(f)
 		f:ClearAllPoints()
-		f:SetPoint(p, UIParent, p, x / r, y / r)
+		local d = m.dock
+		local target = d and self.byKey[d.target]
+		if target then
+			f:SetPoint(d.point, target.frame, d.relPoint, d.x / r, d.y / r)
+		else
+			f:SetPoint(p, UIParent, p, x / r, y / r)
+		end
 	end, "mover:" .. m.key)
+end
+
+function Movers:Dock(key, targetKey, point, relPoint, x, y)
+	local m = self.byKey[key]
+	if not m or not self.byKey[targetKey] then return end
+	m.dock = { target = targetKey, point = point, relPoint = relPoint or point, x = x or 0, y = y or 0 }
+	self:Apply(m)
+end
+
+function Movers:Undock(key)
+	local m = self.byKey[key]
+	if not m or not m.dock then return end
+	m.dock = nil
+	self:Apply(m)
+end
+
+-- Whether a mover gets a box in edit mode.
+function Movers:IsMovable(m)
+	return not m.dock and (not m.isShown or m.isShown())
 end
 
 function Movers:ApplyAll()
