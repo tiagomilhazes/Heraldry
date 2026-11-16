@@ -57,6 +57,13 @@ for _, def in ipairs(BARS) do
 	defaults[k .. "alpha"] = 1
 	defaults[k .. "mouseover"] = false
 	defaults[k .. "fadeAlpha"] = 0
+	-- Look (Art.lua): theme frames on every button, the plate only on bar 1.
+	defaults[k .. "frame"] = "slim"
+	defaults[k .. "plate"] = def.n == 1
+	defaults[k .. "rails"] = true
+	defaults[k .. "caps"] = true
+	defaults[k .. "pad"] = 6
+	defaults[k .. "railSize"] = 10
 end
 
 local AB = H:NewModule("ActionBars", { label = "Action bars", defaults = defaults })
@@ -153,6 +160,8 @@ function AB:LayoutBar(bar)
 		bar.driver = driver
 	end
 
+	if self.ApplyBarArt then self:ApplyBarArt(bar) end
+
 	-- The scale changed: put the bar back at its saved place.
 	if bar.mover then H.Movers:Apply(bar.mover) end
 end
@@ -244,6 +253,7 @@ function AB:OnEnable()
 	self:Build()
 	self:LayoutAll()
 	H:RegisterEvent("UI_SCALE_CHANGED", function() AB:LayoutAll() end)
+	H:On("THEME_CHANGED", function() AB:LayoutAll() end)
 	-- Learning a stance (aura) changes how many stance buttons there are.
 	H:RegisterEvent("UPDATE_SHAPESHIFT_FORMS", function()
 		if AB.bars.stance then AB:LayoutBar(AB.bars.stance) end

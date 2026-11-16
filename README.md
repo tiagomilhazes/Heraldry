@@ -27,8 +27,8 @@ Each top-level folder is one addon. Copy them into `Interface\AddOns\`.
 | C6 | Configuration panel | - |
 | C7 | Installer, presets, import/export | after 2-3 modules |
 | M1 | Action bars: layout, size, spacing, fading, movable | done (vehicle untested) |
-| M1.1 | Stance bar and pet bar | testing |
-| M1.5 | Theme system (Standard + Paladin) on the action bars | - |
+| M1.1 | Stance bar and pet bar | done (pet, vehicle untested) |
+| M1.5 | Theme system (Standard + Paladin) on the action bars | testing |
 
 ## Commands
 

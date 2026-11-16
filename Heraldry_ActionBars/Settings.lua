@@ -66,6 +66,32 @@ H:RegisterOptionsPage({
 		get, set = field("spacing")
 		page:Slider({ label = "Spacing", desc = "Space between buttons, in pixels.", min = 0, max = 16, step = 1, get = get, set = set })
 
+		page:Section("Look")
+		get, set = field("frame")
+		page:Dropdown({
+			label = "Button frames",
+			desc = "Theme frames come from the active theme (General > Theme).",
+			values = function()
+				return {
+					{ value = "slim", text = "Theme frame, slim" },
+					{ value = "ornate", text = "Theme frame, ornate" },
+					{ value = "simple", text = "Simple border" },
+					{ value = "game", text = "Game default" },
+				}
+			end,
+			get = get, set = set,
+		})
+		get, set = field("plate")
+		page:Toggle({ label = "Plate behind the bar", desc = "The theme's backdrop, with rails and crests.", get = get, set = set })
+		get, set = field("rails")
+		page:Toggle({ label = "Rails", desc = "Strips along the top and bottom of the plate.", get = get, set = set })
+		get, set = field("caps")
+		page:Toggle({ label = "End crests", desc = "Only on bars wider than tall.", get = get, set = set })
+		get, set = field("pad")
+		page:Slider({ label = "Plate margin", desc = "Space between the buttons and the edge of the plate.", min = 0, max = 24, step = 1, get = get, set = set })
+		get, set = field("railSize")
+		page:Slider({ label = "Rail thickness", min = 4, max = 30, step = 1, get = get, set = set })
+
 		page:Section("Visibility")
 		local pct = function(v) return math.floor(v * 100 + 0.5) .. "%" end
 		get, set = field("alpha")
