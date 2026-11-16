@@ -21,7 +21,7 @@ Each top-level folder is one addon. Copy them into `Interface\AddOns\`.
 | C1.5 | Settings panel (General, Profiles), game menu button | done |
 | C2 | Module system, Modules page, test module | done |
 | C3 | Settings layers (profile / class) | later, with the first module that needs it |
-| C4 | Movers and edit mode | testing |
+| C4 | Movers and edit mode | done |
 | C5 | Themes (Standard + Paladin) and the art geometry contract | - |
 | C6 | Configuration panel | - |
 | C7 | Installer, presets, import/export | - |
