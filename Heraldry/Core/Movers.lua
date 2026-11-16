@@ -122,6 +122,17 @@ function Movers:SaveRect(m, left, bottom, w, h, scale)
 	self:Apply(m)
 end
 
+-- Live move while dragging in edit mode: positions the frame directly,
+-- saves nothing (SaveRect on release). Edit mode is never open in combat.
+function Movers:Preview(m, left, bottom, w, h)
+	if InCombatLockdown() or m.dock then return end
+	local p, x, y = self:AnchorFor(left, bottom, w, h)
+	local f = m.frame
+	local r = ratio(f)
+	f:ClearAllPoints()
+	f:SetPoint(p, UIParent, p, x / r, y / r)
+end
+
 function Movers:SetScale(m, scale)
 	local p, x, y = self:Get(m)
 	H.profile.layout[m.key] = { p, x, y, scale }

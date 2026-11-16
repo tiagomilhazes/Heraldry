@@ -20,6 +20,8 @@ local ACCENT = { 0.910, 0.690, 0.294 }
 
 local overlays = {}
 local selected
+local dragging            -- the box being dragged, if any
+local SYNC_EVERY = 0.2    -- idle boxes follow their frame 5 times a second
 local bar, grid, keys
 
 local function settings()
@@ -96,23 +98,30 @@ local function save(o)
 	Movers:SaveRect(o.mover, l, b, w, h, s)
 end
 
-local function onUpdate(o)
+local function onUpdate(o, elapsed)
 	if not o.dragging then
+		-- Nothing else moves while a box is dragged; otherwise a light refresh.
+		if dragging then return end
+		o.syncWait = (o.syncWait or 0) - elapsed
+		if o.syncWait > 0 then return end
+		o.syncWait = SYNC_EVERY
 		sync(o)
 		return
 	end
 	local scale = UIParent:GetEffectiveScale()
 	local cx, cy = GetCursorPosition()
 	cx, cy = cx / scale, cy / scale
-	local _, _, w, h = o:GetRect()
+	-- Only work when the mouse moved by a pixel.
+	local rx, ry = math.floor(cx + 0.5), math.floor(cy + 0.5)
+	if rx == o.lastX and ry == o.lastY then return end
+	o.lastX, o.lastY = rx, ry
+	local w, h = o.w, o.h
 	local l, b = cx - o.dx, cy - o.dy
 	if not IsAltKeyDown() then
-		local xs, ys = snapTargets(o)
-		l, b = snap(l, w, xs), snap(b, h, ys)
+		l, b = snap(l, w, o.xs), snap(b, h, o.ys)
 	end
 	place(o, l, b, w, h)
-	local _, _, _, s = Movers:Get(o.mover)
-	Movers:SaveRect(o.mover, l, b, w, h, s)
+	Movers:Preview(o.mover, l, b, w, h)
 end
 
 local function createOverlay(m)
@@ -141,13 +150,19 @@ local function createOverlay(m)
 		selectBox(self)
 		local scale = UIParent:GetEffectiveScale()
 		local cx, cy = GetCursorPosition()
-		local l, b = self:GetRect()
+		local l, b, w, h = self:GetRect()
 		self.dx, self.dy = cx / scale - l, cy / scale - b
+		self.w, self.h = w, h
+		self.lastX, self.lastY = nil, nil
+		-- The other boxes don't move during the drag: snap targets once.
+		self.xs, self.ys = snapTargets(self)
 		self.dragging = true
+		dragging = self
 	end)
 	o:SetScript("OnMouseUp", function(self, button)
 		if button == "LeftButton" and self.dragging then
 			self.dragging = false
+			dragging = nil
 			save(self)
 		end
 	end)
@@ -316,6 +331,7 @@ function H:SetEditMode(on)
 			o.dragging = false
 			o:Hide()
 		end
+		dragging = nil
 		selectBox(nil)
 		keys:EnableKeyboard(false)
 		keys:Hide()
