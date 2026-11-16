@@ -58,6 +58,7 @@ local function buildNav(sidebar)
 	for _, def in ipairs(sortedPages()) do
 		local g = groupOf(def)
 		if g ~= lastGroup then
+			if lastGroup then y = y - 18 end   -- breathing room between groups
 			lastGroup = g
 			local gt = UI.Text(sidebar, 11, C.faint)
 			gt:SetPoint("TOPLEFT", 20, y - 6)
