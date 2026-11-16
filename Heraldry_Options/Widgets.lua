@@ -96,7 +96,11 @@ local function newRow(page, label, desc)
 		d:SetWidth(w)
 		d:SetWordWrap(false)
 		d:SetPoint("TOPLEFT", l, "BOTTOMLEFT", 0, -5)
-		d:SetText(desc)
+		if type(desc) == "function" then
+			page:OnRefresh(function() d:SetText(desc()) end)
+		else
+			d:SetText(desc)
+		end
 		page:Place(f, 50)
 	else
 		l:SetPoint("LEFT", 14, 0)

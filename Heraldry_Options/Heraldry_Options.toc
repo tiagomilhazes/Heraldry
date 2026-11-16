@@ -2,7 +2,7 @@
 ## Title: |cffE8B04BHeraldry|r Options
 ## Notes: Heraldry settings panel. Loads when you open it.
 ## Author: Tiago
-## Version: 0.1.1
+## Version: 0.2.0
 ## Dependencies: Heraldry
 ## LoadOnDemand: 1
 ## IconTexture: Interface\Icons\INV_Shield_06
@@ -12,3 +12,4 @@ Widgets.lua
 Panel.lua
 Pages\General.lua
 Pages\Profiles.lua
+Pages\Modules.lua

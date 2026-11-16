@@ -11,14 +11,15 @@ Each top-level folder is one addon. Copy them into `Interface\AddOns\`.
 |---|---|
 | `Heraldry` | Core: database, profiles, events, commands, settings registry |
 | `Heraldry_Options` | Settings panel, load on demand (opens with `/hui`) |
+| `Heraldry_Test` | Test module for the module system (temporary) |
 
 ## Status
 
 | Step | Content | State |
 |---|---|---|
 | C1 | Skeleton, database, profiles, profiles per spec, slash commands, debug | done |
-| C1.5 | Settings panel (General, Profiles) | testing |
-| C2 | Module system | - |
+| C1.5 | Settings panel (General, Profiles), game menu button | done |
+| C2 | Module system, Modules page, test module | testing |
 | C3 | Settings layers (profile / class / spec) | - |
 | C4 | Movers and edit mode | - |
 | C5 | Themes (Standard + Paladin) and the art geometry contract | - |
