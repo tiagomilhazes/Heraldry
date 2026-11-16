@@ -23,6 +23,11 @@
 	      (x, y) is the middle of the edge that meets the plate, h is how tall
 	      the plate is there: the crest is scaled so h matches the plate.
 
+	  orb.health / orb.power            ring around the life / power orb
+	      file, size = { w, h }, hole = { cx, cy, r }, reach
+	      hole: centre and radius of the glass; reach: how far the ring goes
+	      from that centre towards the bars (it tucks against the plate)
+
 	A theme can also give:
 	  accent = { r, g, b }               metal colour for thin lines (button borders)
 	  finish = "bronze"                  default finish (see FINISHES): tones the art down
@@ -76,6 +81,11 @@ local TYPES = {
 }
 TYPES["button.frameSlim"] = TYPES["button.frame"]
 TYPES["block.plate"] = TYPES["bar.plate"]
+TYPES["orb.health"] = function(p)
+	return p.file and nums(p.size, 2) and nums(p.hole, 3) and p.hole[3] > 0 and isNum(p.reach)
+		or "needs file, size {w,h}, hole {cx,cy,r} and reach"
+end
+TYPES["orb.power"] = TYPES["orb.health"]
 
 -- desaturation (0-1), colour multiplied over the art
 Themes.FINISHES = {

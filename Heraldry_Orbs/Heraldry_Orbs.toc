@@ -1,0 +1,13 @@
+## Interface: 16001
+## Title: |cffE8B04BHeraldry|r Orbs
+## Notes: Life and power orbs at the ends of the action bars, in the theme's rings.
+## Author: Tiago
+## Version: 0.8.0
+## Dependencies: Heraldry
+## OptionalDeps: Heraldry_ActionBars
+## X-Heraldry-Module: 1
+## X-Heraldry-Label: Orbs
+## IconTexture: Interface\Icons\INV_Shield_06
+
+Orbs.lua
+Settings.lua

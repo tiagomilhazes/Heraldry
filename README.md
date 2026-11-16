@@ -12,7 +12,8 @@ Each top-level folder is one addon. Copy them into `Interface\AddOns\`.
 | `Heraldry` | Core: database, profiles, events, commands, settings registry |
 | `Heraldry_Options` | Settings panel, load on demand (opens with `/hui`) |
 | `Heraldry_Test` | Test module for the module system (temporary) |
-| `Heraldry_ActionBars` | Action bars 1 to 8 |
+| `Heraldry_ActionBars` | Action bars 1 to 8, stance and pet bars, the block (bars 1+2) |
+| `Heraldry_Orbs` | Life and power orbs docked to the block |
 
 ## Status
 
@@ -28,7 +29,8 @@ Each top-level folder is one addon. Copy them into `Interface\AddOns\`.
 | C7 | Installer, presets, import/export | after 2-3 modules |
 | M1 | Action bars: layout, size, spacing, fading, movable | done (vehicle untested) |
 | M1.1 | Stance bar and pet bar | done (pet, vehicle untested) |
-| M1.5 | Theme system (Standard + Paladin) on the action bars | testing |
+| M1.5 | Theme system (Standard + Paladin), the block | done |
+| M2 | Orbs | testing |
 
 ## Commands
 
