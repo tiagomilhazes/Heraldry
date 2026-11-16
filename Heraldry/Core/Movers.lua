@@ -7,7 +7,9 @@
 		label    = "Test square",
 		default  = { "TOP", 0, -140 },   -- point, x, y (screen units); the frame's
 		                                 -- point is anchored to the same point of the screen
-		scalable = true,                 -- mouse wheel changes its scale in edit mode
+		scalable = true,                 -- mouse wheel changes its scale in edit mode;
+		                                 -- false: the module sets the frame's scale itself
+		isShown  = function() end,       -- optional: false hides its box in edit mode
 	})
 	H.Movers:Reset(key)   H.Movers:ResetAll()
 
@@ -44,7 +46,8 @@ function Movers:Apply(m)
 	H:RunOutOfCombat(function()
 		local p, x, y, s = self:Get(m)
 		local f = m.frame
-		f:SetScale(s)
+		-- Not scalable: the module owns the frame's scale (e.g. button size).
+		if m.scalable then f:SetScale(s) end
 		local r = ratio(f)
 		f:ClearAllPoints()
 		f:SetPoint(p, UIParent, p, x / r, y / r)
@@ -123,6 +126,7 @@ function H:RegisterMover(frame, key, opts)
 		label = opts.label or key,
 		default = opts.default or { "CENTER", 0, 0 },
 		scalable = opts.scalable ~= false,
+		isShown = opts.isShown,
 	}
 	Movers.list[#Movers.list + 1] = m
 	Movers.byKey[key] = m

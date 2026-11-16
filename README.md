@@ -12,6 +12,7 @@ Each top-level folder is one addon. Copy them into `Interface\AddOns\`.
 | `Heraldry` | Core: database, profiles, events, commands, settings registry |
 | `Heraldry_Options` | Settings panel, load on demand (opens with `/hui`) |
 | `Heraldry_Test` | Test module for the module system (temporary) |
+| `Heraldry_ActionBars` | Action bars 1 to 8 |
 
 ## Status
 
@@ -24,7 +25,9 @@ Each top-level folder is one addon. Copy them into `Interface\AddOns\`.
 | C4 | Movers and edit mode | done |
 | C5 | Themes (Standard + Paladin) and the art geometry contract | - |
 | C6 | Configuration panel | - |
-| C7 | Installer, presets, import/export | - |
+| C7 | Installer, presets, import/export | after 2-3 modules |
+| M1 | Action bars: layout, size, spacing, fading, movable | testing |
+| M1.5 | Theme system (Standard + Paladin) on the action bars | - |
 
 ## Commands
 
