@@ -1,0 +1,14 @@
+## Interface: 16001
+## Title: |cffE8B04BHeraldry|r
+## Notes: All-in-one immersive UI for WoW Forever (core).
+## Author: Tiago
+## Version: 0.1.0-c1
+## SavedVariables: HeraldryDB
+## IconTexture: Interface\Icons\INV_Shield_06
+
+Core\Init.lua
+Core\Events.lua
+Core\Combat.lua
+Core\Database.lua
+Core\Profiles.lua
+Core\Commands.lua
