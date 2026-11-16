@@ -178,34 +178,46 @@ end
 
 --[[ Dropdown menu (one shared list for every dropdown) ]]
 
-local menu, catcher
+local menu
 local ITEM_H = 22
+
+function UI.IsMenuOpenFor(anchor)
+	return menu ~= nil and menu:IsShown() and menu.anchor == anchor
+end
+
+function UI.CloseMenu()
+	if menu then menu:Hide() end
+end
 
 function UI.OpenMenu(anchor, items, current, onPick)
 	if not menu then
-		catcher = CreateFrame("Button", nil, UIParent)
-		catcher:SetAllPoints(UIParent)
-		catcher:SetFrameStrata("FULLSCREEN_DIALOG")
-		catcher:SetFrameLevel(1)
-		catcher:Hide()
-
 		menu = CreateFrame("Frame", nil, UI.root)
 		menu:SetFrameStrata("FULLSCREEN_DIALOG")
-		menu:SetFrameLevel(20)
 		menu:EnableMouse(true)
+		menu:Hide()
 		UI.Fill(menu, C.menu)
 		UI.Border(menu, C.borderStrong)
 		menu.items = {}
-		menu:SetScript("OnHide", function() catcher:Hide() end)
-		catcher:SetScript("OnClick", function() menu:Hide() end)
+		-- Close on a click anywhere outside the list (or its own dropdown button,
+		-- which toggles it instead).
+		menu:SetScript("OnShow", function(self) self:RegisterEvent("GLOBAL_MOUSE_DOWN") end)
+		menu:SetScript("OnHide", function(self) self:UnregisterEvent("GLOBAL_MOUSE_DOWN") end)
+		menu:SetScript("OnEvent", function(self)
+			if not self:IsMouseOver() and not (self.anchor and self.anchor:IsMouseOver()) then
+				self:Hide()
+			end
+		end)
 		UI.root:HookScript("OnHide", function() menu:Hide() end)
 	end
+	menu.anchor = anchor
 
 	local n = math.max(#items, 1)
 	for i = 1, n do
 		local it = menu.items[i]
 		if not it then
 			it = CreateFrame("Button", nil, menu)
+			it:EnableMouse(true)
+			it:RegisterForClicks("LeftButtonUp")
 			it:SetPoint("TOPLEFT", 2, -2 - (i - 1) * ITEM_H)
 			it:SetPoint("TOPRIGHT", -2, -2 - (i - 1) * ITEM_H)
 			it:SetHeight(ITEM_H)
@@ -225,6 +237,7 @@ function UI.OpenMenu(anchor, items, current, onPick)
 			it.text:SetTextColor(unpack(data.value == current and C.accent or C.text))
 			it:SetScript("OnClick", function()
 				menu:Hide()
+				H:Debug("Menu pick:", tostring(data.value))
 				onPick(data.value)
 			end)
 		else
@@ -239,8 +252,8 @@ function UI.OpenMenu(anchor, items, current, onPick)
 	menu:ClearAllPoints()
 	menu:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -2)
 	menu:SetSize(anchor:GetWidth(), n * ITEM_H + 4)
-	catcher:Show()
 	menu:Show()
+	menu:Raise()
 end
 
 function Page:Dropdown(o)
@@ -270,6 +283,10 @@ function Page:Dropdown(o)
 		b.label:SetTextColor(unpack(text and C.text or C.faint))
 	end
 	b:SetScript("OnClick", function()
+		if UI.IsMenuOpenFor(b) then
+			UI.CloseMenu()
+			return
+		end
 		UI.OpenMenu(b, o.values(), o.get and o.get(), function(value)
 			o.set(value)
 			page:Refresh()
@@ -339,7 +356,7 @@ function UI.Confirm(text, yesLabel, onYes)
 	if not confirm then
 		confirm = CreateFrame("Frame", nil, UI.root)
 		confirm:SetAllPoints(UI.root)
-		confirm:SetFrameLevel(UI.root:GetFrameLevel() + 50)
+		confirm:SetFrameStrata("DIALOG")
 		confirm:EnableMouse(true)
 		UI.Fill(confirm, { 0, 0, 0, 0.6 })
 
