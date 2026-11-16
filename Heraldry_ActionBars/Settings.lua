@@ -38,7 +38,7 @@ H:RegisterOptionsPage({
 				for _, def in ipairs(AB.BARS) do
 					if AB.bars[def.n] then
 						local off = AB:IsBarEnabled(def.n) and "" or "  |cff888888(off)|r"
-						t[#t + 1] = { value = def.n, text = "Action bar " .. def.n .. off }
+						t[#t + 1] = { value = def.n, text = def.label .. off }
 					end
 				end
 				return t
@@ -48,7 +48,7 @@ H:RegisterOptionsPage({
 		})
 		page:Toggle({
 			label = "Show this bar",
-			desc = "Until you set it, a bar follows the game's own setting.",
+			desc = "Action bars follow the game's own setting until you set them.",
 			get = function() return AB:IsBarEnabled(selected) end,
 			set = function(v)
 				AB:Set(selected, "enabled", v)
@@ -58,7 +58,7 @@ H:RegisterOptionsPage({
 
 		page:Section("Layout")
 		local get, set = field("buttons")
-		page:Slider({ label = "Buttons", desc = "How many buttons the bar shows.", min = 1, max = 12, step = 1, get = get, set = set })
+		page:Slider({ label = "Buttons", desc = "How many buttons the bar shows, at most.", min = 1, max = 12, step = 1, get = get, set = set })
 		get, set = field("perRow")
 		page:Slider({ label = "Buttons per row", desc = "1 makes a vertical bar.", min = 1, max = 12, step = 1, get = get, set = set })
 		get, set = field("size")
@@ -82,7 +82,7 @@ H:RegisterOptionsPage({
 			text = "Reset",
 			kind = "danger",
 			onClick = function()
-				UI.Confirm(("Reset action bar %d?"):format(selected), "Reset", function()
+				UI.Confirm(("Reset the %s?"):format(AB.defs[selected].label:lower()), "Reset", function()
 					AB:ResetBar(selected)
 					page:Refresh()
 				end)
