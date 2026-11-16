@@ -19,7 +19,6 @@ end
 function Test:OnEnable()
 	H:Debug("Test: OnEnable")
 	local f = CreateFrame("Frame", nil, UIParent)
-	f:SetPoint("TOP", 0, -140)
 	local bg = f:CreateTexture(nil, "BACKGROUND")
 	bg:SetAllPoints()
 	bg:SetColorTexture(0.91, 0.69, 0.29, 0.85)
@@ -27,6 +26,7 @@ function Test:OnEnable()
 	f.text:SetPoint("TOP", f, "BOTTOM", 0, -4)
 	self.frame = f
 	self:Apply()
+	H:RegisterMover(f, "Test.square", { label = "Test square", default = { "TOP", 0, -140 } })
 end
 
 function Test:OnProfileChanged()

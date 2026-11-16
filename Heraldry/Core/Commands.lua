@@ -26,6 +26,7 @@ end
 local function help()
 	H:Print("commands:")
 	print(W .. "/hui|r " .. G .. "- open or close the settings|r")
+	print(W .. "/hui edit|r " .. G .. "- move things around (edit mode)|r")
 	print(W .. "/hui status|r " .. G .. "- version, character, profile|r")
 	print(W .. "/hui debug|r " .. G .. "- toggle debug messages|r")
 	print(W .. "/hui profile list|r")
@@ -124,6 +125,9 @@ SlashCmdList.HERALDRY = function(msg)
 		H:ToggleOptions()
 	elseif cmd == "help" then
 		help()
+	elseif cmd == "edit" or cmd == "move" then
+		if H.Panel then H.Panel:Hide() end
+		H:ToggleEditMode()
 	elseif cmd == "status" or cmd == "version" then
 		status()
 	elseif cmd == "debug" then
