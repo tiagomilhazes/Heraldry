@@ -112,17 +112,43 @@ end)
 
 --[[ Installed modules, loaded or not ]]
 
-function M:IsAddonEnabled(addon)
-	return (C_AddOns.GetAddOnEnableState(addon, UnitName("player")) or 0) > 0
+-- Enable state for this character: 0 off, above 0 on.
+local function stateOf(addon)
+	return C_AddOns.GetAddOnEnableState(addon, UnitName("player")) or 0
 end
 
+function M:IsAddonEnabled(addon)
+	return stateOf(addon) > 0
+end
+
+-- Turns a module addon on or off for this character (applies after a reload).
+-- If the client ignores the per-character form, the all-characters form is used.
 function M:SetAddonEnabled(addon, on)
+	local before = stateOf(addon)
+	local char = UnitName("player")
 	if on then
-		C_AddOns.EnableAddOn(addon)
+		C_AddOns.EnableAddOn(addon, char)
 	else
-		C_AddOns.DisableAddOn(addon)
+		C_AddOns.DisableAddOn(addon, char)
 	end
-	H:Debug("Module addon", addon, on and "on" or "off", "(after reload)")
+	local after = stateOf(addon)
+	local fallback = false
+	if (after > 0) ~= on then
+		fallback = true
+		if on then
+			C_AddOns.EnableAddOn(addon)
+		else
+			C_AddOns.DisableAddOn(addon)
+		end
+		after = stateOf(addon)
+	end
+	local ok, all = pcall(C_AddOns.GetAddOnEnableState, addon)
+	H:Debug(("Module %s -> %s. State %s -> %s (all characters: %s)%s"):format(
+		addon, on and "on" or "off", tostring(before), tostring(after),
+		ok and tostring(all) or "?", fallback and ", used the all-characters form" or ""))
+	if (after > 0) ~= on then
+		H:Error(("Couldn't turn %s %s. Use the AddOns list in the game menu."):format(addon, on and "on" or "off"))
+	end
 end
 
 -- { addon, label, desc, loaded } for every addon that declares X-Heraldry-Module.
