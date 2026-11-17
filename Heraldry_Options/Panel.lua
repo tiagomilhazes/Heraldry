@@ -189,6 +189,27 @@ function Panel:Build()
 	close:SetPoint("TOPRIGHT", -14, -14)
 	close:SetScript("OnClick", function() frame:Hide() end)
 
+	-- Edit mode, always one click away
+	local edit = UI.Button(header, "Edit mode", 96)
+	edit:SetSize(96, 28)
+	edit:SetPoint("RIGHT", close, "LEFT", -8, 0)
+	edit.label:SetTextColor(0.91, 0.69, 0.29)
+	edit:SetScript("OnClick", function()
+		if InCombatLockdown() then
+			H:Error("Edit mode isn't available in combat.")
+			return
+		end
+		frame:Hide()
+		H:SetEditMode(true)
+	end)
+	edit:HookScript("OnEnter", function(b)
+		GameTooltip:SetOwner(b, "ANCHOR_BOTTOM")
+		GameTooltip:SetText("Edit mode")
+		GameTooltip:AddLine("Move and scale everything on screen. Also with /hui edit.", 1, 1, 1, true)
+		GameTooltip:Show()
+	end)
+	edit:HookScript("OnLeave", function() GameTooltip:Hide() end)
+
 	-- Footer
 	local footer = CreateFrame("Frame", nil, frame)
 	footer:SetPoint("BOTTOMLEFT", SIDEBAR_W + 1, 1)
