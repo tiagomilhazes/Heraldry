@@ -1,14 +1,14 @@
 --[[
 	Heraldry_UnitFrames - Target.lua
 	The target frame, in two styles:
-	  Heraldic (default)  one art family for every target (TargetArt.lua): the
-	                      ornament on the left says what the target is (hostile,
-	                      friendly, elite, rare, boss, or the player's class),
-	                      the level sits on its gem, rails hug the bars.
-	  Minimal             dark glass panel, a rim in the theme's metal colour and
-	                      the theme's gem (level 2 of the visual hierarchy).
-	The bars keep their size and place whatever the target: only the ornament
-	changes around them.
+	  Plaque (default)  one fixed plaque (TargetPlaque.lua): the bars fill its
+	                    slot, the level sits on the left jewel. What the target
+	                    is shows as the metal's finish (iron hostile, bronze
+	                    friendly, gold elite and players, silver rare, red boss)
+	                    and the jewels' colour (reaction, or the player's class).
+	                    The plaque never changes shape, so texts never move.
+	  Minimal           dark glass panel, a rim in the theme's metal colour and
+	                    the theme's gem (level 2 of the visual hierarchy).
 
 	- The frame is a secure unit button for "target", shown and hidden by the
 	  game (RegisterUnitWatch): left click targets, right click opens the
@@ -34,10 +34,7 @@ local UF = H:NewModule("UnitFrames", {
 	label = "Unit frames",
 	fonts = true,
 	defaults = {
-		style = "heraldic",      -- heraldic | minimal
-		rails = "class",         -- class | neutral (players: the class rod's rails, or the hostile rails)
-		bothEnds = true,         -- the ornament on both ends of the bars (the level is on the left one)
-		capOverlap = 8,          -- how far the ornaments reach over the ends of the bars (negative: a gap)
+		style = "plaque",        -- plaque | minimal
 		width = 240,
 		healthHeight = 18,
 		powerHeight = 8,
@@ -55,10 +52,6 @@ local UF = H:NewModule("UnitFrames", {
 		hideBlizzard = true,
 	},
 })
-
--- Class rods: ornament scale and rail thickness per pixel of bar height.
-local ROD_K = 0.5625 / 28   -- x the rod's scale (0.8): 0.45 at 28 px of bars
-local ROD_RAIL = 0.3
 
 -- The frame's texts, in the order the Text tab lists them.
 UF.TEXTS = {
@@ -180,25 +173,26 @@ function UF:Create()
 	f.level:SetShadowColor(0, 0, 0, 1)
 	f.level:SetShadowOffset(1, -1)
 
-	-- Heraldic: rails under the bars, the ornament and its level above them
-	local rails = CreateFrame("Frame", nil, f)
-	rails:SetAllPoints()
-	rails:SetFrameLevel(f:GetFrameLevel())
-	f.railTop = rails:CreateTexture(nil, "ARTWORK")
-	f.railBottom = rails:CreateTexture(nil, "ARTWORK")
-	f.rails = rails
-	local cap = CreateFrame("Frame", nil, f)
-	cap:SetFrameLevel(f:GetFrameLevel() + 6)
-	cap:SetAllPoints()
-	-- each end: the ornament, and a strip where it fades into the rails
-	f.ends = {}
+	-- Plaque: the art under the bars, the jewels (and the level) above them
+	local plaque = CreateFrame("Frame", nil, f)
+	plaque:SetAllPoints()
+	f.plaque = plaque
+	f.slices = { plaque:CreateTexture(nil, "ARTWORK"), plaque:CreateTexture(nil, "ARTWORK"), plaque:CreateTexture(nil, "ARTWORK") }
+	local jewels = CreateFrame("Frame", nil, f)
+	jewels:SetAllPoints()
+	f.jewelFrame = jewels
+	f.jewels = {}
 	for i = 1, 2 do
-		f.ends[i] = { main = cap:CreateTexture(nil, "ARTWORK"), fade = cap:CreateTexture(nil, "ARTWORK") }
+		local j = jewels:CreateTexture(nil, "ARTWORK")
+		local m = jewels:CreateMaskTexture()
+		m:SetTexture(MASK)
+		m:SetAllPoints(j)
+		j:AddMaskTexture(m)
+		f.jewels[i] = j
 	end
-	f.capLevel = cap:CreateFontString(nil, "OVERLAY")
+	f.capLevel = jewels:CreateFontString(nil, "OVERLAY")
 	f.capLevel:SetShadowColor(0, 0, 0, 1)
 	f.capLevel:SetShadowOffset(1, -1)
-	f.capFrame = cap
 
 	self.frame = f
 	RegisterUnitWatch(f)
@@ -313,7 +307,7 @@ end
 function UF:UpdateLevel()
 	local f = self.frame
 	if not f or not UnitExists(UNIT) then return end
-	if self.db.style == "heraldic" then
+	if self:Style() == "plaque" then
 		levelText(f.capLevel)
 		self:UpdateArt()
 		return
@@ -329,132 +323,89 @@ function UF:UpdateLevel()
 	end
 end
 
---[[ Heraldic art ]]
+--[[ Plaque ]]
 
--- Which art the current target gets, and its tint ("rare", "boss" or nil).
-function UF:ArtKey()
-	if UnitIsPlayer(UNIT) then
-		local _, class = UnitClass(UNIT)
-		if class and self.ART[class] then return class end
-	end
+-- "plaque" or "minimal" (profiles saved with the retired "heraldic" style get the plaque)
+function UF:Style()
+	return self.db.style == "minimal" and "minimal" or "plaque"
+end
+
+-- What the target is: "player", "boss", "rare", "elite", "hostile" or "friendly".
+function UF:Kind()
+	if UnitIsPlayer(UNIT) then return "player" end
 	local r = rank()
-	if r then return "Elite", (r ~= "elite") and r or nil end
+	if r then return r end
 	local reaction = UnitReaction(UNIT, "player")
-	if reaction and reaction <= 3 then return "Hostile" end
-	return "Friendly"
+	if reaction and reaction <= 3 then return "hostile" end
+	return "friendly"
 end
 
--- desaturation and colour: the rare/boss tint, or the theme's finish
-local function tone(tint)
-	local t = tint and UF.ART_TINT[tint]
-	if t then return t[1], t[2][1], t[2][2], t[2][3] end
-	local f = Themes.FINISHES[Themes:FinishKey()]
-	return f.desat, f.color[1], f.color[2], f.color[3]
+-- Colour of the jewels.
+function UF:JewelColor(kind)
+	if kind == "player" then
+		local r, g, b = classColor(UNIT)
+		if r then return r, g, b end
+	end
+	if kind == "friendly" and UnitReaction(UNIT, "player") == 4 then return unpack(self.JEWEL.neutral) end
+	return unpack(self.JEWEL[kind])
 end
 
--- Texture work only: safe in combat.
+-- Finish and jewels for the current target. Texture work only: safe in combat.
 function UF:UpdateArt()
-	local f, db = self.frame, self.db
-	if not f or db.style ~= "heraldic" or not UnitExists(UNIT) then return end
-	local key, tint = self:ArtKey()
-	local art = self.ART[key]
-	local railArt = art
-	if db.rails == "neutral" and not (key == "Hostile" or key == "Friendly" or key == "Elite") then
-		railArt = self.ART.Hostile
+	local f = self.frame
+	if not f or self:Style() ~= "plaque" or not UnitExists(UNIT) then return end
+	local kind = self:Kind()
+	local fin = self.FINISH[self.KIND_FINISH[kind]]
+	for _, t in ipairs(f.slices) do
+		t:SetDesaturation(fin[1])
+		t:SetVertexColor(fin[2][1], fin[2][2], fin[2][3])
 	end
-
-	-- Scale. NPC ornaments come with their own rails: the art's gap between
-	-- the rails is fitted to the bars, so the rails and the ornament always
-	-- join exactly, at any bar height. Class rods have no rails of their own:
-	-- they are sized from the bars.
-	local barsH = db.healthHeight + (db.showPower and (2 + db.powerHeight) or 0)
-	local c = art.cap
-	local joined = art.rail.bottom ~= nil
-	local k, topT, botT, mid
-	if joined then
-		local rt, rb = art.rail.top, art.rail.bottom
-		k = barsH / (rb[1] - rt[2] - 1)
-		topT, botT = (rt[2] - rt[1] + 1) * k, (rb[2] - rb[1] + 1) * k
-		mid = (rt[2] + 1 + rb[1]) / 2
-	else
-		k = ROD_K * barsH * (c.scale or 1)
-		topT, botT = ROD_RAIL * barsH, ROD_RAIL * barsH
-		mid = c.gem[2]
+	local r, g, b = self:JewelColor(kind)
+	for _, j in ipairs(f.jewels) do
+		j:SetDesaturation(1)
+		j:SetVertexColor(r, g, b)
 	end
+end
 
-	-- ornaments: the middle of their rails on the middle of the bars
-	local fade = c.fade or 0
-	local solid = c.crop - fade
-	local h = c.size[2] * k
-	local y = (mid - c.size[2] / 2) * k
-	local overlap = db.capOverlap
-	local desat, cr, cg, cb = tone(tint)
-	for i, e in ipairs(f.ends) do
-		local shown = i == 1 or db.bothEnds
-		e.main:SetShown(shown)
-		e.fade:SetShown(shown and fade > 0)
-		if shown then
-			local left = i == 1
-			local u0, u1 = 0, solid / c.size[1]
-			local f0, f1 = solid / c.size[1], c.crop / c.size[1]
-			if not left then u0, u1, f0, f1 = u1, u0, f1, f0 end   -- mirrored
-			e.main:SetTexture(c.file)
-			e.main:SetTexCoord(u0, u1, 0, 1)
-			e.main:SetSize(solid * k, h)
-			e.main:SetDesaturation(desat)
-			e.main:SetVertexColor(cr, cg, cb)
-			e.main:ClearAllPoints()
-			e.fade:ClearAllPoints()
-			if left then
-				e.main:SetPoint("LEFT", f, "LEFT", overlap - c.crop * k, y)
-			else
-				e.main:SetPoint("RIGHT", f, "RIGHT", c.crop * k - overlap, y)
-			end
-			if fade > 0 then
-				e.fade:SetTexture(c.file)
-				e.fade:SetTexCoord(f0, f1, 0, 1)
-				e.fade:SetSize(fade * k, h)
-				e.fade:SetDesaturation(desat)
-				if left then
-					e.fade:SetPoint("LEFT", e.main, "RIGHT")
-				else
-					e.fade:SetPoint("RIGHT", e.main, "LEFT")
-				end
-				local solidC, clearC = { cr, cg, cb, 1 }, { cr, cg, cb, 0 }
-				local a, b = solidC, clearC
-				if not left then a, b = clearC, solidC end
-				if CreateColor and e.fade.SetGradient and not pcall(e.fade.SetGradient, e.fade, "HORIZONTAL",
-					CreateColor(a[1], a[2], a[3], a[4]), CreateColor(b[1], b[2], b[3], b[4])) then
-					if e.fade.SetGradientAlpha then
-						e.fade:SetGradientAlpha("HORIZONTAL", a[1], a[2], a[3], a[4], b[1], b[2], b[3], b[4])
-					end
-				end
-			end
+-- Sizes and places of the plaque: they depend on the bars only, so they are
+-- set by Layout (out of combat) and never change between targets.
+function UF:LayoutPlaque(barsH)
+	local f, db, P = self.frame, self.db, self.PLAQUE
+	local W, H = P.size[1], P.size[2]
+	local sl, st, sr, sb = P.slot[1], P.slot[2], P.slot[3], P.slot[4]
+	local k = barsH / (sb - st)
+	local a, b = P.split[1], P.split[2]
+	local L, M, R = f.slices[1], f.slices[2], f.slices[3]
+	for _, t in ipairs(f.slices) do
+		t:SetTexture(P.file)
+		t:ClearAllPoints()
+	end
+	L:SetTexCoord(0, a / W, 0, 1)
+	M:SetTexCoord(a / W, b / W, 0, 1)
+	R:SetTexCoord(b / W, 1, 0, 1)
+	L:SetSize(a * k, H * k)
+	R:SetSize((W - b) * k, H * k)
+	L:SetPoint("TOPLEFT", f, "TOPLEFT", -sl * k, st * k)
+	R:SetPoint("TOPRIGHT", f, "TOPRIGHT", (W - sr) * k, st * k)
+	M:SetPoint("TOPLEFT", L, "TOPRIGHT")
+	M:SetPoint("BOTTOMRIGHT", R, "BOTTOMLEFT")
+
+	-- jewels: the plaque's own gems, recoloured (desaturated, then tinted)
+	for i, g in ipairs(P.gems) do
+		local j = f.jewels[i]
+		local x, y, rad = g[1], g[2], g[3]
+		j:SetTexture(P.file)
+		j:SetTexCoord((x - rad) / W, (x + rad) / W, (y - rad) / H, (y + rad) / H)
+		j:SetSize(2 * rad * k, 2 * rad * k)
+		j:ClearAllPoints()
+		if i == 1 then
+			j:SetPoint("CENTER", f, "TOPLEFT", (x - sl) * k, -(y - st) * k)
+		else
+			j:SetPoint("CENTER", f, "TOPRIGHT", (x - sr) * k, -(y - st) * k)
 		end
 	end
 	f.capLevel:ClearAllPoints()
-	f.capLevel:SetPoint("CENTER", f, "LEFT", overlap - c.crop * k + c.gem[1] * k + db.levelX, db.levelY)
-
-	-- rails: above and below the bars, from one ornament to the other
-	local r = railArt.rail
-	local inner = overlap - 2
-	local function band(tex, rows, flip, top, thick)
-		-- the ornament's own rails keep the art's proportions; borrowed ones are squeezed to fit
-		local tileW = (joined and railArt == art) and r.size[1] * k or thick * r.size[1] / (rows[2] - rows[1] + 1)
-		local t1, t2 = rows[1] / r.size[2], (rows[2] + 1) / r.size[2]
-		if flip then t1, t2 = t2, t1 end
-		local len = db.width - inner - (db.bothEnds and inner or 0)
-		tex:SetTexture(r.file, "REPEAT", "CLAMP")
-		tex:SetTexCoord(0, len / tileW, t1, t2)
-		tex:ClearAllPoints()
-		local edge, side = top and "TOP" or "BOTTOM", top and "BOTTOM" or "TOP"
-		tex:SetPoint(side .. "LEFT", f, edge .. "LEFT", inner, 0)
-		tex:SetPoint(side .. "RIGHT", f, edge .. "RIGHT", db.bothEnds and -inner or 0, 0)
-		tex:SetHeight(thick)
-		Themes:Paint(tex)
-	end
-	band(f.railTop, r.top, false, true, topT)
-	band(f.railBottom, r.bottom or r.top, not r.bottom, false, botT)
+	f.capLevel:SetPoint("CENTER", f.jewels[1], "CENTER", db.levelX, db.levelY)
 end
 
 function UF:UpdateAll()
@@ -473,13 +424,13 @@ function UF:Layout()
 		return
 	end
 	local f, db = self.frame, self.db
-	local heraldic = db.style == "heraldic"
+	local heraldic = self:Style() == "plaque"
 	local pad, gap = 6, 3
 
 	-- parts of each style
 	for _, t in ipairs({ f.bg, f.light, unpack(f.rim) }) do t:SetShown(not heraldic) end
-	f.rails:SetShown(heraldic)
-	f.capFrame:SetShown(heraldic)
+	f.plaque:SetShown(heraldic)
+	f.jewelFrame:SetShown(heraldic)
 
 	-- text
 	H.Fonts:Apply(f.name, "header", db.nameSize, self)
@@ -497,12 +448,12 @@ function UF:Layout()
 	local nameH = math.ceil(db.nameSize * 1.2)
 	local barsH = db.healthHeight + (db.showPower and (2 + db.powerHeight) or 0)
 
-	-- stacking: rails, then the bars, then the ornaments over the bars' ends
+	-- stacking: the plaque, then the bars in its slot, then the jewels
 	local base = f:GetFrameLevel()
-	f.rails:SetFrameLevel(base + 1)
+	f.plaque:SetFrameLevel(base + 1)
 	f.health:SetFrameLevel(base + 2)
 	f.power:SetFrameLevel(base + 2)
-	f.capFrame:SetFrameLevel(base + 6)
+	f.jewelFrame:SetFrameLevel(base + 6)
 	f.gemFrame:SetFrameLevel(base + 6)
 
 	f.name:ClearAllPoints()
@@ -510,15 +461,14 @@ function UF:Layout()
 	f.name:SetDrawLayer("OVERLAY")
 	f.health:ClearAllPoints()
 	if heraldic then
-		-- the frame (and its click area) is the bars; rails and ornaments sit
-		-- around it and change with the target without resizing it in combat
+		-- the frame (and its click area) is the plaque's slot, filled by the bars
 		f:SetSize(db.width, barsH)
 		f.health:SetPoint("TOPLEFT", 0, 0)
 		f.health:SetPoint("TOPRIGHT", 0, 0)
-		-- name inside the life bar, clear of the ornament
-		f.name:SetPoint("LEFT", f.health, "LEFT", 12 + db.nameX, db.nameY)
+		f.name:SetPoint("LEFT", f.health, "LEFT", 8 + db.nameX, db.nameY)
 		f.name:SetHeight(nameH)
 		f.gemFrame:Hide()
+		self:LayoutPlaque(barsH)
 	else
 		local G = db.gemSize
 		local left = db.showGem and (G / 2 + 6) or pad
@@ -555,7 +505,7 @@ function UF:Layout()
 	end
 	f.health:SetHeight(db.healthHeight)
 	-- values on the right of the bars: percentage outermost, then the value
-	local inset = (heraldic and db.bothEnds) and -14 or -4
+	local inset = heraldic and -8 or -4
 	local pct, val = f.health.pct, f.health.text
 	pct:ClearAllPoints()
 	pct:SetPoint("RIGHT", f.health, "RIGHT", inset + db.hpPctX, db.hpPctY)

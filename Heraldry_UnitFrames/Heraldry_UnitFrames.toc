@@ -1,13 +1,13 @@
 ## Interface: 16001
 ## Title: |cffE8B04BHeraldry|r Unit Frames
-## Notes: Target frame: heraldic art per target (class, hostile, friendly, elite, rare, boss) or minimal glass.
+## Notes: Target frame: a heraldic plaque (finish and jewels by target) or minimal glass.
 ## Author: Tiago
-## Version: 0.3.1
+## Version: 0.4.0
 ## Dependencies: Heraldry
 ## X-Heraldry-Module: 1
 ## X-Heraldry-Label: Unit frames
 ## IconTexture: Interface\Icons\INV_Shield_06
 
 Target.lua
-TargetArt.lua
+TargetPlaque.lua
 Settings.lua

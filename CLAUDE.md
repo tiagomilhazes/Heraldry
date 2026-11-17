@@ -51,7 +51,7 @@ Heraldry_Options/              settings panel, LoadOnDemand
   Pages/General|Profiles|Theme|Fonts|Layout|Modules.lua
 Heraldry_ActionBars/           ActionBars.lua Art.lua Text.lua Settings.lua
 Heraldry_Orbs/                 Orbs.lua Settings.lua Media/{Liquid1,Liquid2,Glass,Surface}.tga
-Heraldry_UnitFrames/           Target.lua TargetArt.lua Settings.lua Media/Target/*.tga
+Heraldry_UnitFrames/           Target.lua TargetPlaque.lua Settings.lua Media/Target/Plaque.tga
 Heraldry_Test/                 temporary test module (to be deleted)
 ```
 
@@ -210,7 +210,7 @@ H:RegisterOptionsPage({
 | Level | What | Look |
 |---|---|---|
 | 1, hero | Action bar block (bars 1+2) and the orbs | Full ornament: double plate, rails, caps, theme rings, button frames |
-| 1.5, target | Target frame (Heraldic style) | One art family for every target: an ornament on the left (hostile, friendly, elite, rare, boss, or the target's class rod) and rails hugging the bars. Bars never move or resize between targets |
+| 1.5, target | Target frame (Plaque style) | One fixed plaque (lion medallions, two jewels, a slot the bars fill). The target shows only as colour: metal finish (iron hostile, bronze friendly, gold elite/players, silver rare, red boss) and jewel colour (reaction or class). Shape never changes, so texts never move. Class emblems will replace the lions for players (art pending) |
 | 2, frames | Minimap, quest log (and the target's Minimal style) | Dark glass panel, a rim in the theme accent, **one** theme motif (the gem) |
 | 3, panels | Chat, damage meter, tooltips | Flat and dark, with a thin rim |
 
@@ -230,7 +230,7 @@ Art is designed **as a whole**, not as loose pieces. The first Paladin art (a pi
 | M2 | Orbs: theme rings, docked to bar 1, animated liquid, text, clickable life orb, player frame hidden | approved |
 | — | Fonts (core + per-module override), action bar texts | approved |
 | — | Tabs in every settings page | approved |
-| M3 | Unit frames: **target**. Styles Heraldic (art per target: hostile/friendly/elite NPCs, rare silver, boss red, 9 class rods; level on the ornament's gem) and Minimal (glass panel, theme gem, halo). Secure button, Blizzard target hidden | delivered, awaiting test |
+| M3 | Unit frames: **target**. Styles Plaque (fixed plaque, finish and jewels by target, level on the left jewel; per-text size/offset settings) and Minimal (glass panel, theme gem, halo). Secure button, Blizzard target hidden | delivered, awaiting test |
 
 Settings tabs per page:
 

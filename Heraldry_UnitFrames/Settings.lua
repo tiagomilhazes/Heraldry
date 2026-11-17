@@ -80,26 +80,12 @@ H:RegisterOptionsPage({
 			local get, set = field("style")
 			page:Dropdown({
 				label = "Style",
-				desc = "Heraldic: an ornament that shows what the target is (class, hostile, friendly, elite, rare, boss). Minimal: a dark glass panel.",
+				desc = "Plaque: a heraldic plaque whose metal and jewels show what the target is. Minimal: a dark glass panel. The plaque's size follows the bar heights (Size tab).",
 				values = function()
-					return { { value = "heraldic", text = "Heraldic" }, { value = "minimal", text = "Minimal" } }
+					return { { value = "plaque", text = "Plaque" }, { value = "minimal", text = "Minimal" } }
 				end,
-				get = get, set = set,
+				get = function() return UF:Style() end, set = set,
 			})
-			page:Section("Heraldic")
-			get, set = field("rails")
-			page:Dropdown({
-				label = "Rails on players",
-				desc = "Class: the rails of the class's rod. Neutral: the dark iron rails of hostile targets, for a calmer frame.",
-				values = function()
-					return { { value = "class", text = "Class" }, { value = "neutral", text = "Neutral" } }
-				end,
-				get = get, set = set,
-			})
-			get, set = field("bothEnds")
-			page:Toggle({ label = "Ornament on both ends", desc = "The level stays on the left ornament.", get = get, set = set })
-			get, set = field("capOverlap")
-			page:Slider({ label = "Ornament overlap", desc = "How far the ornaments reach over the ends of the bars. Negative leaves a gap.", min = -20, max = 40, step = 1, get = get, set = set })
 			page:Section("Colours")
 			get, set = field("classColor")
 			page:Toggle({ label = "Class colour for players", desc = "Off: players use the reaction colour, like NPCs.", get = get, set = set })
