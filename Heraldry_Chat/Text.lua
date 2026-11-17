@@ -32,15 +32,15 @@ for k, v in pairs(DEFAULTS) do CH.defaults[k] = v end
 -- Chat types (named in the line) and the usual numbered channels.
 -- abbr_<key> in the settings replaces the short name.
 CH.CHANNELS = {
-	{ key = "GUILD",           label = "Guild",              name = "Guild",            short = "G" },
-	{ key = "OFFICER",         label = "Officer",            name = "Officer",          short = "O" },
-	{ key = "PARTY",           label = "Party",              name = "Party",            short = "P" },
-	{ key = "PARTY_LEADER",    label = "Party leader",       name = "Party Leader",     short = "PL" },
-	{ key = "RAID",            label = "Raid",               name = "Raid",             short = "R" },
-	{ key = "RAID_LEADER",     label = "Raid leader",        name = "Raid Leader",      short = "RL" },
-	{ key = "RAID_WARNING",    label = "Raid warning",       name = "Raid Warning",     short = "RW" },
-	{ key = "INSTANCE",        label = "Instance",           name = "Instance",         short = "I" },
-	{ key = "INSTANCE_LEADER", label = "Instance leader",    name = "Instance Leader",  short = "IL" },
+	{ key = "GUILD",           label = "Guild",              name = "Guild",            short = "G", type = "GUILD" },
+	{ key = "OFFICER",         label = "Officer",            name = "Officer",          short = "O", type = "OFFICER" },
+	{ key = "PARTY",           label = "Party",              name = "Party",            short = "P", type = "PARTY" },
+	{ key = "PARTY_LEADER",    label = "Party leader",       name = "Party Leader",     short = "PL", type = "PARTY_LEADER" },
+	{ key = "RAID",            label = "Raid",               name = "Raid",             short = "R", type = "RAID" },
+	{ key = "RAID_LEADER",     label = "Raid leader",        name = "Raid Leader",      short = "RL", type = "RAID_LEADER" },
+	{ key = "RAID_WARNING",    label = "Raid warning",       name = "Raid Warning",     short = "RW", type = "RAID_WARNING" },
+	{ key = "INSTANCE",        label = "Instance",           name = "Instance",         short = "I", type = "INSTANCE_CHAT" },
+	{ key = "INSTANCE_LEADER", label = "Instance leader",    name = "Instance Leader",  short = "IL", type = "INSTANCE_CHAT_LEADER" },
 	{ key = "General",         label = "General",            numbered = true,           short = "Gen" },
 	{ key = "Trade",           label = "Trade",              numbered = true,           short = "T" },
 	{ key = "LocalDefense",    label = "Local defense",      numbered = true,           short = "LD" },
@@ -48,6 +48,15 @@ CH.CHANNELS = {
 	{ key = "WorldDefense",    label = "World defense",      numbered = true,           short = "WD" },
 	{ key = "GuildRecruitment", label = "Guild recruitment", numbered = true,           short = "GR" },
 	{ key = "Services",        label = "Services",           numbered = true,           short = "S" },
+}
+
+-- Colours only (no tag in the line to shorten)
+CH.SPEECH = {
+	{ label = "Say",            type = "SAY" },
+	{ label = "Yell",           type = "YELL" },
+	{ label = "Whisper (from)", type = "WHISPER" },
+	{ label = "Whisper (to)",   type = "WHISPER_INFORM" },
+	{ label = "Emote",          type = "EMOTE" },
 }
 
 local function norm(s) return (s:gsub("%s", ""):lower()) end
@@ -111,6 +120,34 @@ function CH:FormatLine(text)
 		text = text:gsub("^(%d+:%d+[:%d]*%s?[AaPp]?[Mm]?) ", "|cff" .. hex .. "%1|r ", 1)
 	end
 	return text
+end
+
+--[[ Colours: the game's own chat colours (one place), changed from our page ]]
+
+-- the game's chat type of a channel entry; numbered channels by their current number
+function CH:ChatType(c)
+	if c.type then return c.type end
+	if not GetChannelList then return nil end
+	local list = { GetChannelList() }
+	for i = 1, #list, 3 do
+		local id, name = list[i], list[i + 1]
+		if type(name) == "string" and norm(name:match("^(.-) %- ") or name) == norm(c.key) then
+			return "CHANNEL" .. id
+		end
+	end
+end
+
+function CH:GetColor(chatType)
+	local info = chatType and ChatTypeInfo and ChatTypeInfo[chatType]
+	if info then return info.r, info.g, info.b end
+	return 1, 1, 1
+end
+
+function CH:SetColor(chatType, r, g, b)
+	if not chatType then return end
+	if ChangeChatColor then ChangeChatColor(chatType, r, g, b) end
+	local info = ChatTypeInfo and ChatTypeInfo[chatType]
+	if info then info.r, info.g, info.b = r, g, b end
 end
 
 --[[ Applied with the layout: fading and the input lines ]]

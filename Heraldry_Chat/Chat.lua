@@ -38,6 +38,7 @@ local CH = H:NewModule("Chat", {
 		textSize = 0,             -- 0: the size set in the game's chat menu
 		tabSize = 12,
 		tabGap = 6,               -- space between the tabs and the messages
+		editGap = 6,              -- space between the messages and the input line
 		rolledUp = false,
 		glow = true,
 		enterUnrolls = true,
@@ -367,8 +368,8 @@ function CH:PlaceEdit()
 	eb.hLock = true
 	eb:ClearAllPoints()
 	-- inside the paper, under the messages
-	eb:SetPoint("TOPLEFT", cf, "BOTTOMLEFT", -4, -4)
-	eb:SetPoint("TOPRIGHT", cf, "BOTTOMRIGHT", 4, -4)
+	eb:SetPoint("TOPLEFT", cf, "BOTTOMLEFT", -4, -self.db.editGap)
+	eb:SetPoint("TOPRIGHT", cf, "BOTTOMRIGHT", 4, -self.db.editGap)
 	eb:SetHeight(self.editH)
 	eb.hLock = false
 end
@@ -599,7 +600,7 @@ function CH:Layout()
 		x = side + db.margin,
 		y = inset + db.margin + self.tabH,
 		w = math.max(db.width - 2 * (side + db.margin), 80),
-		h = math.max(db.height - 2 * (inset + db.margin) - self.editH - 6 - self.tabH, 40),
+		h = math.max(db.height - 2 * (inset + db.margin) - self.editH - db.editGap - self.tabH, 40),
 	}
 
 	for _, r in ipairs({ f.left, f.right }) do r:SetShown(scroll) end

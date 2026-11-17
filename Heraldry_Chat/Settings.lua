@@ -13,6 +13,8 @@ local function field(name)
 	end
 end
 
+local selected = 1   -- channel picked on the Channels tab
+
 local function pct(v) return math.floor(v * 100 + 0.5) .. "%" end
 
 H:RegisterOptionsPage({
@@ -73,6 +75,8 @@ H:RegisterOptionsPage({
 			page:Slider({ label = "Size", min = 8, max = 20, step = 1, get = get, set = set })
 			get, set = field("tabGap")
 			page:Slider({ label = "Space under the tabs", desc = "Between the tabs' rule and the first line of messages.", min = 0, max = 30, step = 1, get = get, set = set })
+			get, set = field("editGap")
+			page:Slider({ label = "Space above the input line", desc = "Between the last line of messages and the input line.", min = 0, max = 30, step = 1, get = get, set = set })
 			page:Section("Timestamps")
 			page:Dropdown({
 				label = "Timestamp",
@@ -107,19 +111,43 @@ H:RegisterOptionsPage({
 				get = function() return CH.db.channelStyle end,
 				set = function(v) CH.db.channelStyle = v end,
 			})
-			page:Section("Short names", "Leave a box empty to use the default shown in it.")
-			for _, c in ipairs(CH.CHANNELS) do
-				page:Input({
-					label = c.label,
-					placeholder = c.short,
-					button = "Set",
-					maxLetters = 12,
-					get = function() return CH.db["abbr_" .. c.key] or "" end,
-					onSubmit = function(text)
-						text = strtrim(text or "")
-						CH.db["abbr_" .. c.key] = text ~= "" and text or nil
-						return true
-					end,
+			page:Section("Channel", "Pick a channel; its short name and colour are below. New lines use them.")
+			page:Dropdown({
+				label = "Channel",
+				values = function()
+					local t = {}
+					for i, c in ipairs(CH.CHANNELS) do t[#t + 1] = { value = i, text = c.label } end
+					return t
+				end,
+				get = function() return selected end,
+				set = function(v) selected = v end,
+			})
+			local function current() return CH.CHANNELS[selected] end
+			page:Input({
+				label = "Short name",
+				desc = function() return "Empty: " .. current().short end,
+				button = "Set",
+				maxLetters = 12,
+				get = function() return CH.db["abbr_" .. current().key] or "" end,
+				onSubmit = function(text)
+					text = strtrim(text or "")
+					CH.db["abbr_" .. current().key] = text ~= "" and text or nil
+					return true
+				end,
+			})
+			page:Color({
+				label = "Colour",
+				desc = "The game's colour for this channel.",
+				disabled = function() return not CH:ChatType(current()) and "Not joined" or nil end,
+				get = function() return CH:GetColor(CH:ChatType(current())) end,
+				set = function(r, g, b) CH:SetColor(CH:ChatType(current()), r, g, b) end,
+			})
+			page:Section("Speech colours")
+			for _, sp in ipairs(CH.SPEECH) do
+				page:Color({
+					label = sp.label,
+					get = function() return CH:GetColor(sp.type) end,
+					set = function(r, g, b) CH:SetColor(sp.type, r, g, b) end,
 				})
 			end
 		end },

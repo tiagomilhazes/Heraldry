@@ -10,6 +10,7 @@
 	page:Input    { label, desc, placeholder, button, maxLetters, onSubmit = fn(text) -> ok, get }
 	              with get: the box shows the current value and keeps it after OK
 	page:Button   { label, desc, text, kind, onClick }
+	page:Color    { label, desc, get -> r, g, b, set = fn(r, g, b), disabled = fn -> reason }
 
 	Every control re-reads its value on page:Refresh(), which runs whenever the
 	page is shown and after any change, so values never go stale.
@@ -352,6 +353,65 @@ function Page:Input(o)
 		updatePlaceholder()
 	end)
 	updatePlaceholder()
+end
+
+-- A colour swatch; a click opens the game's colour picker.
+local function openPicker(r, g, b, onChange)
+	local cp = ColorPickerFrame
+	if not cp then return end
+	local function picked()
+		local nr, ng, nb = cp:GetColorRGB()
+		onChange(nr, ng, nb)
+	end
+	local function cancelled(prev)
+		if type(prev) == "table" then onChange(prev.r or prev[1], prev.g or prev[2], prev.b or prev[3]) else onChange(r, g, b) end
+	end
+	if cp.SetupColorPickerAndShow then
+		cp:SetupColorPickerAndShow({ r = r, g = g, b = b, hasOpacity = false,
+			swatchFunc = picked, cancelFunc = cancelled })
+	else
+		cp.func, cp.cancelFunc, cp.hasOpacity = picked, cancelled, false
+		cp.previousValues = { r, g, b }
+		cp:SetColorRGB(r, g, b)
+		cp:Hide()
+		cp:Show()
+	end
+	cp:SetFrameStrata("FULLSCREEN_DIALOG")
+	cp:Raise()
+end
+
+function Page:Color(o)
+	local page = self
+	local f = newRow(self, o.label, o.desc)
+	local b = CreateFrame("Button", nil, f)
+	b:SetSize(44, 22)
+	b:SetPoint("RIGHT", -14, 0)
+	UI.Fill(b, C.input)
+	local border = UI.Border(b, C.borderStrong)
+	b.swatch = b:CreateTexture(nil, "ARTWORK")
+	b.swatch:SetPoint("TOPLEFT", 3, -3)
+	b.swatch:SetPoint("BOTTOMRIGHT", -3, 3)
+	local note = UI.Text(f, 11, C.faint, nil, "RIGHT")
+	note:SetPoint("RIGHT", b, "LEFT", -10, 0)
+	local function refresh()
+		local reason = o.disabled and o.disabled()
+		note:SetText(reason or "")
+		b:SetEnabled(not reason)
+		b:SetAlpha(reason and 0.35 or 1)
+		local r, g, bl = o.get()
+		b.swatch:SetColorTexture(r or 1, g or 1, bl or 1)
+	end
+	b:SetScript("OnEnter", function() border:SetColor(unpack(C.accent)) end)
+	b:SetScript("OnLeave", function() border:SetColor(unpack(C.borderStrong)) end)
+	b:SetScript("OnClick", function()
+		local r, g, bl = o.get()
+		openPicker(r or 1, g or 1, bl or 1, function(nr, ng, nb)
+			o.set(nr, ng, nb)
+			refresh()
+		end)
+	end)
+	self:OnRefresh(refresh)
+	refresh()
 end
 
 function Page:Button(o)
