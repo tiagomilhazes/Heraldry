@@ -16,7 +16,7 @@
 
 local H = Heraldry
 local Themes = H.Themes
-local M = "Interface\\AddOns\\Heraldry_Quests\\Media\\"
+local PAPER = "Interface\\AddOns\\Heraldry\\Media\\Paper\\"   -- shared with the chat
 
 local Q = H:NewModule("Quests", {
 	label = "Quests",
@@ -47,8 +47,8 @@ local Q = H:NewModule("Quests", {
 })
 
 Q.PAPERS = {
-	light = { file = M .. "PaperLight", size = { 512, 512 }, shade = 0.30 },
-	dark  = { file = M .. "PaperDark",  size = { 512, 256 }, shade = 0.45 },
+	light = { file = PAPER .. "Light", size = { 512, 512 }, shade = 0.30 },
+	dark  = { file = PAPER .. "Dark",  size = { 512, 256 }, shade = 0.45 },
 }
 
 -- text colours for each paper

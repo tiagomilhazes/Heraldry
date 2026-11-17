@@ -86,7 +86,9 @@ function F:Set(key, value)
 	H:Fire("FONTS_CHANGED")
 end
 
-function F:Apply(fs, kind, size, mod)
+-- The font a text should use: path, size, flags and whether it gets a shadow.
+-- For frames whose SetFont answers nothing (chat windows), use this instead of Apply.
+function F:Resolve(kind, size, mod)
 	local name, outline = self:Get(kind), self:Get("outline")
 	local db = mod and mod.db
 	if db and db.fontOverride then
@@ -94,11 +96,15 @@ function F:Apply(fs, kind, size, mod)
 		outline = db.fontOutline or outline
 	end
 	local flags = (outline == "NONE" or outline == "SHADOW") and "" or outline
-	size = math.max(6, size * self:Get("scale"))
-	if not fs:SetFont(self:Path(name), size, flags) then
-		fs:SetFont(FALLBACK, size, flags)
+	return self:Path(name), math.max(6, size * self:Get("scale")), flags, outline == "SHADOW"
+end
+
+function F:Apply(fs, kind, size, mod)
+	local path, sz, flags, shadow = self:Resolve(kind, size, mod)
+	if not fs:SetFont(path, sz, flags) then
+		fs:SetFont(FALLBACK, sz, flags)
 	end
-	if outline == "SHADOW" then
+	if shadow then
 		fs:SetShadowColor(0, 0, 0, 1)
 		fs:SetShadowOffset(1, -1)
 	else

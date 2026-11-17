@@ -46,7 +46,9 @@ Heraldry/                      core (always loaded)
   Core/Commands.lua            /hui, /heraldry
   Media/Themes/Paladin/*.tga   ButtonFrame, ButtonFrameSlim, Plate, PlateDouble,
                                Rail, Cap, OrbHealth, OrbPower, Gem, RodCap, RodMid
+  Media/Themes/*/RodCapV*.tga, RodMidV  the same rods standing up (scroll.rodV)
   Media/Themes/Standard/*.tga  RodCap, RodCapR, RodMid (plain wooden scroll rod)
+  Media/Paper/{Light,Dark}.tga parchment shared by Quests and Chat
 Heraldry_Options/              settings panel, LoadOnDemand
   Style.lua Widgets.lua Panel.lua
   Pages/General|Profiles|Theme|Fonts|Layout|Modules.lua
@@ -54,7 +56,8 @@ Heraldry_ActionBars/           ActionBars.lua Art.lua Text.lua Settings.lua
 Heraldry_Orbs/                 Orbs.lua Settings.lua Media/{Liquid1,Liquid2,Glass,Surface}.tga
 Heraldry_UnitFrames/           Target.lua Cast.lua Small.lua TargetPlaque.lua Settings.lua Media/Target/{Plaque,LevelRing}.tga
 Heraldry_Minimap/              Minimap.lua Settings.lua Media/{Frame,Mask}.tga
-Heraldry_Quests/               Quests.lua Settings.lua Media/{PaperLight,PaperDark}.tga
+Heraldry_Quests/               Quests.lua Settings.lua
+Heraldry_Chat/                 Chat.lua Settings.lua
 Heraldry_Test/                 temporary test module (to be deleted)
 ```
 
@@ -155,6 +158,7 @@ Each piece type says which numbers a theme must provide, measured in texture pix
 | `orb.health` / `orb.power` | `file, size, hole{cx,cy,r}, reach` |
 | `frame.gem` | `file, size` |
 | `scroll.rod` | `cap, capR?, mid, size, capW, midW?, shaft` (cap mirrored when no capR; mid tiled when midW, else stretched) |
+| `scroll.rodV` | `cap, capB?, mid, size, capH, midH?, shaft` (standing rod; cap flipped when no capB) |
 
 - Optional theme fields:
   - `accent = {r,g,b}`: the metal colour for thin lines.
@@ -173,7 +177,7 @@ Each piece type says which numbers a theme must provide, measured in texture pix
 2. **Module:** with `fonts = true`, a module can override the font and outline (`db.fontOverride`, `db.font`, `db.fontOutline`). Every module uses the same "Font" tab, `page:FontSection(mod, onChange)`.
 3. **Text:** each text's size and position is a setting of its own module.
 
-Always apply fonts with `H.Fonts:Apply(fontString, "header"|"body", size, mod)`.
+Always apply fonts with `H.Fonts:Apply(fontString, "header"|"body", size, mod)`. For chat frames (their SetFont returns nothing) use `H.Fonts:Resolve(kind, size, mod)` -> path, size, flags, shadow.
 
 ### Options panel
 
@@ -253,6 +257,7 @@ Settings tabs per page:
 | Unit frames | Target (Size / Text / Look / Behaviour) / Target of target (Size / Text / Behaviour) / Focus (Size / Text / Behaviour) / Font. Party and raid will be new top-level tabs |
 | Minimap | Size / Text / Addons / Behaviour / Font |
 | Quests | Look / Text / Behaviour / Font |
+| Chat | Look / Size / Text / Behaviour / Font |
 
 ## Untested (needs the situation in game)
 
@@ -270,7 +275,8 @@ Settings tabs per page:
 2. Target of target and focus delivered (Small.lua: smaller plaques, same finish/jewel rules, per-frame prefixed settings tot*/focus*, ToT docked right of the target). Party later (vertical cards, prototype P4).
 3. **Minimap**: delivered as prototype M1 (TimelessUI Paladin_PlateM frame, level 1.5 like the target): map cut to the window by a mask, sockets = day/night (GameTimeFrame), addon buttons panel toggle, mail; zone + clock on the plate with per-text settings. Approved.
 4. **Quest tracker**: delivered as Q4, a parchment scroll (`Heraldry_Quests`): theme rods top and bottom (`scroll.rod`), light (ink) or dark paper, click the top rod to roll up, own tracker reading C_QuestLog with classic fallbacks. The game's tracker is hidden with Hide() + an OnShow hook (Questie's approach on this client; the frame is protected, so it is not reparented). Steps aside when Questie's tracker is on. Only the level carries the difficulty colour; ready/failed shown on the title; rolled up shows a strip with the quest count. Approved. The quest log window itself comes later.
-5. Delete `Heraldry_Test`.
+5. **Chat**: delivered as a sideways scroll (`Heraldry_Chat`): standing theme rods (`scroll.rodV`), dark/light/glass paper or a flat panel, rolls up to the fixed side (the mover's anchor), glow on new messages, Enter opens to type. ChatFrame1 kept at its open size and placed in our frame (SetPoint/SetSize hooks); Blizzard art killed by alpha hooks; ink by wrapping AddMessage. Fonts via `H.Fonts:Resolve` (chat frames' SetFont answers nothing). Awaiting test.
+6. Delete `Heraldry_Test`.
 6. Swing bar styling.
 7. **C3 class overrides**, when the first module needs them.
 8. **C7:** installer, presets ("Altar" plus a Healer variant), import/export.

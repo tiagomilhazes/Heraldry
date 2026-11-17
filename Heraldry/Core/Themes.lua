@@ -39,6 +39,12 @@
 	      tiled sideways when midW (its width in pixels) is given, else stretched;
 	      shaft: the share of the rod's height that is the plain shaft (0-1).
 
+	  scroll.rodV                       the same rod standing up (scrolls that unroll sideways: chat)
+	      cap, capB, mid, size = { w, h }, capH, midH, shaft
+	      cap: the top end (the bottom end is capB, or cap flipped); capH: how many
+	      pixels of its height are the end piece; mid tiled up and down when midH
+	      is given; shaft: the share of the rod's width that is the plain shaft.
+
 	A theme can also give:
 	  accent = { r, g, b }               metal colour for thin lines (button borders)
 	  finish = "bronze"                  default finish (see FINISHES): tones the art down
@@ -104,6 +110,11 @@ end
 TYPES["scroll.rod"] = function(p)
 	return p.cap and p.mid and nums(p.size, 2) and isNum(p.capW) and isNum(p.shaft) and p.shaft > 0 and p.shaft <= 1
 		or "needs cap, mid, size {w,h}, capW and shaft"
+end
+
+TYPES["scroll.rodV"] = function(p)
+	return p.cap and p.mid and nums(p.size, 2) and isNum(p.capH) and isNum(p.shaft) and p.shaft > 0 and p.shaft <= 1
+		or "needs cap, mid, size {w,h}, capH and shaft"
 end
 
 -- desaturation (0-1), colour multiplied over the art

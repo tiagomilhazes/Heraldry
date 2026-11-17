@@ -14,5 +14,6 @@ Heraldry:RegisterTheme("STANDARD", {
 		["block.plate"] = { color = { 0.04, 0.04, 0.04, 0.55 } },
 		-- plain wood and gold rod (TimelessUI Chat/Scroll_Rod*)
 		["scroll.rod"] = { cap = S .. "RodCap", capR = S .. "RodCapR", mid = S .. "RodMid", size = { 256, 128 }, capW = 234, shaft = 0.5 },
+		["scroll.rodV"] = { cap = S .. "RodCapV", capB = S .. "RodCapVB", mid = S .. "RodMidV", size = { 128, 256 }, capH = 234, shaft = 0.5 },
 	},
 })

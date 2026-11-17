@@ -22,5 +22,6 @@ Heraldry:RegisterTheme("PALADIN", {
 		["bar.cap"]          = { file = P .. "Cap",             size = { 256, 256 },  join = { 256, 194, 94 } },
 		["frame.gem"]        = { file = P .. "Gem",             size = { 64, 64 } },
 		["scroll.rod"]       = { cap = P .. "RodCap", mid = P .. "RodMid", size = { 256, 128 }, capW = 234, midW = 512, shaft = 0.391 },
+		["scroll.rodV"]      = { cap = P .. "RodCapV", mid = P .. "RodMidV", size = { 128, 256 }, capH = 234, midH = 512, shaft = 0.391 },
 	},
 })
