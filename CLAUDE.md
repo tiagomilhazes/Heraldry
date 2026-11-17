@@ -51,7 +51,7 @@ Heraldry_Options/              settings panel, LoadOnDemand
   Pages/General|Profiles|Theme|Fonts|Layout|Modules.lua
 Heraldry_ActionBars/           ActionBars.lua Art.lua Text.lua Settings.lua
 Heraldry_Orbs/                 Orbs.lua Settings.lua Media/{Liquid1,Liquid2,Glass,Surface}.tga
-Heraldry_UnitFrames/           Target.lua TargetPlaque.lua Settings.lua Media/Target/{Plaque,LevelRing}.tga
+Heraldry_UnitFrames/           Target.lua Cast.lua TargetPlaque.lua Settings.lua Media/Target/{Plaque,LevelRing}.tga
 Heraldry_Test/                 temporary test module (to be deleted)
 ```
 
@@ -258,7 +258,7 @@ Settings tabs per page:
 
 ## Next steps
 
-1. **Target cast bar.** Plan for secret cast times; this is a separate step.
+1. **Target cast bar**: delivered as C4 — the target's casts take the power row (Cast.lua; gold interruptible, grey not, red interrupted/failed; game timer via SetTimerDuration when available, else GetTime maths in pcall). Awaiting test.
 2. More unit frames in the same module, each with its own page: focus, target of target, party.
 3. **Minimap** (level 2).
 4. **Quest log / tracker** (level 2). Must coexist with Questie and Zygor.

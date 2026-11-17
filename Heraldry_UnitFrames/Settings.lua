@@ -102,6 +102,9 @@ H:RegisterOptionsPage({
 			page:Section("Behaviour")
 			local get, set = field("hideBlizzard")
 			page:Toggle({ label = "Hide the game's target frame", get = get, set = set })
+			page:Section("Casts")
+			get, set = field("castInPower")
+			page:Toggle({ label = "Show casts in the power row", desc = "While the target casts, its power bar turns into the cast bar. Needs the power bar (Size tab).", get = get, set = set })
 		end },
 
 		{ key = "font", label = "Font", build = function(page)

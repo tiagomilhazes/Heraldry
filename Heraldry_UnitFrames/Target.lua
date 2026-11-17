@@ -47,6 +47,9 @@ local UF = H:NewModule("UnitFrames", {
 		hpPctShow = true,   hpPctSize = 11,   hpPctX = 0,   hpPctY = 0,
 		powerShow = false,  powerSize = 9,    powerX = 0,   powerY = 0,
 		levelShow = true,   levelSize = 12,   levelX = 0,   levelY = 0,
+		castNameShow = true, castNameSize = 10, castNameX = 0, castNameY = 0,
+		castTimeShow = true, castTimeSize = 10, castTimeX = 0, castTimeY = 0,
+		castInPower = true,      -- the target's casts take the power row (Cast.lua)
 		classColor = true,
 		panelAlpha = 0.82,
 		hideBlizzard = true,
@@ -60,6 +63,8 @@ UF.TEXTS = {
 	{ key = "hpPct",   label = "Life percentage" },
 	{ key = "power",   label = "Power value" },
 	{ key = "level",   label = "Level" },
+	{ key = "castName", label = "Cast: spell name" },
+	{ key = "castTime", label = "Cast: time left" },
 }
 
 local Abbr = AbbreviateNumbers or AbbreviateLargeNumbers or tostring
@@ -203,6 +208,7 @@ function UF:Create()
 	f.capLevel:SetShadowOffset(1, -1)
 
 	self.frame = f
+	self:CreateCast()
 	RegisterUnitWatch(f)
 	return f
 end
@@ -575,6 +581,7 @@ function UF:Layout()
 		f.power:SetPoint("TOPRIGHT", f.health, "BOTTOMRIGHT", 0, -2)
 		f.power:SetHeight(db.powerHeight)
 	end
+	self:LayoutCast(inset)
 
 	H.Movers:Apply(f.mover)
 	H:RefreshEditMode()
@@ -629,6 +636,7 @@ function UF:OnEnable()
 		end
 	end)
 
+	self:EnableCast()
 	H:On("THEME_CHANGED", function() UF:Layout() end)
 	H:On("FONTS_CHANGED", function() UF:Layout() end)
 	self:Layout()
