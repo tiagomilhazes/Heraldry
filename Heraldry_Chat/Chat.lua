@@ -37,6 +37,7 @@ local CH = H:NewModule("Chat", {
 		margin = 8,
 		textSize = 0,             -- 0: the size set in the game's chat menu
 		tabSize = 12,
+		tabGap = 6,               -- space between the tabs and the messages
 		rolledUp = false,
 		glow = true,
 		enterUnrolls = true,
@@ -311,8 +312,8 @@ function CH:PlaceDock()
 	d.hLock = true
 	d:ClearAllPoints()
 	-- in the top of the paper, over the messages
-	d:SetPoint("BOTTOMLEFT", cf, "TOPLEFT", -6, 3)
-	d:SetPoint("BOTTOMRIGHT", cf, "TOPRIGHT", 0, 3)
+	d:SetPoint("BOTTOMLEFT", cf, "TOPLEFT", -6, 3 + self.db.tabGap)
+	d:SetPoint("BOTTOMRIGHT", cf, "TOPRIGHT", 0, 3 + self.db.tabGap)
 	d.hLock = false
 end
 
@@ -571,7 +572,7 @@ function CH:Layout()
 	-- the input line takes the bottom of the paper, under the messages
 	self.editH = 22
 	-- the tabs take the top of the paper, over the messages
-	self.tabH = db.tabSize + 12
+	self.tabH = db.tabSize + 12 + db.tabGap
 	self.geo = {
 		x = side + db.margin,
 		y = inset + db.margin + self.tabH,
@@ -605,8 +606,9 @@ function CH:Layout()
 	local ar, ag, ab = Themes:Accent()
 	if not ar then ar, ag, ab = 0.42, 0.34, 0.19 end
 	f.tabRule:ClearAllPoints()
-	f.tabRule:SetPoint("BOTTOMLEFT", ChatFrame1, "TOPLEFT", -4, 2)
-	f.tabRule:SetPoint("BOTTOMRIGHT", ChatFrame1, "TOPRIGHT", 4, 2)
+	-- the rule sits under the tabs; the gap is below it
+	f.tabRule:SetPoint("BOTTOMLEFT", ChatFrame1, "TOPLEFT", -4, 2 + db.tabGap)
+	f.tabRule:SetPoint("BOTTOMRIGHT", ChatFrame1, "TOPRIGHT", 4, 2 + db.tabGap)
 	f.tabRule:SetColorTexture(ar, ag, ab, 0.45)
 	self:ColorTabs()
 	if not self.animW then self:SetChatVisible(not self.rolled) end

@@ -71,6 +71,8 @@ H:RegisterOptionsPage({
 			page:Section("Tabs")
 			get, set = field("tabSize")
 			page:Slider({ label = "Size", min = 8, max = 20, step = 1, get = get, set = set })
+			get, set = field("tabGap")
+			page:Slider({ label = "Space under the tabs", desc = "Between the tabs' rule and the first line of messages.", min = 0, max = 30, step = 1, get = get, set = set })
 		end },
 
 		{ key = "behaviour", label = "Behaviour", build = function(page)
