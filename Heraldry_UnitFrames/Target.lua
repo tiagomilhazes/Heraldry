@@ -596,6 +596,7 @@ function UF:Layout()
 	self:UpdateBlizzard()
 	self:UpdateAll()
 	if self.LayoutSmall then self:LayoutSmall() end   -- the target of target follows the plaque
+	if self.LayoutParty then self:LayoutParty() end
 end
 
 
@@ -650,6 +651,7 @@ function UF:OnEnable()
 	H:On("FONTS_CHANGED", function() UF:Layout() end)
 	self:Layout()
 	self:EnableSmall()
+	self:EnableParty()
 end
 
 function UF:OnProfileChanged()

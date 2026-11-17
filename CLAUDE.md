@@ -55,12 +55,11 @@ Heraldry_Options/              settings panel, LoadOnDemand
   Pages/General|Profiles|Theme|Fonts|Layout|Modules.lua
 Heraldry_ActionBars/           ActionBars.lua Art.lua Text.lua Settings.lua
 Heraldry_Orbs/                 Orbs.lua Settings.lua Media/{Liquid1,Liquid2,Glass,Surface}.tga
-Heraldry_UnitFrames/           Target.lua Cast.lua Small.lua TargetPlaque.lua Settings.lua Media/Target/{Plaque,LevelRing}.tga
+Heraldry_UnitFrames/           Target.lua Cast.lua Small.lua Party.lua TargetPlaque.lua Settings.lua Media/Target/{Plaque,LevelRing}.tga
 Heraldry_Minimap/              Minimap.lua Settings.lua Media/{Frame,Mask}.tga
 Heraldry_Quests/               Quests.lua Settings.lua
 Heraldry_Chat/                 Chat.lua Text.lua Settings.lua
 Heraldry_Tooltips/             Tooltips.lua Settings.lua
-Heraldry_Test/                 temporary test module (to be deleted)
 ```
 
 ### `.toc` conventions
@@ -127,6 +126,7 @@ Heraldry_Test/                 temporary test module (to be deleted)
 - `H:RegisterEvent(event, fn)` for game events.
 - `H:On(msg, fn)` and `H:Fire(msg, ...)` for internal messages. Listener lists are copy-on-write and each listener runs in `xpcall`.
 - Internal messages: `DB_LOADED`, `READY`, `THEME_CHANGED`, `FONTS_CHANGED`.
+- `H.previews`: list of `{ label, desc, get, set }` toggles that modules add; General > Testing shows them.
 
 ### Movers and edit mode
 
@@ -258,7 +258,7 @@ Settings tabs per page:
 | Modules | (single page) |
 | Action bars | Block / Bars / Look / Visibility / Text / Font |
 | Orbs | Place / Text / Font / Behaviour |
-| Unit frames | Target (Size / Text / Look / Behaviour) / Target of target (Size / Text / Behaviour) / Focus (Size / Text / Behaviour) / Font. Party and raid will be new top-level tabs |
+| Unit frames | Target (Size / Text / Look / Behaviour) / Target of target (Size / Text / Behaviour) / Focus (Size / Text / Behaviour) / Party (Size / Text / Look / Behaviour) / Font. Raid will be a new top-level tab |
 | Minimap | Size / Text / Addons / Behaviour / Font |
 | Quests | Look / Text / Behaviour / Font |
 | Chat | Look / Size / Text / Channels / Input / Behaviour / Font |
@@ -282,7 +282,7 @@ Settings tabs per page:
 4. **Quest tracker**: delivered as Q4, a parchment scroll (`Heraldry_Quests`): theme rods top and bottom (`scroll.rod`), light (ink) or dark paper, click the top rod to roll up, own tracker reading C_QuestLog with classic fallbacks. The game's tracker is hidden with Hide() + an OnShow hook (Questie's approach on this client; the frame is protected, so it is not reparented). Steps aside when Questie's tracker is on. Only the level carries the difficulty colour; ready/failed shown on the title; rolled up shows a strip with the quest count. Approved. The quest log window itself comes later.
 5. **Chat**: delivered as a sideways scroll (`Heraldry_Chat`): standing theme rods (`scroll.rodV`), dark/light/glass paper or a flat panel, rolls up to the fixed side (the mover's anchor), glow on new messages, Enter opens to type. ChatFrame1 kept at its open size and placed in our frame (SetPoint/SetSize hooks); Blizzard art killed by alpha hooks; ink by wrapping AddMessage. Fonts via `H.Fonts:Resolve` (chat frames' SetFont answers nothing). Approved. Text.lua: channel names full/short/number/hidden with per-channel short names, "says" dropped, faded timestamps (the game's CVar), fading, input history with plain Up/Down (SetAltArrowKeyMode(false)) saved per character; light paper uses an ink palette per chat type (ink_<key> overrides; on other papers the colour pickers write the game's chat colours); player names without brackets; message body in plain ink.
 6. **Tooltips** (T2): the game's tooltips on paper (dark default, light ink, glass) with a metal rim, quality rim for items, class-coloured names, thin health strip, anchor game/fixed/cursor, hide units in combat. Background/border only (NineSlice hidden by alpha hook); skinned via TooltipDataProcessor post-calls. Anchor defaults to our mover (`Tooltips.anchor`), growing from the corner nearest the screen edge. Approved.
-7. Delete `Heraldry_Test`.
+7. ~~Delete `Heraldry_Test`~~ (done). **Party**: Party.lua, members built on Small.lua (`UF.Small`), styles plaque (PF2) / compact (PF3), container mover `UnitFrames.party` (SecureHandlerStateTemplate, hidden in raid unless set), dead/ghost/offline, range fade (pcall), leader crown, Blizzard party frames reparented away, preview with made-up members (registered in `H.previews`, shown in General > Testing). Awaiting test.
 8. Swing bar styling.
 9. **C3 class overrides**, when the first module needs them.
 8. **C7:** installer, presets ("Altar" plus a Healer variant), import/export.

@@ -189,7 +189,7 @@ function Small:Layout()
 	f.name:SetPoint("RIGHT", f.health, "RIGHT", -6 - self:Get("PctSize") * 2.8, 0)
 
 	if self.OnLayout then self:OnLayout() end
-	H.Movers:Apply(f.mover)
+	if f.mover then H.Movers:Apply(f.mover) end
 	self:Update()
 end
 
@@ -224,6 +224,9 @@ function Small:Update()
 		j:SetVertexColor(r, g, b)
 	end
 end
+
+-- Party.lua builds its members on this class
+UF.Small = Small
 
 local function newSmall(prefix, unit, globalName, label, default)
 	local s = setmetatable({ prefix = prefix, unit = unit, globalName = globalName, label = label, default = default }, Small)

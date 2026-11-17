@@ -150,13 +150,97 @@ local function small(prefix, extra)
 	}
 end
 
+--[[ Party (Party.lua) ]]
+
+local function pf(name)
+	return function() return UF.db["party" .. name] end, function(v)
+		UF.db["party" .. name] = v
+		UF:LayoutParty()
+	end
+end
+
+local party = {
+	size = function(page)
+		page:Section("Each member")
+		local get, set = pf("Width")
+		page:Slider({ label = "Width", min = 80, max = 320, step = 2, get = get, set = set })
+		get, set = pf("HealthHeight")
+		page:Slider({ label = "Life bar height", min = 6, max = 40, step = 1, get = get, set = set })
+		get, set = pf("ShowPower")
+		page:Toggle({ label = "Show the power bar", get = get, set = set })
+		get, set = pf("PowerHeight")
+		page:Slider({ label = "Power bar height", min = 2, max = 16, step = 1, get = get, set = set })
+		page:Section("Layout")
+		get, set = pf("Direction")
+		page:Dropdown({
+			label = "Grow",
+			values = function() return {
+				{ value = "down", text = "Down (a column)" },
+				{ value = "up", text = "Up (a column)" },
+				{ value = "right", text = "Right (a row)" },
+				{ value = "left", text = "Left (a row)" },
+			} end,
+			get = get, set = set,
+		})
+		get, set = pf("Spacing")
+		page:Slider({ label = "Space between members", min = 0, max = 40, step = 1, get = get, set = set })
+	end,
+	text = function(page)
+		page:Section("Text")
+		local get, set = pf("NameSize")
+		page:Slider({ label = "Name size", min = 6, max = 20, step = 1, get = get, set = set })
+		get, set = pf("PctSize")
+		page:Slider({ label = "Percentage size", min = 6, max = 20, step = 1, get = get, set = set })
+	end,
+	look = function(page)
+		page:Section("Style")
+		local get, set = pf("Style")
+		page:Dropdown({
+			label = "Style",
+			desc = "Plaque: the target of target's plaque. Compact: slim rows with a class jewel.",
+			values = function() return { { value = "plaque", text = "Plaque" }, { value = "compact", text = "Compact" } } end,
+			get = get, set = set,
+		})
+		get, set = pf("LowLife")
+		page:Slider({ label = "Low life (compact)", desc = "The rim turns red below this.", min = 0.1, max = 0.6, step = 0.05,
+			format = pctFormat, get = get, set = set })
+		get, set = pf("Leader")
+		page:Toggle({ label = "Crown on the group leader", get = get, set = set })
+		page:Text("Colours follow the target's rules: theme metal, jewel in the class colour, and the target's class colour option for the life bar.", 36)
+	end,
+	behaviour = function(page)
+		page:Section("Who shows")
+		local get, set = pf("Show")
+		page:Toggle({ label = "Show the party frames", desc = "Takes effect after /reload.", get = get, set = set })
+		get, set = pf("Player")
+		page:Toggle({ label = "Show yourself in the party", desc = "Takes effect after /reload.", get = get, set = set })
+		get, set = pf("InRaid")
+		page:Toggle({ label = "Show in a raid", get = get, set = set })
+		page:Section("Range")
+		get, set = pf("Range")
+		page:Toggle({ label = "Fade members out of range", get = get, set = set })
+		get, set = pf("RangeAlpha")
+		page:Slider({ label = "Faded to", min = 0.1, max = 0.9, step = 0.05, format = pctFormat, get = get, set = set })
+		page:Section("Game frames")
+		get, set = pf("HideBlizzard")
+		page:Toggle({ label = "Hide the game's party frames", get = get, set = set })
+		page:Section("Preview")
+		page:Toggle({
+			label = "Preview with made-up members",
+			desc = "Also in General > Testing.",
+			get = function() return UF.party.preview end,
+			set = function(v) UF:SetPartyPreview(v) end,
+		})
+	end,
+}
+
 local tot = small("tot", { dock = true })
 local focus = small("focus", { power = true, blizzard = true })
 
 H:RegisterOptionsPage({
 	key = "unitframes",
 	label = "Unit frames",
-	desc = "Target, target of target and focus.",
+	desc = "Target, target of target, focus and party.",
 	group = "modules",
 	order = 30,
 	tabs = {
@@ -175,6 +259,12 @@ H:RegisterOptionsPage({
 			{ key = "size", label = "Size", build = focus.size },
 			{ key = "text", label = "Text", build = focus.text },
 			{ key = "behaviour", label = "Behaviour", build = focus.behaviour },
+		} },
+		{ key = "party", label = "Party", tabs = {
+			{ key = "size", label = "Size", build = party.size },
+			{ key = "text", label = "Text", build = party.text },
+			{ key = "look", label = "Look", build = party.look },
+			{ key = "behaviour", label = "Behaviour", build = party.behaviour },
 		} },
 		{ key = "font", label = "Font", build = function(page)
 			page:Text("The font is the module's: it applies to every unit frame.", 20)
