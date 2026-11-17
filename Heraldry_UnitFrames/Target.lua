@@ -190,6 +190,9 @@ function UF:Create()
 		j:AddMaskTexture(m)
 		f.jewels[i] = j
 	end
+	-- texts sit above the plaque (the bars are behind it)
+	f.textFrame = CreateFrame("Frame", nil, f)
+	f.textFrame:SetAllPoints()
 	f.capLevel = jewels:CreateFontString(nil, "OVERLAY")
 	f.capLevel:SetShadowColor(0, 0, 0, 1)
 	f.capLevel:SetShadowOffset(1, -1)
@@ -448,16 +451,22 @@ function UF:Layout()
 	local nameH = math.ceil(db.nameSize * 1.2)
 	local barsH = db.healthHeight + (db.showPower and (2 + db.powerHeight) or 0)
 
-	-- stacking: the plaque, then the bars in its slot, then the jewels
+	-- stacking: the bars, the plaque over them (its slot is cut out), the
+	-- jewels, then the texts
 	local base = f:GetFrameLevel()
-	f.plaque:SetFrameLevel(base + 1)
-	f.health:SetFrameLevel(base + 2)
-	f.power:SetFrameLevel(base + 2)
+	f.health:SetFrameLevel(base + 1)
+	f.power:SetFrameLevel(base + 1)
+	f.plaque:SetFrameLevel(base + 3)
 	f.jewelFrame:SetFrameLevel(base + 6)
 	f.gemFrame:SetFrameLevel(base + 6)
+	f.textFrame:SetFrameLevel(base + 7)
+	f.health.text:SetParent(heraldic and f.textFrame or f.health)
+	f.health.pct:SetParent(heraldic and f.textFrame or f.health)
+	f.power.text:SetParent(heraldic and f.textFrame or f.power)
+	for _, fs in ipairs({ f.health.text, f.health.pct, f.power.text }) do fs:SetDrawLayer("OVERLAY") end
 
 	f.name:ClearAllPoints()
-	f.name:SetParent(heraldic and f.health or f)   -- inside the life bar, or above it
+	f.name:SetParent(heraldic and f.textFrame or f)   -- inside the life bar, or above it
 	f.name:SetDrawLayer("OVERLAY")
 	f.health:ClearAllPoints()
 	if heraldic then

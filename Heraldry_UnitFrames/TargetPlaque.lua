@@ -1,9 +1,11 @@
 --[[
 	Heraldry_UnitFrames - TargetPlaque.lua
 	Art of the "Plaque" target frame: one fixed plaque (from the TimelessUI
-	Paladin kit) whose slot holds the bars. Numbers are pixels of the file.
+	Paladin kit) whose slot holds the bars. The slot's inside is cut out of
+	the texture, so the bars sit behind the plaque and its rims and jewels
+	frame them. Numbers are pixels of the file.
 
-	  slot    {left, top, right, bottom} of the bar slot: the bars fill it,
+	  slot    {left, top, right, bottom} of the cut-out slot: the bars fill it,
 	          so the bar heights set the plaque's scale
 	  split   {a, b}: columns a..b are stretched for the frame's width, the
 	          ends (lion medallions, jewels) keep their shape
@@ -21,7 +23,7 @@ local UF = Heraldry.Modules.byName.UnitFrames
 UF.PLAQUE = {
 	file = "Interface\\AddOns\\Heraldry_UnitFrames\\Media\\Target\\Plaque",
 	size = { 1024, 256 },
-	slot = { 214, 86, 808, 170 },
+	slot = { 208, 84, 814, 174 },
 	split = { 300, 724 },
 	gems = { { 195, 130, 18 }, { 827, 130, 18 } },
 }
