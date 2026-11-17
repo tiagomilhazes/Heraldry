@@ -43,12 +43,12 @@ local function rod(name, crop, gemX, band)
 end
 
 UF.ART = {
-	Hostile  = npc("Hostile",  256, 56, { 5, 192 },  { 160, 128 }, { 66, 102 }, { 154, 190 }),
-	Friendly = npc("Friendly", 256, 40, { 19, 218 }, { 205, 128 }, { 69, 101 }, { 155, 187 }),
+	Hostile  = npc("Hostile",  256, 40, { 5, 192 },  { 172, 128 }, { 66, 102 }, { 154, 190 }),
+	Friendly = npc("Friendly", 254, 0,  { 19, 218 }, { 218, 128 }, { 69, 101 }, { 155, 187 }),
 	Elite    = npc("Elite",    240, 36, { 19, 237 }, { 128, 128 }, { 76, 111 }, { 144, 177 }),
 
 	MAGE    = rod("Mage",    206, 31,  { 29, 97 }),
-	PALADIN = rod("Paladin", 247, 95,  { 36, 91 }),
+	PALADIN = rod("Paladin", 247, 105, { 36, 91 }),
 	WARRIOR = rod("Warrior", 189, 90,  { 42, 85 }),
 	DRUID   = rod("Druid",   199, 159, { 21, 99 }),
 	ROGUE   = rod("Rogue",   184, 95,  { 25, 102 }),

@@ -83,6 +83,8 @@ H:RegisterOptionsPage({
 			page:Toggle({ label = "Ornament on both ends", desc = "The level stays on the left ornament.", get = get, set = set })
 			get, set = field("capSize")
 			page:Slider({ label = "Ornament size", min = 40, max = 140, step = 2, get = get, set = set })
+			get, set = field("capOverlap")
+			page:Slider({ label = "Ornament overlap", desc = "How far the ornaments reach over the ends of the bars. Negative leaves a gap.", min = -20, max = 40, step = 1, get = get, set = set })
 			get, set = field("railSize")
 			page:Slider({ label = "Rail thickness", min = 3, max = 20, step = 1, get = get, set = set })
 			page:Section("Colours")

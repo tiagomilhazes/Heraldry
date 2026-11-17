@@ -39,6 +39,7 @@ local UF = H:NewModule("UnitFrames", {
 		capSize = 72,            -- height of the ornament
 		railSize = 8,            -- thickness of each rail
 		bothEnds = true,         -- the ornament on both ends of the bars (the level is on the left one)
+		capOverlap = 8,          -- how far the ornaments reach over the ends of the bars (negative: a gap)
 		width = 240,
 		healthHeight = 18,
 		powerHeight = 8,
@@ -355,7 +356,7 @@ function UF:UpdateArt()
 	local solid = c.crop - fade
 	local h = c.size[2] * k
 	local y = (c.gem[2] - c.size[2] / 2) * k
-	local overlap = 8
+	local overlap = db.capOverlap
 	local desat, cr, cg, cb = tone(tint)
 	for i, e in ipairs(f.ends) do
 		local shown = i == 1 or db.bothEnds
@@ -455,6 +456,14 @@ function UF:Layout()
 	H.Fonts:Apply(f.capLevel, "header", math.max(8, db.capSize * 0.17), self)
 	local nameH = math.ceil(db.nameSize * 1.2)
 	local barsH = db.healthHeight + (db.showPower and (2 + db.powerHeight) or 0)
+
+	-- stacking: rails, then the bars, then the ornaments over the bars' ends
+	local base = f:GetFrameLevel()
+	f.rails:SetFrameLevel(base + 1)
+	f.health:SetFrameLevel(base + 2)
+	f.power:SetFrameLevel(base + 2)
+	f.capFrame:SetFrameLevel(base + 6)
+	f.gemFrame:SetFrameLevel(base + 6)
 
 	f.name:ClearAllPoints()
 	f.name:SetParent(heraldic and f.health or f)   -- inside the life bar, or above it
