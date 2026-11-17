@@ -47,9 +47,14 @@ local CH = H:NewModule("Chat", {
 })
 
 CH.PAPERS = {
-	dark  = { file = PAPER .. "Dark",  size = { 512, 256 }, shade = 0.45, ink = 1 },
-	light = { file = PAPER .. "Light", size = { 512, 512 }, shade = 0.30, ink = 0.5 },
-	glass = { color = { 0.035, 0.03, 0.025 }, shade = 0.35, ink = 1 },
+	-- ink: how much new lines are darkened; text: colour of lines that bring none;
+	-- tabOn / tabOff: the selected and the other tabs
+	dark  = { file = PAPER .. "Dark",  size = { 512, 256 }, shade = 0.45, ink = 1,
+		tabOn = { 0.91, 0.69, 0.29 }, tabOff = { 0.66, 0.60, 0.50 } },
+	light = { file = PAPER .. "Light", size = { 512, 512 }, shade = 0.30, ink = 0.5, text = { 0.22, 0.15, 0.08 },
+		tabOn = { 0.45, 0.08, 0.06 }, tabOff = { 0.38, 0.30, 0.20 } },
+	glass = { color = { 0.035, 0.03, 0.025 }, shade = 0.35, ink = 1,
+		tabOn = { 0.91, 0.69, 0.29 }, tabOff = { 0.66, 0.60, 0.50 } },
 }
 
 local hidden = CreateFrame("Frame")
@@ -143,6 +148,8 @@ function CH:Create()
 	f.rim = {}
 	for i = 1, 4 do f.rim[i] = f.paperFrame:CreateTexture(nil, "BORDER") end
 	f.paperFrame:SetScript("OnSizeChanged", function() CH:CropPaper() end)
+	f.tabRule = f.paperFrame:CreateTexture(nil, "BORDER")
+	f.tabRule:SetHeight(1)
 
 	f.left = newRod(f)
 	f.right = newRod(f)
@@ -303,9 +310,9 @@ function CH:PlaceDock()
 	local cf = ChatFrame1
 	d.hLock = true
 	d:ClearAllPoints()
-	-- on the paper's top edge, over the messages
-	d:SetPoint("BOTTOMLEFT", cf, "TOPLEFT", -4, self.geo.y - 4)
-	d:SetPoint("BOTTOMRIGHT", cf, "TOPRIGHT", 0, self.geo.y - 4)
+	-- in the top of the paper, over the messages
+	d:SetPoint("BOTTOMLEFT", cf, "TOPLEFT", -6, 3)
+	d:SetPoint("BOTTOMRIGHT", cf, "TOPRIGHT", 0, 3)
 	d.hLock = false
 end
 
@@ -357,7 +364,7 @@ function CH:StyleBlizzard()
 		end
 		if cf.Background then kill(cf.Background) end
 		local tab = _G[cf:GetName() .. "Tab"]
-		if tab then killTextures(tab) end
+		if tab then self:StyleTab(tab) end
 	end
 	local names = { "QuickJoinToastButton", "ChatFrameChannelButton", "ChatFrameMenuButton",
 		"ChatFrameToggleVoiceDeafenButton", "ChatFrameToggleVoiceMuteButton", "TextToSpeechButton" }
@@ -377,6 +384,47 @@ function CH:StyleBlizzard()
 			elseif b:GetParent() == hidden then
 				b:SetParent(b.hParent)
 			end
+		end
+	end
+end
+
+--[[ Tabs: written on the paper, the selected one underlined in the theme's metal ]]
+
+function CH:StyleTab(tab)
+	if not tab.hStyled then
+		tab.hStyled = true
+		killTextures(tab)
+		-- the game fades tabs out when the mouse is away; on paper they stay readable
+		hooksecurefunc(tab, "SetAlpha", function(t, a)
+			if a < 1 and not t.hLock then
+				t.hLock = true
+				t:SetAlpha(1)
+				t.hLock = false
+			end
+		end)
+		tab:SetAlpha(1)
+		tab.hLine = tab:CreateTexture(nil, "OVERLAY")
+		tab.hLine:SetHeight(2)
+		tab.hLine:SetPoint("BOTTOMLEFT", 6, 2)
+		tab.hLine:SetPoint("BOTTOMRIGHT", -6, 2)
+	end
+end
+
+function CH:ColorTabs()
+	local art = self:Paper()
+	if self.db.style ~= "scroll" then art = self.PAPERS.dark end
+	local r, g, b = Themes:Accent()
+	if not r then r, g, b = 0.42, 0.34, 0.19 end
+	local sel = GeneralDockManager and FCFDock_GetSelectedWindow and FCFDock_GetSelectedWindow(GeneralDockManager)
+	for _, cf in ipairs(chatFrames()) do
+		local tab = _G[cf:GetName() .. "Tab"]
+		if tab and tab.hLine then
+			local on = (sel == cf) or (not sel and cf == SELECTED_CHAT_FRAME)
+			local c = on and art.tabOn or art.tabOff
+			local fs = tab:GetFontString() or tab.Text
+			if fs then fs:SetTextColor(c[1], c[2], c[3]) end
+			tab.hLine:SetColorTexture(r, g, b, 0.9)
+			tab.hLine:SetShown(on)
 		end
 	end
 end
@@ -420,14 +468,32 @@ function CH:HookMessages()
 			cf.hAdd = orig
 			cf.AddMessage = function(fr, text, r, g, b, ...)
 				local k = CH.ink
-				if k and k ~= 1 and type(r) == "number" and type(g) == "number" and type(b) == "number" then
-					r, g, b = r * k, g * k, b * k
+				if k and k ~= 1 then
+					if type(r) == "number" and type(g) == "number" and type(b) == "number" then
+						r, g, b = r * k, g * k, b * k
+					elseif r == nil then
+						local c = CH:Paper().text
+						if c then r, g, b = c[1], c[2], c[3] end
+					end
+					-- colours written in the text (names, links): darkened too, when the text can be read
+					local ok, inked = pcall(CH.Ink, CH, text, k)
+					if ok and inked then text = inked end
 				end
 				if fr ~= ChatFrame2 and CH.rolled then CH:Glow(true) end
 				return orig(fr, text, r, g, b, ...)
 			end
 		end
 	end
+end
+
+-- |cffRRGGBB codes in a line, darkened; nil if the text cannot be touched (secret)
+function CH:Ink(text, k)
+	if type(text) ~= "string" then return nil end
+	if issecretvalue and issecretvalue(text) then return nil end
+	return (text:gsub("|c(%x%x)(%x%x)(%x%x)(%x%x)", function(a, rr, gg, bb)
+		local function d(h) return ("%02x"):format(math.floor(tonumber(h, 16) * k)) end
+		return "|c" .. a .. d(rr) .. d(gg) .. d(bb)
+	end))
 end
 
 --[[ Rolling ]]
@@ -504,11 +570,13 @@ function CH:Layout()
 	-- where the chat window goes, and its size (always the open size)
 	-- the input line takes the bottom of the paper, under the messages
 	self.editH = 22
+	-- the tabs take the top of the paper, over the messages
+	self.tabH = db.tabSize + 12
 	self.geo = {
 		x = side + db.margin,
-		y = inset + db.margin,
+		y = inset + db.margin + self.tabH,
 		w = math.max(db.width - 2 * (side + db.margin), 80),
-		h = math.max(db.height - 2 * (inset + db.margin) - self.editH - 6, 40),
+		h = math.max(db.height - 2 * (inset + db.margin) - self.editH - 6 - self.tabH, 40),
 	}
 
 	for _, r in ipairs({ f.left, f.right }) do r:SetShown(scroll) end
@@ -533,6 +601,14 @@ function CH:Layout()
 	self:PlaceChat()
 	self:PlaceDock()
 	self:PlaceEdit()
+	-- a thin rule between the tabs and the messages
+	local ar, ag, ab = Themes:Accent()
+	if not ar then ar, ag, ab = 0.42, 0.34, 0.19 end
+	f.tabRule:ClearAllPoints()
+	f.tabRule:SetPoint("BOTTOMLEFT", ChatFrame1, "TOPLEFT", -4, 2)
+	f.tabRule:SetPoint("BOTTOMRIGHT", ChatFrame1, "TOPRIGHT", 4, 2)
+	f.tabRule:SetColorTexture(ar, ag, ab, 0.45)
+	self:ColorTabs()
 	if not self.animW then self:SetChatVisible(not self.rolled) end
 	if not self.rolled then self:Glow(false) end
 end
@@ -565,6 +641,9 @@ function CH:OnEnable()
 				if CH.db.rolledUp then CH:SetRolledUp(true, true) end
 			end
 		end)
+	end
+	for _, fn in ipairs({ "FCFTab_UpdateColors", "FCF_Tab_OnClick", "FCFDock_SelectWindow" }) do
+		if _G[fn] then hooksecurefunc(fn, function() CH:ColorTabs() end) end
 	end
 	if FCF_SetChatWindowFontSize then
 		hooksecurefunc("FCF_SetChatWindowFontSize", function()

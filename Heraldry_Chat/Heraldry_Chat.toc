@@ -2,7 +2,7 @@
 ## Title: |cffE8B04BHeraldry|r Chat
 ## Notes: The chat as a scroll that unrolls sideways between two rods.
 ## Author: Tiago
-## Version: 0.1.1
+## Version: 0.1.2
 ## Dependencies: Heraldry
 ## X-Heraldry-Module: 1
 ## X-Heraldry-Label: Chat
