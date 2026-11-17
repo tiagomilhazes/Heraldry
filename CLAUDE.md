@@ -242,6 +242,7 @@ Art is designed **as a whole**, not as loose pieces. The first Paladin art (a pi
 | — | Fonts (core + per-module override), action bar texts | approved |
 | — | Tabs in every settings page | approved |
 | M4 | Quest tracker as a parchment scroll (Q4): theme rods, light/dark paper, roll up, own tracker | approved |
+| M6 | Tooltips on paper (T2): dark/light/glass, metal or quality rim, class names, thin health strip, movable anchor | approved |
 | M5 | Chat as a sideways scroll: standing rods, dark/light/glass paper or panel, roll up with glow, tabs and input inside the paper, abbreviations, colours/ink, input history | approved |
 | M3 | Unit frames: **target**. Styles Plaque (fixed plaque with the slot cut out and the bars behind it, finish and jewels by target, level in a ring set into the left medallion; per-text size/offset settings) and Minimal (glass panel, theme gem, halo). Secure button, Blizzard target hidden | approved, cast bar in the power row (C4) approved; class emblems pending |
 
@@ -280,10 +281,10 @@ Settings tabs per page:
 3. **Minimap**: delivered as prototype M1 (TimelessUI Paladin_PlateM frame, level 1.5 like the target): map cut to the window by a mask, sockets = day/night (GameTimeFrame), addon buttons panel toggle, mail; zone + clock on the plate with per-text settings. Approved.
 4. **Quest tracker**: delivered as Q4, a parchment scroll (`Heraldry_Quests`): theme rods top and bottom (`scroll.rod`), light (ink) or dark paper, click the top rod to roll up, own tracker reading C_QuestLog with classic fallbacks. The game's tracker is hidden with Hide() + an OnShow hook (Questie's approach on this client; the frame is protected, so it is not reparented). Steps aside when Questie's tracker is on. Only the level carries the difficulty colour; ready/failed shown on the title; rolled up shows a strip with the quest count. Approved. The quest log window itself comes later.
 5. **Chat**: delivered as a sideways scroll (`Heraldry_Chat`): standing theme rods (`scroll.rodV`), dark/light/glass paper or a flat panel, rolls up to the fixed side (the mover's anchor), glow on new messages, Enter opens to type. ChatFrame1 kept at its open size and placed in our frame (SetPoint/SetSize hooks); Blizzard art killed by alpha hooks; ink by wrapping AddMessage. Fonts via `H.Fonts:Resolve` (chat frames' SetFont answers nothing). Approved. Text.lua: channel names full/short/number/hidden with per-channel short names, "says" dropped, faded timestamps (the game's CVar), fading, input history with plain Up/Down (SetAltArrowKeyMode(false)) saved per character; light paper uses an ink palette per chat type (ink_<key> overrides; on other papers the colour pickers write the game's chat colours); player names without brackets; message body in plain ink.
-6. **Tooltips** (T2): the game's tooltips on paper (dark default, light ink, glass) with a metal rim, quality rim for items, class-coloured names, thin health strip, anchor game/fixed/cursor, hide units in combat. Background/border only (NineSlice hidden by alpha hook); skinned via TooltipDataProcessor post-calls. Awaiting test.
+6. **Tooltips** (T2): the game's tooltips on paper (dark default, light ink, glass) with a metal rim, quality rim for items, class-coloured names, thin health strip, anchor game/fixed/cursor, hide units in combat. Background/border only (NineSlice hidden by alpha hook); skinned via TooltipDataProcessor post-calls. Anchor defaults to our mover (`Tooltips.anchor`), growing from the corner nearest the screen edge. Approved.
 7. Delete `Heraldry_Test`.
 8. Swing bar styling.
-7. **C3 class overrides**, when the first module needs them.
+9. **C3 class overrides**, when the first module needs them.
 8. **C7:** installer, presets ("Altar" plus a Healer variant), import/export.
 9. Later: `Heraldry_Auras` (buffs and debuffs attached to the block), then themes for the other classes. These start only once Standard and Paladin are complete.
 10. **Pending tuning:** default margins of the block, waiting for Tiago's preferred values.
