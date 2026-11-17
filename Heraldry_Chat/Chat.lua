@@ -150,6 +150,7 @@ function CH:Create()
 	f.rim = {}
 	for i = 1, 4 do f.rim[i] = f.paperFrame:CreateTexture(nil, "BORDER") end
 	f.paperFrame:SetScript("OnSizeChanged", function() CH:CropPaper() end)
+	f.paperFrame:SetClipsChildren(true)   -- nothing drawn on the paper spills past it while rolled up
 	f.tabRule = f.paperFrame:CreateTexture(nil, "BORDER")
 	f.tabRule:SetHeight(1)
 
@@ -530,6 +531,8 @@ function CH:SetChatVisible(on)
 	end
 	if GeneralDockManager then GeneralDockManager:SetAlpha(on and 1 or 0) end
 	if ChatFrame1EditBox then ChatFrame1EditBox:SetAlpha(on and 1 or 0) end
+	-- the rule under the tabs is anchored to the chat window, which keeps its open size
+	if self.frame and self.frame.tabRule then self.frame.tabRule:SetShown(on) end
 end
 
 -- temp: opened only to type (Enter); the saved state stays rolled up
