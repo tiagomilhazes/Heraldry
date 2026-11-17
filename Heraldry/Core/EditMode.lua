@@ -174,7 +174,7 @@ local function createOverlay(m)
 	o:SetMovable(true)
 	o:EnableMouse(true)
 	o:EnableMouseWheel(true)
-	o:RegisterForClicks("RightButtonUp")
+	o:RegisterForClicks("RightButtonUp", "MiddleButtonUp")
 	o.bg = o:CreateTexture(nil, "BACKGROUND")
 	o.bg:SetAllPoints()
 	o.edges = {}
@@ -211,7 +211,11 @@ local function createOverlay(m)
 			save(self)
 		end
 	end)
-	o:SetScript("OnClick", function(self)
+	o:SetScript("OnClick", function(self, button)
+		if button == "MiddleButton" then
+			H:CenterSelected(self)
+			return
+		end
 		Movers:Reset(self.mover.key)
 		selectBox(self)
 		H:Print(self.mover.label .. ": back to its default place.")
@@ -290,6 +294,18 @@ function H:RefreshGrid()
 	end
 end
 
+-- Centre a box (or the selected one) horizontally on the screen.
+function H:CenterSelected(o)
+	o = o or selected
+	if not o then
+		H:Print("Select a frame first (click it), then centre it.")
+		return
+	end
+	selectBox(o)
+	Movers:CenterX(o.mover.key)
+	sync(o)
+end
+
 --[[ Toolbar and keys ]]
 
 local function buildBar()
@@ -306,7 +322,7 @@ local function buildBar()
 	title:SetText("|cffE8B04BHeraldry|r edit mode")
 	local help = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
-	help:SetText("Drag to move. Alt: no snapping. Arrows: nudge (Shift: 10). Wheel: scale. Right click: reset.")
+	help:SetText("Drag to move. Alt: no snapping. Arrows: nudge (Shift: 10). Wheel: scale. Right click: reset. Middle click or C: centre.")
 	help:SetTextColor(0.62, 0.60, 0.56)
 
 	local done = CreateFrame("Button", nil, bar, "UIPanelButtonTemplate")
@@ -324,6 +340,19 @@ local function buildBar()
 		H:RefreshGrid()
 	end)
 
+	local centerBtn = CreateFrame("Button", nil, bar, "UIPanelButtonTemplate")
+	centerBtn:SetSize(70, 22)
+	centerBtn:SetPoint("RIGHT", gridBtn, "LEFT", -6, 0)
+	centerBtn:SetText("Centre")
+	centerBtn:SetScript("OnClick", function() H:CenterSelected() end)
+	centerBtn:SetScript("OnEnter", function(b)
+		GameTooltip:SetOwner(b, "ANCHOR_BOTTOM")
+		GameTooltip:SetText("Centre horizontally")
+		GameTooltip:AddLine("Puts the selected frame in the middle of the screen, at the same height.", 1, 1, 1, true)
+		GameTooltip:Show()
+	end)
+	centerBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
 	-- Escape closes it (and with it, edit mode).
 	tinsert(UISpecialFrames, "HeraldryEditModeBar")
 	bar:SetScript("OnHide", function() if H.editMode then H:SetEditMode(false) end end)
@@ -337,7 +366,10 @@ local function buildBar()
 		elseif key == "UP" then dy = step
 		elseif key == "DOWN" then dy = -step
 		end
-		if selected and (dx ~= 0 or dy ~= 0) then
+		if selected and key == "C" then
+			self:SetPropagateKeyboardInput(false)
+			H:CenterSelected()
+		elseif selected and (dx ~= 0 or dy ~= 0) then
 			self:SetPropagateKeyboardInput(false)
 			local l, b, w, h = selected:GetRect()
 			place(selected, l + dx, b + dy, w, h)

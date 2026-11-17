@@ -50,6 +50,24 @@ H:RegisterOptionsPage({
 			})
 		end },
 		{ key = "positions", label = "Positions", build = function(page)
+			page:Section("Centre horizontally")
+			local any = false
+			for _, m in ipairs(H.Movers.list) do
+				if not m.dock then
+					any = true
+					page:Button({
+						label = m.label,
+						desc = "Middle of the screen, at the same height.",
+						text = "Centre",
+						onClick = function()
+							H.Movers:CenterX(m.key)
+							if H.editMode then H:RefreshEditMode() end
+							H:Print(m.label .. ": centred.")
+						end,
+					})
+				end
+			end
+			if not any then page:Text("No frame to centre yet.") end
 			page:Section("Positions")
 			page:Button({
 				label = "Reset all positions",

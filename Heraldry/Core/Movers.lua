@@ -12,6 +12,7 @@
 		isShown  = function() end,       -- optional: false hides its box in edit mode
 	})
 	H.Movers:Reset(key)   H.Movers:ResetAll()
+	H.Movers:CenterX(key)   centre horizontally on the screen, height kept
 
 	Docking: a module can pin one mover to another (bar 2 on top of bar 1,
 	the orbs at the ends of the block). A docked frame follows its target,
@@ -144,6 +145,16 @@ function Movers:Reset(key)
 	if not m then return end
 	H.profile.layout[key] = nil
 	self:Apply(m)
+end
+
+-- Centre a frame horizontally on the screen; its height on screen is kept.
+function Movers:CenterX(key)
+	local m = self.byKey[key]
+	if not m or m.dock then return end
+	local l, b, w, h = self:RectOf(m)
+	if not l then return end
+	local _, _, _, s = self:Get(m)
+	self:SaveRect(m, (UIParent:GetWidth() - w) / 2, b, w, h, s)
 end
 
 function Movers:ResetAll()

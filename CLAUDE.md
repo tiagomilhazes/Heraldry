@@ -133,10 +133,10 @@ H:RegisterMover(frame, key, {
 
 - The position is saved as `{point, x, y, scale}`. The anchor point is chosen by which third of the screen the frame is in, so positions survive resolution changes.
 - Docking pins one mover to another: `mover.dock = { target, point, relPoint, x, y }`, or `Movers:Dock` / `Movers:Undock`. A docked frame follows its target and gets no box in edit mode.
-- Other functions: `Movers:Apply`, `Movers:Preview` (moves live without saving), `Movers:IsMovable`, `H:RefreshEditMode()`.
+- Other functions: `Movers:Apply`, `Movers:Preview` (moves live without saving), `Movers:IsMovable`, `Movers:CenterX(key)` (centre horizontally, height kept), `H:RefreshEditMode()`.
 - Edit mode itself:
   - Boxes move with the native `StartMoving`. Snapping happens **only on release**, with gold guide lines while dragging; live snapping caused stutter.
-  - Arrow keys nudge, the mouse wheel scales, right-click resets.
+  - Arrow keys nudge, the mouse wheel scales, right-click resets, middle-click / C / the "Centre" button centres horizontally. The Layout page's Positions tab also has a "Centre" button per frame.
   - Edit mode closes when combat starts.
 
 ### Themes: the geometry contract

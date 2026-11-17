@@ -2,7 +2,7 @@
 ## Title: |cffE8B04BHeraldry|r
 ## Notes: All-in-one immersive UI for WoW Forever (core).
 ## Author: Tiago
-## Version: 0.8.0
+## Version: 0.8.1
 ## SavedVariables: HeraldryDB
 ## IconTexture: Interface\Icons\INV_Shield_06
 ## AddonCompartmentFunc: Heraldry_OnCompartmentClick
