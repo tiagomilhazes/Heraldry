@@ -7,7 +7,8 @@
 	page:Toggle   { label, desc, get, set }
 	page:Slider   { label, desc, min, max, step, format, get, set, onRelease }
 	page:Dropdown { label, desc, values = fn -> { {value, text}, ... }, get, set, placeholder }
-	page:Input    { label, desc, placeholder, button, maxLetters, onSubmit = fn(text) -> ok }
+	page:Input    { label, desc, placeholder, button, maxLetters, onSubmit = fn(text) -> ok, get }
+	              with get: the box shows the current value and keeps it after OK
 	page:Button   { label, desc, text, kind, onClick }
 
 	Every control re-reads its value on page:Refresh(), which runs whenever the
@@ -326,7 +327,7 @@ function Page:Input(o)
 	end
 	local function submit()
 		if o.onSubmit(eb:GetText()) then
-			eb:SetText("")
+			if not o.get then eb:SetText("") end
 			eb:ClearFocus()
 		end
 		updatePlaceholder()
@@ -336,6 +337,12 @@ function Page:Input(o)
 	btn:SetScript("OnClick", submit)
 	eb:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
 	eb:SetScript("OnTextChanged", updatePlaceholder)
+	if o.get then
+		self:OnRefresh(function()
+			if not eb:HasFocus() then eb:SetText(o.get() or "") end
+			updatePlaceholder()
+		end)
+	end
 	eb:SetScript("OnEditFocusGained", function()
 		border:SetColor(unpack(C.accent))
 		updatePlaceholder()

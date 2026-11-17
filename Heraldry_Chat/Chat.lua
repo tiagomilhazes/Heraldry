@@ -497,6 +497,11 @@ function CH:HookMessages()
 					local ok, inked = pcall(CH.Ink, CH, text, k)
 					if ok and inked then text = inked end
 				end
+				-- abbreviations, timestamps and the like (Text.lua)
+				if CH.FormatLine then
+					local ok, out = pcall(CH.FormatLine, CH, text)
+					if ok and out then text = out end
+				end
 				if fr ~= ChatFrame2 and CH.rolled then CH:Glow(true) end
 				return orig(fr, text, r, g, b, ...)
 			end
@@ -628,6 +633,7 @@ function CH:Layout()
 	f.tabRule:SetPoint("BOTTOMRIGHT", ChatFrame1, "TOPRIGHT", 4, 2 + db.tabGap)
 	f.tabRule:SetColorTexture(ar, ag, ab, 0.45)
 	self:ColorTabs()
+	if self.ApplyText then self:ApplyText() end
 	if not self.animW then self:SetChatVisible(not self.rolled) end
 	if not self.rolled then self:Glow(false) end
 end

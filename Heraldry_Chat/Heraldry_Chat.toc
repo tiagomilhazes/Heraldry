@@ -2,11 +2,12 @@
 ## Title: |cffE8B04BHeraldry|r Chat
 ## Notes: The chat as a scroll that unrolls sideways between two rods.
 ## Author: Tiago
-## Version: 0.1.4
+## Version: 0.2.0
 ## Dependencies: Heraldry
 ## X-Heraldry-Module: 1
 ## X-Heraldry-Label: Chat
 ## IconTexture: Interface\Icons\INV_Letter_15
 
 Chat.lua
+Text.lua
 Settings.lua
