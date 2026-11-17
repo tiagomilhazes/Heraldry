@@ -39,6 +39,7 @@ local Q = H:NewModule("Quests", {
 		hideBlizzard = true,
 		combatRollUp = false,
 		rolledUp = false,
+		rolledCount = true,       -- rolled up: a strip of paper with the number of quests
 		-- ink does not want a black outline: the module's font starts without one
 		fontOverride = true,
 		fontOutline = "NONE",
@@ -246,6 +247,9 @@ function Q:Create()
 	f.header = f.content:CreateFontString(nil, "OVERLAY")
 	f.empty = f.content:CreateFontString(nil, "OVERLAY")
 
+	f.strip = f.paperFrame:CreateFontString(nil, "OVERLAY")
+	f.strip:SetPoint("CENTER")
+
 	self.titles, self.lines = {}, {}
 	return f
 end
@@ -376,29 +380,29 @@ function Q:Fill(textW)
 		b.quest = q
 		H.Fonts:Apply(b.text, "header", db.titleSize, self)
 		b.text:SetWidth(textW)
-		local title = q.title or ""
-		if db.showLevel and q.level and q.level > 0 then title = ("[%d] %s"):format(q.level, title) end
-		b.text:SetText(title)
 		local st = state(q)
-		local r, g, bl = nil, nil, nil
-		if st == "failed" then
-			r, g, bl = unpack(ink.failed)
-		elseif db.difficultyColor then
-			r, g, bl = difficulty(q.level)
-			if r then r, g, bl = r * ink.dim, g * ink.dim, bl * ink.dim end
+		local base = st == "failed" and ink.failed or st == "done" and ink.done or ink.title
+		local title = q.title or ""
+		if st == "done" then title = title .. " \194\183 Ready" elseif st == "failed" then title = title .. " \194\183 Failed" end
+		if db.showLevel and q.level and q.level > 0 then
+			-- only the level carries the difficulty colour; the title stays in ink
+			local r, g, bl
+			if db.difficultyColor then r, g, bl = difficulty(q.level) end
+			local lv = ("[%d]"):format(q.level)
+			if r then
+				lv = ("|cff%02x%02x%02x%s|r"):format(math.floor(r * ink.dim * 255), math.floor(g * ink.dim * 255), math.floor(bl * ink.dim * 255), lv)
+			end
+			title = lv .. " " .. title
 		end
-		if r then b.text:SetTextColor(r, g, bl) else color(b.text, ink.title) end
+		b.text:SetText(title)
+		color(b.text, base)
 		local th = b.text:GetStringHeight()
 		b:SetSize(textW, th)
 		place(b, 0, th, 2)
 		b:Show()
 
 		local list = {}
-		if st == "done" then
-			list[1] = { "Ready to turn in", true }
-		elseif st == "failed" then
-			list[1] = { "Failed", false, true }
-		else
+		if not st then
 			for _, o in ipairs(objectives(q)) do
 				if not (db.hideDone and o[2]) then list[#list + 1] = o end
 			end
@@ -429,6 +433,7 @@ function Q:Fill(textW)
 	else
 		f.empty:Hide()
 	end
+	self.count = #quests
 	return math.min(math.max(y - db.questSpacing, 0), limit)
 end
 
@@ -457,10 +462,23 @@ function Q:Layout()
 	local inset = math.floor(capW * 0.7)
 	local textW = W - 2 * (inset + db.margin)
 	local pad = shaft / 2 + db.margin * 0.6
+	local padBottom = h / 2 + db.margin * 0.6   -- the bottom rod's ends reach higher than its shaft
 	local contentH = self:Fill(math.max(textW, 40))
-	local open = contentH + 2 * pad
+	local open = contentH + pad + padBottom
 	self.openHeight = open
-	local paperH = db.rolledUp and 0 or open
+
+	-- rolled up: nothing, or a strip of paper showing how many quests there are
+	if db.rolledCount then
+		H.Fonts:Apply(f.strip, "header", db.objectiveSize, self)
+		local ink = self.INK[db.paper] or self.INK.light
+		f.strip:SetTextColor(ink.header[1], ink.header[2], ink.header[3])
+		local n = self.count or 0
+		f.strip:SetText(n == 1 and "1 quest" or n .. " quests")
+		self.rolledHeight = h + f.strip:GetStringHeight() + 4
+	else
+		self.rolledHeight = 0
+	end
+	local paperH = db.rolledUp and self.rolledHeight or open
 	if self.animH then paperH = self.animH end
 
 	f:SetWidth(W)
@@ -494,11 +512,16 @@ function Q:SetPaperHeight(ph)
 	f.top:SetPoint("TOPLEFT", f, "TOPLEFT")
 	f.top:SetPoint("TOPRIGHT", f, "TOPRIGHT")
 	f.bot:ClearAllPoints()
-	f.bot:SetPoint("TOPLEFT", f.top, "TOPLEFT", 0, -ph - (ph > 0 and 0 or h * 0.45))
-	f.bot:SetPoint("TOPRIGHT", f.top, "TOPRIGHT", 0, -ph - (ph > 0 and 0 or h * 0.45))
+	local gap = ph > 1 and 0 or h * 0.45    -- fully closed: the rods overlap a little
+	f.bot:SetPoint("TOPLEFT", f.top, "TOPLEFT", 0, -ph - gap)
+	f.bot:SetPoint("TOPRIGHT", f.top, "TOPRIGHT", 0, -ph - gap)
 	f.paperFrame:SetHeight(math.max(ph, 0.01))
 	f.paperFrame:SetShown(ph > 1)
-	f:SetHeight(h + ph + (ph > 0 and 0 or h * 0.45))
+	-- the quests show while the paper is open; the count shows on the strip
+	local rolled = self.db.rolledUp and not self.animH
+	f.content:SetShown(not rolled)
+	f.strip:SetShown(rolled and self.db.rolledCount)
+	f:SetHeight(h + ph + gap)
 	cropPaper(f.paper, self.PAPERS[db.paper] or self.PAPERS.light, f.paperFrame:GetWidth(), ph)
 end
 
@@ -508,8 +531,8 @@ function Q:SetRolledUp(on)
 	self.db.rolledUp = on and true or false
 	local f = self.frame
 	if not f then return end
-	local from = self.animH or (on and self.openHeight or 0)
-	local to = on and 0 or (self.openHeight or 0)
+	local from = self.animH or (on and self.openHeight or self.rolledHeight or 0)
+	local to = on and (self.rolledHeight or 0) or (self.openHeight or 0)
 	local t, dur = 0, 0.25
 	f:SetScript("OnUpdate", function(_, elapsed)
 		t = t + elapsed

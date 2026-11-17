@@ -56,7 +56,7 @@ H:RegisterOptionsPage({
 			get, set = field("showLevel")
 			page:Toggle({ label = "Show the quest level", get = get, set = set })
 			get, set = field("difficultyColor")
-			page:Toggle({ label = "Colour titles by difficulty", desc = "On light paper the colours are darkened to read as ink.", get = get, set = set })
+			page:Toggle({ label = "Colour the level by difficulty", desc = "Only the level is coloured; the title stays in ink. On light paper the colours are darkened.", get = get, set = set })
 			page:Section("Objectives")
 			get, set = field("objectiveSize")
 			page:Slider({ label = "Size", min = 7, max = 20, step = 1, get = get, set = set })
@@ -76,6 +76,8 @@ H:RegisterOptionsPage({
 				get = get, set = set,
 			})
 			page:Section("Behaviour")
+			get, set = field("rolledCount")
+			page:Toggle({ label = "Show the number of quests when rolled up", desc = "A strip of paper stays between the rods.", get = get, set = set })
 			get, set = field("combatRollUp")
 			page:Toggle({ label = "Roll up in combat", desc = "Unrolls again when the fight ends.", get = get, set = set })
 			page:Toggle({
