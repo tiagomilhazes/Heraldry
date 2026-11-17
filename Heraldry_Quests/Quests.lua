@@ -244,9 +244,7 @@ function Q:Create()
 	f.rodButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 	f.header = f.content:CreateFontString(nil, "OVERLAY")
-	f.header:SetText("Quests")
 	f.empty = f.content:CreateFontString(nil, "OVERLAY")
-	f.empty:SetText("No tracked quests")
 
 	self.titles, self.lines = {}, {}
 	return f
@@ -358,6 +356,7 @@ function Q:Fill(textW)
 
 	if db.headerShow then
 		H.Fonts:Apply(f.header, "header", db.headerSize, self)
+		f.header:SetText("Quests")
 		color(f.header, ink.header)
 		f.header:SetJustifyH("CENTER")
 		f.header:SetWidth(textW)
@@ -421,6 +420,7 @@ function Q:Fill(textW)
 
 	if nt == 0 then
 		H.Fonts:Apply(f.empty, "body", db.objectiveSize, self)
+		f.empty:SetText("No tracked quests")
 		color(f.empty, ink.faint)
 		f.empty:SetWidth(textW)
 		f.empty:SetJustifyH("CENTER")

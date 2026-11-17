@@ -2,7 +2,7 @@
 ## Title: |cffE8B04BHeraldry|r Quests
 ## Notes: The quest tracker as a parchment scroll between two rods.
 ## Author: Tiago
-## Version: 0.1.0
+## Version: 0.1.1
 ## Dependencies: Heraldry
 ## X-Heraldry-Module: 1
 ## X-Heraldry-Label: Quests
