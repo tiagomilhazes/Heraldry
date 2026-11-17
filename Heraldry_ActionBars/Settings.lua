@@ -75,6 +75,9 @@ H:RegisterOptionsPage({
 			end,
 		})
 
+		get, set = field("hotkeys")
+		page:Toggle({ label = "Show keybinds on this bar", desc = "Off for a bar you only use with the mouse.", get = get, set = set })
+
 		page:Section("Layout")
 		local get, set = field("buttons")
 		page:Slider({ label = "Buttons", desc = "How many buttons the bar shows, at most.", min = 1, max = 12, step = 1, get = get, set = set })
@@ -123,6 +126,40 @@ H:RegisterOptionsPage({
 		page:Toggle({ label = "Show on mouseover only", desc = "Fades the bar until the mouse is over it.", get = get, set = set })
 		get, set = field("fadeAlpha")
 		page:Slider({ label = "Faded opacity", desc = "Opacity while faded.", min = 0, max = 1, step = 0.05, format = pct, get = get, set = set })
+
+		-- Texts: for every bar at once.
+		local ANCHORS = {
+			{ value = "TOPLEFT", text = "Top left" }, { value = "TOP", text = "Top" }, { value = "TOPRIGHT", text = "Top right" },
+			{ value = "LEFT", text = "Left" }, { value = "CENTER", text = "Centre" }, { value = "RIGHT", text = "Right" },
+			{ value = "BOTTOMLEFT", text = "Bottom left" }, { value = "BOTTOM", text = "Bottom" }, { value = "BOTTOMRIGHT", text = "Bottom right" },
+		}
+		local function global(name)
+			return function() return AB.db[name] end, function(v)
+				AB.db[name] = v
+				AB:LayoutAll()
+			end
+		end
+		local pctFmt = function(v) return math.floor(v * 100 + 0.5) .. "%" end
+		for _, t in ipairs(AB.TEXTS) do
+			local k = t.key
+			page:Section(t.label .. " (all bars)")
+			get, set = global(k .. "Show")
+			page:Toggle({ label = "Show", get = get, set = set })
+			if k == "hotkey" then
+				get, set = global("hotkeyShort")
+				page:Toggle({ label = "Short keybinds", desc = "s-Z becomes SZ, Mouse Button 4 becomes M4.", get = get, set = set })
+			end
+			get, set = global(k .. "Size")
+			page:Slider({ label = "Size", desc = "Share of the button, so it follows the button size.", min = 0.12, max = 0.6, step = 0.01, format = pctFmt, get = get, set = set })
+			get, set = global(k .. "Pos")
+			page:Dropdown({ label = "Position", values = function() return ANCHORS end, get = get, set = set })
+			get, set = global(k .. "X")
+			page:Slider({ label = "Offset, sideways", min = -20, max = 20, step = 1, get = get, set = set })
+			get, set = global(k .. "Y")
+			page:Slider({ label = "Offset, up and down", min = -20, max = 20, step = 1, get = get, set = set })
+		end
+
+		page:FontSection(AB, function() AB:LayoutAll() end)
 
 		page:Section("Reset")
 		page:Button({

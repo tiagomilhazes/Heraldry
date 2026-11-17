@@ -67,12 +67,20 @@ for _, def in ipairs(BARS) do
 	defaults[k .. "padY"] = 8       -- plate margin at the top and bottom
 	defaults[k .. "railSize"] = 12
 	defaults[k .. "railExtend"] = 30
+	defaults[k .. "hotkeys"] = true    -- show keybinds on this bar
 end
+-- Button texts (Text.lua), for every bar. Sizes are a share of the button.
+defaults.hotkeyShow, defaults.hotkeySize, defaults.hotkeyPos = true, 0.30, "TOPRIGHT"
+defaults.hotkeyX, defaults.hotkeyY, defaults.hotkeyShort = -2, -3, true
+defaults.countShow, defaults.countSize, defaults.countPos = true, 0.32, "BOTTOMRIGHT"
+defaults.countX, defaults.countY = -2, 3
+defaults.nameShow, defaults.nameSize, defaults.namePos = true, 0.24, "BOTTOM"
+defaults.nameX, defaults.nameY = 0, 2
 -- The block: bar 2 docked on top of bar 1, one plate around both.
 defaults.join = true
 defaults.joinGap = 4
 
-local AB = H:NewModule("ActionBars", { label = "Action bars", defaults = defaults })
+local AB = H:NewModule("ActionBars", { label = "Action bars", defaults = defaults, fonts = true })
 AB.BARS = BARS
 AB.bars = {}   -- n -> bar frame
 AB.defs = {}   -- n -> definition
@@ -181,6 +189,7 @@ function AB:LayoutBar(bar)
 	end
 
 	if self.ApplyBarArt then self:ApplyBarArt(bar) end
+	if self.StyleTexts then self:StyleTexts(bar) end
 
 	-- The scale changed: put the bar back at its saved place.
 	if bar.mover then H.Movers:Apply(bar.mover) end
@@ -274,6 +283,7 @@ function AB:OnEnable()
 	self:LayoutAll()
 	H:RegisterEvent("UI_SCALE_CHANGED", function() AB:LayoutAll() end)
 	H:On("THEME_CHANGED", function() AB:LayoutAll() end)
+	H:On("FONTS_CHANGED", function() AB:LayoutAll() end)
 	-- Learning a stance (aura) changes how many stance buttons there are.
 	H:RegisterEvent("UPDATE_SHAPESHIFT_FORMS", function()
 		if AB.bars.stance then AB:LayoutBar(AB.bars.stance) end

@@ -4,10 +4,16 @@
 	font, the outline and a global text scale. Saved in the profile.
 	Modules never pick fonts themselves: they call
 
-	H.Fonts:Apply(fontString, "header" | "body", size)
+	H.Fonts:Apply(fontString, "header" | "body", size [, module])
 
 	and listen to FONTS_CHANGED. Fonts from LibSharedMedia (installed by
 	other addons) are offered too.
+
+	Three layers, nothing repeated:
+	  1. core: font, outline and scale for the whole addon (this file);
+	  2. module: may override font and outline (H:NewModule(name, { fonts = true })
+	     adds fontOverride / font / fontOutline to its settings);
+	  3. each text: its size (and position) is a setting of its module.
 ]]
 
 local _, ns = ...
@@ -80,11 +86,16 @@ function F:Set(key, value)
 	H:Fire("FONTS_CHANGED")
 end
 
-function F:Apply(fs, kind, size)
-	local outline = self:Get("outline")
+function F:Apply(fs, kind, size, mod)
+	local name, outline = self:Get(kind), self:Get("outline")
+	local db = mod and mod.db
+	if db and db.fontOverride then
+		name = db.font or name
+		outline = db.fontOutline or outline
+	end
 	local flags = (outline == "NONE" or outline == "SHADOW") and "" or outline
 	size = math.max(6, size * self:Get("scale"))
-	if not fs:SetFont(self:Path(self:Get(kind)), size, flags) then
+	if not fs:SetFont(self:Path(name), size, flags) then
 		fs:SetFont(FALLBACK, size, flags)
 	end
 	if outline == "SHADOW" then

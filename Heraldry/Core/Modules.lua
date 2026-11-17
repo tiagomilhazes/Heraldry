@@ -80,6 +80,13 @@ end
 function H:NewModule(name, opts)
 	assert(type(name) == "string" and not M.byName[name], "NewModule: missing or duplicate name")
 	opts = opts or {}
+	-- fonts = true: the module can override the core's font and outline.
+	if opts.fonts then
+		opts.defaults = opts.defaults or {}
+		opts.defaults.fontOverride = false
+		opts.defaults.font = false          -- false: the core's font
+		opts.defaults.fontOutline = false   -- false: the core's outline
+	end
 	local mod = setmetatable({
 		name = name,
 		label = opts.label or name,

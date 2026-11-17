@@ -23,6 +23,7 @@ local MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 
 local Orbs = H:NewModule("Orbs", {
 	label = "Orbs",
+	fonts = true,
 	defaults = {
 		attach = true,          -- docked to action bar 1
 		size = 104,             -- diameter of the glass, in pixels
@@ -221,8 +222,8 @@ function Orbs:Style(o, piece)
 	o.surface:SetSize(D, D / 11)
 	-- Font, outline and global scale come from the core (Fonts page).
 	local size = math.max(8, D * 0.15 * self.db.textSize)
-	H.Fonts:Apply(o.text, "header", size)
-	H.Fonts:Apply(o.sub, "header", size * 0.62)
+	H.Fonts:Apply(o.text, "header", size, self)
+	H.Fonts:Apply(o.sub, "header", size * 0.62, self)
 	return reach
 end
 

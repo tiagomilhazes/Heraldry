@@ -354,6 +354,50 @@ function Page:Button(o)
 	b:SetScript("OnClick", function() o.onClick() end)
 end
 
+-- Font override of a module (made with { fonts = true }): one section,
+-- the same on every module page. onChange re-applies the module's texts.
+function Page:FontSection(mod, onChange)
+	local F = H.Fonts
+	local function set(key)
+		return function(v)
+			mod.db[key] = v
+			onChange()
+		end
+	end
+	self:Section("Font")
+	self:Toggle({
+		label = "Use the global font",
+		desc = "Off: pick a font and outline for this module only.",
+		get = function() return not mod.db.fontOverride end,
+		set = function(v)
+			mod.db.fontOverride = not v
+			onChange()
+		end,
+	})
+	self:Dropdown({
+		label = "Font for this module",
+		desc = "Used while the global font is off.",
+		values = function()
+			local t = { { value = false, text = ("Global (%s)"):format(F:Get("header")) } }
+			for _, name in ipairs(F:List()) do t[#t + 1] = { value = name, text = name } end
+			return t
+		end,
+		get = function() return mod.db.font end,
+		set = set("font"),
+	})
+	self:Dropdown({
+		label = "Outline for this module",
+		desc = "Used while the global font is off.",
+		values = function()
+			local t = { { value = false, text = "Global" } }
+			for _, o in ipairs(F.OUTLINES) do t[#t + 1] = o end
+			return t
+		end,
+		get = function() return mod.db.fontOutline end,
+		set = set("fontOutline"),
+	})
+end
+
 --[[ Confirmation dialog ]]
 
 local confirm

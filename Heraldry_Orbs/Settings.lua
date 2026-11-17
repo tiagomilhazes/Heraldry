@@ -47,6 +47,8 @@ H:RegisterOptionsPage({
 		get, set = field("textSize")
 		page:Slider({ label = "Text size", min = 0.5, max = 2, step = 0.05, format = function(v) return math.floor(v * 100 + 0.5) .. "%" end, get = get, set = set })
 
+		page:FontSection(Orbs, function() Orbs:Layout() end)
+
 		page:Section("Behaviour")
 		get, set = field("clickable")
 		page:Toggle({ label = "Click the life orb", desc = "Left click targets you, right click opens your menu.", get = get, set = set })
