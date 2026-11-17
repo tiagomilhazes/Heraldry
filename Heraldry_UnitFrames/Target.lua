@@ -243,13 +243,19 @@ local function setPercent(fs, cur, max, isHealth)
 	if not ok then fs:SetText("") end
 end
 
+UF.util = {}
+
 local function classColor(unit)
 	local _, class = UnitClass(unit)
 	local c = class and ((C_ClassColor and C_ClassColor.GetClassColor(class)) or (RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]))
 	if c then return c.r, c.g, c.b end
 end
 
-function UF:HealthColor()
+UF.util.setBar = setBar
+UF.util.setValue = setValue
+
+function UF:HealthColor(unit)
+	local UNIT = unit or UNIT
 	if not UnitIsConnected(UNIT) or UnitIsDeadOrGhost(UNIT) then return 0.45, 0.45, 0.45 end
 	if UnitIsPlayer(UNIT) and self.db.classColor then
 		local r, g, b = classColor(UNIT)
@@ -297,9 +303,9 @@ function UF:UpdateName()
 end
 
 -- "rare", "boss", "elite" or nil
-local function rank()
-	local level = UnitLevel(UNIT)
-	local c = UnitClassification(UNIT)
+local function rank(unit)
+	local level = UnitLevel(unit or UNIT)
+	local c = UnitClassification(unit or UNIT)
 	if c == "worldboss" or (level and level < 0 and c ~= "rare" and c ~= "rareelite") then return "boss" end
 	if c == "rare" or c == "rareelite" then return "rare" end
 	if c == "elite" then return "elite" end
@@ -345,22 +351,24 @@ function UF:Style()
 end
 
 -- What the target is: "player", "boss", "rare", "elite", "hostile" or "friendly".
-function UF:Kind()
-	if UnitIsPlayer(UNIT) then return "player" end
-	local r = rank()
+function UF:Kind(unit)
+	unit = unit or UNIT
+	if UnitIsPlayer(unit) then return "player" end
+	local r = rank(unit)
 	if r then return r end
-	local reaction = UnitReaction(UNIT, "player")
+	local reaction = UnitReaction(unit, "player")
 	if reaction and reaction <= 3 then return "hostile" end
 	return "friendly"
 end
 
 -- Colour of the jewels.
-function UF:JewelColor(kind)
+function UF:JewelColor(kind, unit)
+	unit = unit or UNIT
 	if kind == "player" then
-		local r, g, b = classColor(UNIT)
+		local r, g, b = classColor(unit)
 		if r then return r, g, b end
 	end
-	if kind == "friendly" and UnitReaction(UNIT, "player") == 4 then return unpack(self.JEWEL.neutral) end
+	if kind == "friendly" and UnitReaction(unit, "player") == 4 then return unpack(self.JEWEL.neutral) end
 	return unpack(self.JEWEL[kind])
 end
 
@@ -587,6 +595,7 @@ function UF:Layout()
 	H:RefreshEditMode()
 	self:UpdateBlizzard()
 	self:UpdateAll()
+	if self.LayoutSmall then self:LayoutSmall() end   -- the target of target follows the plaque
 end
 
 
@@ -640,6 +649,7 @@ function UF:OnEnable()
 	H:On("THEME_CHANGED", function() UF:Layout() end)
 	H:On("FONTS_CHANGED", function() UF:Layout() end)
 	self:Layout()
+	self:EnableSmall()
 end
 
 function UF:OnProfileChanged()

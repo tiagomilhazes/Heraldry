@@ -51,7 +51,7 @@ Heraldry_Options/              settings panel, LoadOnDemand
   Pages/General|Profiles|Theme|Fonts|Layout|Modules.lua
 Heraldry_ActionBars/           ActionBars.lua Art.lua Text.lua Settings.lua
 Heraldry_Orbs/                 Orbs.lua Settings.lua Media/{Liquid1,Liquid2,Glass,Surface}.tga
-Heraldry_UnitFrames/           Target.lua Cast.lua TargetPlaque.lua Settings.lua Media/Target/{Plaque,LevelRing}.tga
+Heraldry_UnitFrames/           Target.lua Cast.lua Small.lua TargetPlaque.lua Settings.lua Media/Target/{Plaque,LevelRing}.tga
 Heraldry_Test/                 temporary test module (to be deleted)
 ```
 
@@ -245,6 +245,7 @@ Settings tabs per page:
 | Action bars | Block / Bars / Look / Visibility / Text / Font |
 | Orbs | Place / Text / Font / Behaviour |
 | Target | Size / Text / Look / Behaviour / Font |
+| Target of target, Focus | Size / Text / Behaviour |
 
 ## Untested (needs the situation in game)
 
@@ -259,7 +260,7 @@ Settings tabs per page:
 ## Next steps
 
 1. ~~Target cast bar~~: approved as C4 — the target's casts take the power row (Cast.lua; gold interruptible, grey not, red interrupted/failed; game timer via SetTimerDuration when available, else GetTime maths in pcall). Pending for the target: class emblems in the medallions (Canva, needs Tiago's prompt wording).
-2. More unit frames in the same module, each with its own page: focus, target of target, party.
+2. Target of target and focus delivered (Small.lua: smaller plaques, same finish/jewel rules, per-frame prefixed settings tot*/focus*, ToT docked right of the target). Party later (vertical cards, prototype P4).
 3. **Minimap** (level 2).
 4. **Quest log / tracker** (level 2). Must coexist with Questie and Zygor.
 5. Delete `Heraldry_Test`.

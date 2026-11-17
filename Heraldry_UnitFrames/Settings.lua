@@ -112,3 +112,61 @@ H:RegisterOptionsPage({
 		end },
 	},
 })
+
+--[[ Target of target and focus (Small.lua) ]]
+
+local function smallField(prefix, name)
+	return function() return UF.db[prefix .. name] end, function(v)
+		UF.db[prefix .. name] = v
+		local s = UF.small[prefix]
+		if s and s.frame then s:Layout() end
+	end
+end
+
+local function smallPage(prefix, key, label, order, extra)
+	H:RegisterOptionsPage({
+		key = key,
+		label = label,
+		desc = "A smaller plaque, with the same metal and jewel colours as the target.",
+		group = "modules",
+		order = order,
+		tabs = {
+			{ key = "size", label = "Size", build = function(page)
+				page:Section("Size")
+				local get, set = smallField(prefix, "Width")
+				page:Slider({ label = "Width", min = 80, max = 320, step = 2, get = get, set = set })
+				get, set = smallField(prefix, "HealthHeight")
+				page:Slider({ label = "Life bar height", min = 6, max = 30, step = 1, get = get, set = set })
+				if extra and extra.power then
+					get, set = smallField(prefix, "ShowPower")
+					page:Toggle({ label = "Show the power bar", get = get, set = set })
+					get, set = smallField(prefix, "PowerHeight")
+					page:Slider({ label = "Power bar height", min = 3, max = 16, step = 1, get = get, set = set })
+				end
+			end },
+			{ key = "text", label = "Text", build = function(page)
+				page:Section("Text")
+				local get, set = smallField(prefix, "NameSize")
+				page:Slider({ label = "Name size", min = 6, max = 20, step = 1, get = get, set = set })
+				get, set = smallField(prefix, "PctSize")
+				page:Slider({ label = "Percentage size", min = 6, max = 20, step = 1, get = get, set = set })
+			end },
+			{ key = "behaviour", label = "Behaviour", build = function(page)
+				page:Section("Behaviour")
+				local get, set = smallField(prefix, "Show")
+				page:Toggle({ label = "Show this frame", desc = "Takes effect after /reload.", get = get, set = set })
+				if extra and extra.dock then
+					get, set = smallField(prefix, "Dock")
+					page:Toggle({ label = "Attach to the target", desc = "Off: move it on its own in edit mode.", get = get, set = set })
+				end
+				if extra and extra.blizzard then
+					get, set = smallField(prefix, "HideBlizzard")
+					page:Toggle({ label = "Hide the game's focus frame", get = get, set = set })
+				end
+			end },
+		},
+	})
+end
+
+smallPage("tot", "targettarget", "Target of target", 31, { dock = true })
+smallPage("focus", "focus", "Focus", 32, { power = true, blizzard = true })

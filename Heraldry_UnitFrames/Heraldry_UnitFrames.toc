@@ -2,7 +2,7 @@
 ## Title: |cffE8B04BHeraldry|r Unit Frames
 ## Notes: Target frame: a heraldic plaque (finish and jewels by target) or minimal glass.
 ## Author: Tiago
-## Version: 0.5.0
+## Version: 0.6.0
 ## Dependencies: Heraldry
 ## X-Heraldry-Module: 1
 ## X-Heraldry-Label: Unit frames
@@ -10,5 +10,6 @@
 
 Target.lua
 Cast.lua
+Small.lua
 TargetPlaque.lua
 Settings.lua
