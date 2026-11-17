@@ -81,7 +81,7 @@ H:RegisterOptionsPage({
 			page:Toggle({ label = "Enter unrolls the scroll to type", desc = "It rolls up again when you are done.", get = get, set = set })
 			page:Section("Game buttons")
 			get, set = field("hideButtons")
-			page:Toggle({ label = "Hide the game's chat buttons", desc = "Social, channels, chat menu and the scroll buttons. The tabs' right-click menu keeps the chat options.", get = get, set = set })
+			page:Toggle({ label = "Hide the game's chat buttons", desc = "Social, channels, chat menu, the scroll bar and the scroll buttons (the mouse wheel still scrolls). The tabs' right-click menu keeps the chat options.", get = get, set = set })
 		end },
 
 		{ key = "font", label = "Font", build = function(page)

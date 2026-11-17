@@ -10,7 +10,8 @@
 	    scroll moves and shown again once it is open, so lines never reflow
 	  - rolled up, the rods glow when a message arrives; Enter opens the
 	    scroll to type and it rolls up again when you are done
-	  - tabs sit above the scroll, the input line below it
+	  - tabs sit on the paper's top edge, the input line inside the paper,
+	    under the messages
 	  - papers: dark, light (channel colours darkened to read as ink) or glass
 	  - style "panel": no rods, a flat dark panel with a thin rim (level 3)
 
@@ -30,9 +31,9 @@ local CH = H:NewModule("Chat", {
 		style = "scroll",         -- "scroll" | "panel"
 		paper = "dark",           -- "dark" | "light" | "glass"
 		paperAlpha = 0.95,
-		rodSize = 24,
-		width = 440,
-		height = 190,
+		rodSize = 28,
+		width = 540,
+		height = 260,
 		margin = 8,
 		textSize = 0,             -- 0: the size set in the game's chat menu
 		tabSize = 12,
@@ -299,11 +300,12 @@ function CH:PlaceDock()
 			C_Timer.After(0, function() CH:PlaceDock() end)
 		end)
 	end
-	local f, g = self.frame, self.geo
+	local cf = ChatFrame1
 	d.hLock = true
 	d:ClearAllPoints()
-	d:SetPoint("BOTTOMLEFT", f, "TOPLEFT", g.x - 4, 2)
-	d:SetPoint("BOTTOMRIGHT", f, "TOPRIGHT", -g.x, 2)
+	-- on the paper's top edge, over the messages
+	d:SetPoint("BOTTOMLEFT", cf, "TOPLEFT", -4, self.geo.y - 4)
+	d:SetPoint("BOTTOMRIGHT", cf, "TOPRIGHT", 0, self.geo.y - 4)
 	d.hLock = false
 end
 
@@ -327,7 +329,7 @@ function CH:PlaceEdit()
 		end
 		eb.hBg = eb:CreateTexture(nil, "BACKGROUND", nil, -7)
 		eb.hBg:SetAllPoints()
-		eb.hBg:SetColorTexture(0.03, 0.028, 0.025, 0.85)
+		eb.hBg:SetColorTexture(0, 0, 0, 0.3)
 		eb.hLine = eb:CreateTexture(nil, "BORDER")
 		eb.hLine:SetPoint("BOTTOMLEFT")
 		eb.hLine:SetPoint("BOTTOMRIGHT")
@@ -336,11 +338,13 @@ function CH:PlaceEdit()
 	local r, g, b = Themes:Accent()
 	if not r then r, g, b = 0.42, 0.34, 0.19 end
 	eb.hLine:SetColorTexture(r, g, b, 0.9)
-	local f, geo = self.frame, self.geo
+	local cf = ChatFrame1
 	eb.hLock = true
 	eb:ClearAllPoints()
-	eb:SetPoint("TOPLEFT", f, "BOTTOMLEFT", geo.x - 4, -2)
-	eb:SetPoint("TOPRIGHT", f, "BOTTOMRIGHT", -geo.x + 4, -2)
+	-- inside the paper, under the messages
+	eb:SetPoint("TOPLEFT", cf, "BOTTOMLEFT", -4, -4)
+	eb:SetPoint("TOPRIGHT", cf, "BOTTOMRIGHT", 4, -4)
+	eb:SetHeight(self.editH)
 	eb.hLock = false
 end
 
@@ -361,6 +365,9 @@ function CH:StyleBlizzard()
 	for _, n in ipairs(names) do frames[#frames + 1] = _G[n] end
 	for _, cf in ipairs(chatFrames()) do
 		frames[#frames + 1] = cf.buttonFrame or _G[cf:GetName() .. "ButtonFrame"]
+		-- the scroll bar and "jump to the end" button on the right of the text (the wheel still scrolls)
+		frames[#frames + 1] = cf.ScrollBar
+		frames[#frames + 1] = cf.ScrollToBottomButton
 	end
 	for _, b in pairs(frames) do
 		if b then
@@ -486,7 +493,7 @@ function CH:Layout()
 	local scroll = db.style == "scroll" and piece ~= nil
 	local w = scroll and db.rodSize or 0
 	local capPx = scroll and piece.capH * w / piece.size[1] or 0
-	local inset = scroll and math.floor(capPx * 0.7) or 0
+	local inset = scroll and math.floor(capPx * 0.55) or 0
 	local side = scroll and (w / 2 + w * piece.shaft / 2) or 0
 
 	self.openW = db.width
@@ -495,11 +502,13 @@ function CH:Layout()
 	f:SetSize(self.animW or (self.rolled and self.rolledW or self.openW), db.height)
 
 	-- where the chat window goes, and its size (always the open size)
+	-- the input line takes the bottom of the paper, under the messages
+	self.editH = 22
 	self.geo = {
 		x = side + db.margin,
 		y = inset + db.margin,
 		w = math.max(db.width - 2 * (side + db.margin), 80),
-		h = math.max(db.height - 2 * (inset + db.margin), 40),
+		h = math.max(db.height - 2 * (inset + db.margin) - self.editH - 6, 40),
 	}
 
 	for _, r in ipairs({ f.left, f.right }) do r:SetShown(scroll) end
