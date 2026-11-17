@@ -32,8 +32,6 @@ H:RegisterOptionsPage({
 			page:Toggle({ label = "Show the power bar", get = get, set = set })
 			get, set = field("powerHeight")
 			page:Slider({ label = "Power bar height", min = 3, max = 20, step = 1, get = get, set = set })
-			get, set = field("gemSize")
-			page:Slider({ label = "Gem size", min = 20, max = 60, step = 1, get = get, set = set })
 		end },
 
 		{ key = "text", label = "Text", build = function(page)
@@ -61,11 +59,38 @@ H:RegisterOptionsPage({
 		end },
 
 		{ key = "look", label = "Look", build = function(page)
-			page:Section("Look")
-			local get, set = field("classColor")
+			page:Section("Style")
+			local get, set = field("style")
+			page:Dropdown({
+				label = "Style",
+				desc = "Heraldic: an ornament that shows what the target is (class, hostile, friendly, elite, rare, boss). Minimal: a dark glass panel.",
+				values = function()
+					return { { value = "heraldic", text = "Heraldic" }, { value = "minimal", text = "Minimal" } }
+				end,
+				get = get, set = set,
+			})
+			page:Section("Heraldic")
+			get, set = field("rails")
+			page:Dropdown({
+				label = "Rails on players",
+				desc = "Class: the rails of the class's rod. Neutral: the dark iron rails of hostile targets, for a calmer frame.",
+				values = function()
+					return { { value = "class", text = "Class" }, { value = "neutral", text = "Neutral" } }
+				end,
+				get = get, set = set,
+			})
+			get, set = field("capSize")
+			page:Slider({ label = "Ornament size", min = 40, max = 140, step = 2, get = get, set = set })
+			get, set = field("railSize")
+			page:Slider({ label = "Rail thickness", min = 3, max = 20, step = 1, get = get, set = set })
+			page:Section("Colours")
+			get, set = field("classColor")
 			page:Toggle({ label = "Class colour for players", desc = "Off: players use the reaction colour, like NPCs.", get = get, set = set })
+			page:Section("Minimal")
 			get, set = field("showGem")
 			page:Toggle({ label = "Show the gem", desc = "The level, and a halo for elite, rare and boss units.", get = get, set = set })
+			get, set = field("gemSize")
+			page:Slider({ label = "Gem size", min = 20, max = 60, step = 1, get = get, set = set })
 			get, set = field("panelAlpha")
 			page:Slider({ label = "Panel opacity", min = 0, max = 1, step = 0.05, format = pctFormat, get = get, set = set })
 		end },

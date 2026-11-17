@@ -1,7 +1,14 @@
 --[[
 	Heraldry_UnitFrames - Target.lua
-	The target frame, level 2 of the visual hierarchy: dark glass panel, a
-	thin rim in the theme's metal colour, one gem.
+	The target frame, in two styles:
+	  Heraldic (default)  one art family for every target (TargetArt.lua): the
+	                      ornament on the left says what the target is (hostile,
+	                      friendly, elite, rare, boss, or the player's class),
+	                      the level sits on its gem, rails hug the bars.
+	  Minimal             dark glass panel, a rim in the theme's metal colour and
+	                      the theme's gem (level 2 of the visual hierarchy).
+	The bars keep their size and place whatever the target: only the ornament
+	changes around them.
 
 	- The frame is a secure unit button for "target", shown and hidden by the
 	  game (RegisterUnitWatch): left click targets, right click opens the
@@ -9,8 +16,10 @@
 	- Life and power are StatusBars: the game's protected ("secret") values in
 	  combat go straight into them. Text that needs maths is wrapped in pcall
 	  and falls back to the plain value.
-	- The gem (theme piece frame.gem) carries the level. A halo behind it
-	  shows elite (gold), rare (silver) and boss (red) units.
+	- Minimal: the gem (theme piece frame.gem) carries the level, and a halo
+	  behind it shows elite (gold), rare (silver) and boss (red) units.
+	- Art changes between targets are texture changes only, so they also
+	  happen in combat; sizes and places are set out of combat.
 	- The game's target frame is hidden (option).
 ]]
 
@@ -25,7 +34,11 @@ local UF = H:NewModule("UnitFrames", {
 	label = "Unit frames",
 	fonts = true,
 	defaults = {
-		width = 260,
+		style = "heraldic",      -- heraldic | minimal
+		rails = "class",         -- class | neutral (players: the class rod's rails, or the hostile rails)
+		capSize = 72,            -- height of the ornament
+		railSize = 8,            -- thickness of each rail
+		width = 240,
 		healthHeight = 18,
 		powerHeight = 8,
 		showPower = true,
@@ -149,6 +162,22 @@ function UF:Create()
 	f.level:SetShadowColor(0, 0, 0, 1)
 	f.level:SetShadowOffset(1, -1)
 
+	-- Heraldic: rails under the bars, the ornament and its level above them
+	local rails = CreateFrame("Frame", nil, f)
+	rails:SetAllPoints()
+	rails:SetFrameLevel(f:GetFrameLevel())
+	f.railTop = rails:CreateTexture(nil, "ARTWORK")
+	f.railBottom = rails:CreateTexture(nil, "ARTWORK")
+	f.rails = rails
+	local cap = CreateFrame("Frame", nil, f)
+	cap:SetFrameLevel(f:GetFrameLevel() + 6)
+	cap:SetAllPoints()
+	f.cap = cap:CreateTexture(nil, "ARTWORK")
+	f.capLevel = cap:CreateFontString(nil, "OVERLAY")
+	f.capLevel:SetShadowColor(0, 0, 0, 1)
+	f.capLevel:SetShadowOffset(1, -1)
+	f.capFrame = cap
+
 	self.frame = f
 	RegisterUnitWatch(f)
 	return f
@@ -239,28 +268,115 @@ function UF:UpdateName()
 	f.name:SetText(UnitName(UNIT) or "")
 end
 
+-- "rare", "boss", "elite" or nil
+local function rank()
+	local level = UnitLevel(UNIT)
+	local c = UnitClassification(UNIT)
+	if c == "worldboss" or (level and level < 0 and c ~= "rare" and c ~= "rareelite") then return "boss" end
+	if c == "rare" or c == "rareelite" then return "rare" end
+	if c == "elite" then return "elite" end
+end
+
+local function levelText(fs)
+	local level = UnitLevel(UNIT)
+	if level and level > 0 then
+		fs:SetText(level)
+		local c = GetCreatureDifficultyColor and GetCreatureDifficultyColor(level)
+			or (GetQuestDifficultyColor and GetQuestDifficultyColor(level))
+		if c then fs:SetTextColor(c.r, c.g, c.b) else fs:SetTextColor(1, 0.85, 0.3) end
+	else
+		fs:SetText("??")
+		fs:SetTextColor(1, 0.25, 0.2)
+	end
+end
+
 function UF:UpdateLevel()
 	local f = self.frame
 	if not f or not UnitExists(UNIT) then return end
-	local level = UnitLevel(UNIT)
-	local class = UnitClassification(UNIT)
-	if level and level > 0 then
-		f.level:SetText(level)
-		local c = GetCreatureDifficultyColor and GetCreatureDifficultyColor(level)
-			or (GetQuestDifficultyColor and GetQuestDifficultyColor(level))
-		if c then f.level:SetTextColor(c.r, c.g, c.b) else f.level:SetTextColor(1, 0.85, 0.3) end
-	else
-		f.level:SetText("??")
-		f.level:SetTextColor(1, 0.25, 0.2)
-		if class ~= "rareelite" and class ~= "rare" then class = "worldboss" end
+	if self.db.style == "heraldic" then
+		levelText(f.capLevel)
+		self:UpdateArt()
+		return
 	end
-	local halo = HALO[class]
+	levelText(f.level)
+	local r = rank()
+	local halo = HALO[r == "boss" and "worldboss" or r]
 	if halo then
 		f.halo:SetVertexColor(halo[1], halo[2], halo[3], 0.95)
 		f.halo:Show()
 	else
 		f.halo:Hide()
 	end
+end
+
+--[[ Heraldic art ]]
+
+-- Which art the current target gets, and its tint ("rare", "boss" or nil).
+function UF:ArtKey()
+	if UnitIsPlayer(UNIT) then
+		local _, class = UnitClass(UNIT)
+		if class and self.ART[class] then return class end
+	end
+	local r = rank()
+	if r then return "Elite", (r ~= "elite") and r or nil end
+	local reaction = UnitReaction(UNIT, "player")
+	if reaction and reaction <= 3 then return "Hostile" end
+	return "Friendly"
+end
+
+local function paint(tex, tint)
+	if tint then
+		local t = UF.ART_TINT[tint]
+		tex:SetDesaturation(t[1])
+		tex:SetVertexColor(t[2][1], t[2][2], t[2][3])
+	else
+		Themes:Paint(tex)
+	end
+end
+
+-- Texture work only: safe in combat.
+function UF:UpdateArt()
+	local f, db = self.frame, self.db
+	if not f or db.style ~= "heraldic" or not UnitExists(UNIT) then return end
+	local key, tint = self:ArtKey()
+	local art = self.ART[key]
+	local railArt = art
+	if db.rails == "neutral" and not (key == "Hostile" or key == "Friendly" or key == "Elite") then
+		railArt = self.ART.Hostile
+	end
+
+	-- ornament: its gem on the middle of the bars, its right end over the bars' start
+	local c = art.cap
+	local k = db.capSize / (c.rows[2] - c.rows[1]) * (c.scale or 1)
+	local w, h = c.crop * k, c.size[2] * k
+	f.cap:SetTexture(c.file)
+	f.cap:SetTexCoord(0, c.crop / c.size[1], 0, 1)
+	f.cap:SetSize(w, h)
+	f.cap:ClearAllPoints()
+	local overlap = 8
+	f.cap:SetPoint("LEFT", f, "LEFT", overlap - w, (c.gem[2] - c.size[2] / 2) * k)
+	paint(f.cap, tint)
+	f.capLevel:ClearAllPoints()
+	f.capLevel:SetPoint("CENTER", f, "LEFT", overlap - w + c.gem[1] * k, 0)
+
+	-- rails
+	local r = railArt.rail
+	local rs = db.railSize
+	local function band(tex, rows, flip, top)
+		local tileW = rs * r.size[1] / (rows[2] - rows[1] + 1)
+		local t1, t2 = rows[1] / r.size[2], (rows[2] + 1) / r.size[2]
+		tex:SetTexture(r.file, "REPEAT", "CLAMP")
+		if flip then t1, t2 = t2, t1 end
+		tex:SetTexCoord(0, (db.width + 4) / tileW, t1, t2)
+		tex:ClearAllPoints()
+		local edge = top and "TOP" or "BOTTOM"
+		tex:SetPoint(edge .. "LEFT", f, edge .. "LEFT", -4, 0)
+		tex:SetPoint(edge .. "RIGHT", f, edge .. "RIGHT", 0, 0)
+		tex:SetHeight(rs)
+		paint(tex, nil)
+	end
+	band(f.railTop, r.top, false, true)
+	band(f.railBottom, r.bottom or r.top, not r.bottom, false)
 end
 
 function UF:UpdateAll()
@@ -279,64 +395,80 @@ function UF:Layout()
 		return
 	end
 	local f, db = self.frame, self.db
+	local heraldic = db.style == "heraldic"
 	local pad, gap = 6, 3
-	local gemOn = db.showGem
-	local G = db.gemSize
-	local left = gemOn and (G / 2 + 6) or pad
 
-	-- panel
-	f.bg:SetVertexColor(0.02, 0.02, 0.028, db.panelAlpha)
-	local ar, ag, ab = Themes:Accent()
-	for _, t in ipairs(f.rim) do
-		if ar then t:SetVertexColor(ar, ag, ab, 0.9) else t:SetVertexColor(0.35, 0.35, 0.38, 0.9) end
-	end
+	-- parts of each style
+	for _, t in ipairs({ f.bg, f.light, unpack(f.rim) }) do t:SetShown(not heraldic) end
+	f.rails:SetShown(heraldic)
+	f.capFrame:SetShown(heraldic)
 
 	-- text
 	H.Fonts:Apply(f.name, "header", db.nameSize, self)
 	H.Fonts:Apply(f.health.text, "body", db.valueSize, self)
 	H.Fonts:Apply(f.power.text, "body", math.max(7, db.valueSize - 2), self)
-	H.Fonts:Apply(f.level, "header", math.max(8, G * 0.36), self)
+	H.Fonts:Apply(f.level, "header", math.max(8, db.gemSize * 0.36), self)
+	H.Fonts:Apply(f.capLevel, "header", math.max(8, db.capSize * 0.17), self)
 	local nameH = math.ceil(db.nameSize * 1.2)
+	local barsH = db.healthHeight + (db.showPower and (2 + db.powerHeight) or 0)
 
-	-- rows
 	f.name:ClearAllPoints()
-	f.name:SetPoint("TOPLEFT", left, -pad + 1)
-	f.name:SetPoint("TOPRIGHT", -pad, -pad + 1)
-	f.name:SetHeight(nameH)
-
+	f.name:SetParent(heraldic and f.health or f)   -- inside the life bar, or above it
+	f.name:SetDrawLayer("OVERLAY")
 	f.health:ClearAllPoints()
-	f.health:SetPoint("TOPLEFT", left, -(pad + nameH + gap))
-	f.health:SetPoint("TOPRIGHT", -pad, -(pad + nameH + gap))
+	if heraldic then
+		-- the frame is the bars plus the rails; the ornament hangs out on the left
+		local rs = db.railSize
+		f:SetSize(db.width, barsH + 2 * rs)
+		f.health:SetPoint("TOPLEFT", 0, -rs)
+		f.health:SetPoint("TOPRIGHT", 0, -rs)
+		-- name inside the life bar, clear of the ornament
+		f.name:SetPoint("LEFT", f.health, "LEFT", 12, 0)
+		f.name:SetPoint("RIGHT", f.health.text, "LEFT", -6, 0)
+		f.name:SetHeight(nameH)
+		f.gemFrame:Hide()
+	else
+		local G = db.gemSize
+		local left = db.showGem and (G / 2 + 6) or pad
+		f.bg:SetVertexColor(0.02, 0.02, 0.028, db.panelAlpha)
+		local ar, ag, ab = Themes:Accent()
+		for _, t in ipairs(f.rim) do
+			if ar then t:SetVertexColor(ar, ag, ab, 0.9) else t:SetVertexColor(0.35, 0.35, 0.38, 0.9) end
+		end
+		f.name:SetPoint("TOPLEFT", left, -pad + 1)
+		f.name:SetPoint("TOPRIGHT", -pad, -pad + 1)
+		f.name:SetHeight(nameH)
+		f.health:SetPoint("TOPLEFT", left, -(pad + nameH + gap))
+		f.health:SetPoint("TOPRIGHT", -pad, -(pad + nameH + gap))
+		f:SetSize(db.width, pad + nameH + gap + barsH + pad)
+
+		-- gem: centred on the left edge
+		local g = f.gemFrame
+		g:SetShown(db.showGem)
+		g:ClearAllPoints()
+		g:SetPoint("CENTER", f, "LEFT", 0, 0)
+		g:SetSize(G, G)
+		f.halo:SetSize(G * 1.22, G * 1.22)
+		local piece = Themes:Piece("frame.gem")
+		if piece then
+			f.gem:SetTexture(piece.file)
+			Themes:Paint(f.gem)
+			f.gem:Show()
+			f.gemBack:Hide()
+		else
+			f.gem:Hide()
+			f.gemBack:Show()
+			f.gemBack:SetVertexColor(0.06, 0.06, 0.07, 1)
+		end
+	end
 	f.health:SetHeight(db.healthHeight)
 
-	local h = pad + nameH + gap + db.healthHeight
 	f.power:SetShown(db.showPower)
 	if db.showPower then
 		f.power:ClearAllPoints()
 		f.power:SetPoint("TOPLEFT", f.health, "BOTTOMLEFT", 0, -2)
 		f.power:SetPoint("TOPRIGHT", f.health, "BOTTOMRIGHT", 0, -2)
 		f.power:SetHeight(db.powerHeight)
-		h = h + 2 + db.powerHeight
-	end
-	f:SetSize(db.width, h + pad)
-
-	-- gem: centred on the left edge
-	local g = f.gemFrame
-	g:SetShown(gemOn)
-	g:ClearAllPoints()
-	g:SetPoint("CENTER", f, "LEFT", 0, 0)
-	g:SetSize(G, G)
-	f.halo:SetSize(G * 1.22, G * 1.22)
-	local piece = Themes:Piece("frame.gem")
-	if piece then
-		f.gem:SetTexture(piece.file)
-		Themes:Paint(f.gem)
-		f.gem:Show()
-		f.gemBack:Hide()
-	else
-		f.gem:Hide()
-		f.gemBack:Show()
-		f.gemBack:SetVertexColor(0.06, 0.06, 0.07, 1)
 	end
 
 	H.Movers:Apply(f.mover)
@@ -344,6 +476,7 @@ function UF:Layout()
 	self:UpdateBlizzard()
 	self:UpdateAll()
 end
+
 
 -- The game's target frame shows the same thing.
 function UF:UpdateBlizzard()
@@ -385,6 +518,7 @@ function UF:OnEnable()
 			UF:UpdateLevel()
 		elseif e == "UNIT_FACTION" then
 			UF:UpdateHealth()
+			UF:UpdateArt()
 		else
 			UF:UpdateAll()
 		end
