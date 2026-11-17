@@ -13,6 +13,8 @@ local function field(name)
 	end
 end
 
+local selectedText = "name"
+
 local function pctFormat(v) return math.floor(v * 100 + 0.5) .. "%" end
 
 H:RegisterOptionsPage({
@@ -35,27 +37,42 @@ H:RegisterOptionsPage({
 		end },
 
 		{ key = "text", label = "Text", build = function(page)
-			page:Section("Name")
-			local get, set = field("nameSize")
-			page:Slider({ label = "Name size", min = 8, max = 22, step = 1, get = get, set = set })
-			page:Section("Values")
-			get, set = field("healthText")
 			page:Dropdown({
-				label = "Life",
+				label = "Text",
+				desc = "Every option below applies to this text.",
 				values = function()
-					return {
-						{ value = "both", text = "Value and percentage" },
-						{ value = "percent", text = "Percentage" },
-						{ value = "current", text = "Value" },
-						{ value = "none", text = "None" },
-					}
+					local t = {}
+					for _, it in ipairs(UF.TEXTS) do t[#t + 1] = { value = it.key, text = it.label } end
+					return t
 				end,
-				get = get, set = set,
+				get = function() return selectedText end,
+				set = function(v) selectedText = v end,
 			})
-			get, set = field("powerText")
-			page:Toggle({ label = "Show the power value", get = get, set = set })
-			get, set = field("valueSize")
-			page:Slider({ label = "Value size", min = 7, max = 18, step = 1, get = get, set = set })
+			local function sel(suffix)
+				return function() return UF.db[selectedText .. suffix] end, function(v)
+					UF.db[selectedText .. suffix] = v
+					UF:Layout()
+				end
+			end
+			page:Section("Look")
+			local get, set = sel("Show")
+			page:Toggle({ label = "Show", get = get, set = set })
+			get, set = sel("Size")
+			page:Slider({ label = "Size", min = 6, max = 30, step = 1, get = get, set = set })
+			page:Section("Position")
+			get, set = sel("X")
+			page:Slider({ label = "Offset X", desc = "Right is positive.", min = -100, max = 100, step = 1, get = get, set = set })
+			get, set = sel("Y")
+			page:Slider({ label = "Offset Y", desc = "Up is positive.", min = -50, max = 50, step = 1, get = get, set = set })
+			page:Button({
+				label = "Reset this text",
+				text = "Reset",
+				onClick = function()
+					for _, suffix in ipairs({ "Show", "Size", "X", "Y" }) do UF.db[selectedText .. suffix] = nil end
+					UF:Layout()
+					page:Refresh()
+				end,
+			})
 		end },
 
 		{ key = "look", label = "Look", build = function(page)

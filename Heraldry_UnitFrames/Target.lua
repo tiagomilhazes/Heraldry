@@ -46,15 +46,26 @@ local UF = H:NewModule("UnitFrames", {
 		showPower = true,
 		gemSize = 34,
 		showGem = true,
-		healthText = "both",     -- both | percent | current | none
-		powerText = false,
-		nameSize = 13,
-		valueSize = 11,
+		-- texts: show, size, offset (x, y) of each one; see UF.TEXTS
+		nameShow = true,    nameSize = 13,    nameX = 0,    nameY = 0,
+		hpValueShow = true, hpValueSize = 11, hpValueX = 0, hpValueY = 0,
+		hpPctShow = true,   hpPctSize = 11,   hpPctX = 0,   hpPctY = 0,
+		powerShow = false,  powerSize = 9,    powerX = 0,   powerY = 0,
+		levelShow = true,   levelSize = 12,   levelX = 0,   levelY = 0,
 		classColor = true,
 		panelAlpha = 0.82,
 		hideBlizzard = true,
 	},
 })
+
+-- The frame's texts, in the order the Text tab lists them.
+UF.TEXTS = {
+	{ key = "name",    label = "Name" },
+	{ key = "hpValue", label = "Life value" },
+	{ key = "hpPct",   label = "Life percentage" },
+	{ key = "power",   label = "Power value" },
+	{ key = "level",   label = "Level" },
+}
 
 local Abbr = AbbreviateNumbers or AbbreviateLargeNumbers or tostring
 local INTERP = Enum and Enum.StatusBarInterpolation and Enum.StatusBarInterpolation.ExponentialEaseOut
@@ -146,6 +157,9 @@ function UF:Create()
 
 	f.health = bar(f)
 	f.power = bar(f)
+	f.health.pct = f.health:CreateFontString(nil, "OVERLAY")
+	f.health.pct:SetShadowColor(0, 0, 0, 1)
+	f.health.pct:SetShadowOffset(1, -1)
 
 	-- gem on the left edge, above everything
 	local g = CreateFrame("Frame", nil, f)
@@ -206,21 +220,17 @@ local function percent(cur, max)
 	if ok then return p end
 end
 
-local function setValueText(fs, mode, cur, max, isHealth)
-	if mode == "none" then fs:SetText("") return end
+-- Plain value (may be secret: the game's own abbreviation, else as is).
+local function setValue(fs, v)
+	if not pcall(function() fs:SetText(Abbr(v)) end) then pcall(fs.SetText, fs, v) end
+end
+
+local function setPercent(fs, cur, max, isHealth)
 	local ok = pcall(function()
 		local p = isHealth and percent(cur, max) or (max > 0 and cur / max * 100 or 0)
-		if mode == "percent" then
-			fs:SetFormattedText("%d%%", p)
-		elseif mode == "current" then
-			fs:SetText(Abbr(cur))
-		else
-			fs:SetFormattedText("%s  |cffbbbbbb%d%%|r", Abbr(cur), p)
-		end
+		fs:SetFormattedText("%d%%", p)
 	end)
-	if not ok and not pcall(fs.SetText, fs, Abbr(cur)) then
-		pcall(fs.SetText, fs, cur)
-	end
+	if not ok then fs:SetText("") end
 end
 
 local function classColor(unit)
@@ -248,12 +258,14 @@ function UF:UpdateHealth()
 	local cur, max = UnitHealth(UNIT), UnitHealthMax(UNIT)
 	setBar(f.health, cur, max)
 	f.health:SetStatusBarColor(self:HealthColor())
-	if UnitIsDeadOrGhost(UNIT) then
-		f.health.text:SetText(DEAD or "Dead")
-	elseif not UnitIsConnected(UNIT) then
-		f.health.text:SetText(PLAYER_OFFLINE or "Offline")
+	local state = UnitIsDeadOrGhost(UNIT) and (DEAD or "Dead")
+		or (not UnitIsConnected(UNIT) and (PLAYER_OFFLINE or "Offline"))
+	if state then
+		f.health.text:SetText(state)
+		f.health.pct:SetText("")
 	else
-		setValueText(f.health.text, self.db.healthText, cur, max, true)
+		setValue(f.health.text, cur)
+		setPercent(f.health.pct, cur, max, true)
 	end
 end
 
@@ -265,7 +277,7 @@ function UF:UpdatePower()
 	setBar(f.power, cur, max)
 	local c = (PowerBarColor and (PowerBarColor[token] or PowerBarColor[ptype])) or { r = 0.3, g = 0.5, b = 1 }
 	f.power:SetStatusBarColor(c.r, c.g, c.b)
-	setValueText(f.power.text, self.db.powerText and "current" or "none", cur, max, false)
+	setValue(f.power.text, cur)
 end
 
 function UF:UpdateName()
@@ -402,7 +414,7 @@ function UF:UpdateArt()
 		end
 	end
 	f.capLevel:ClearAllPoints()
-	f.capLevel:SetPoint("CENTER", f, "LEFT", overlap - c.crop * k + c.gem[1] * k, 0)
+	f.capLevel:SetPoint("CENTER", f, "LEFT", overlap - c.crop * k + c.gem[1] * k + db.levelX, db.levelY)
 
 	-- rails
 	local r = railArt.rail
@@ -450,10 +462,17 @@ function UF:Layout()
 
 	-- text
 	H.Fonts:Apply(f.name, "header", db.nameSize, self)
-	H.Fonts:Apply(f.health.text, "body", db.valueSize, self)
-	H.Fonts:Apply(f.power.text, "body", math.max(7, db.valueSize - 2), self)
-	H.Fonts:Apply(f.level, "header", math.max(8, db.gemSize * 0.36), self)
-	H.Fonts:Apply(f.capLevel, "header", math.max(8, db.capSize * 0.17), self)
+	H.Fonts:Apply(f.health.text, "body", db.hpValueSize, self)
+	H.Fonts:Apply(f.health.pct, "body", db.hpPctSize, self)
+	H.Fonts:Apply(f.power.text, "body", db.powerSize, self)
+	H.Fonts:Apply(f.level, "header", db.levelSize, self)
+	H.Fonts:Apply(f.capLevel, "header", db.levelSize, self)
+	f.name:SetShown(db.nameShow)
+	f.health.text:SetShown(db.hpValueShow)
+	f.health.pct:SetShown(db.hpPctShow)
+	f.power.text:SetShown(db.powerShow)
+	f.level:SetShown(db.levelShow)
+	f.capLevel:SetShown(db.levelShow)
 	local nameH = math.ceil(db.nameSize * 1.2)
 	local barsH = db.healthHeight + (db.showPower and (2 + db.powerHeight) or 0)
 
@@ -476,8 +495,7 @@ function UF:Layout()
 		f.health:SetPoint("TOPLEFT", 0, -rs)
 		f.health:SetPoint("TOPRIGHT", 0, -rs)
 		-- name inside the life bar, clear of the ornament
-		f.name:SetPoint("LEFT", f.health, "LEFT", 12, 0)
-		f.name:SetPoint("RIGHT", f.health.text, "LEFT", -6, 0)
+		f.name:SetPoint("LEFT", f.health, "LEFT", 12 + db.nameX, db.nameY)
 		f.name:SetHeight(nameH)
 		f.gemFrame:Hide()
 	else
@@ -488,8 +506,8 @@ function UF:Layout()
 		for _, t in ipairs(f.rim) do
 			if ar then t:SetVertexColor(ar, ag, ab, 0.9) else t:SetVertexColor(0.35, 0.35, 0.38, 0.9) end
 		end
-		f.name:SetPoint("TOPLEFT", left, -pad + 1)
-		f.name:SetPoint("TOPRIGHT", -pad, -pad + 1)
+		f.name:SetPoint("TOPLEFT", left + db.nameX, -pad + 1 + db.nameY)
+		f.name:SetPoint("TOPRIGHT", -pad + db.nameX, -pad + 1 + db.nameY)
 		f.name:SetHeight(nameH)
 		f.health:SetPoint("TOPLEFT", left, -(pad + nameH + gap))
 		f.health:SetPoint("TOPRIGHT", -pad, -(pad + nameH + gap))
@@ -515,8 +533,26 @@ function UF:Layout()
 		end
 	end
 	f.health:SetHeight(db.healthHeight)
-	f.health.text:ClearAllPoints()
-	f.health.text:SetPoint("RIGHT", (heraldic and db.bothEnds) and -14 or -4, 0)
+	-- values on the right of the bars: percentage outermost, then the value
+	local inset = (heraldic and db.bothEnds) and -14 or -4
+	local pct, val = f.health.pct, f.health.text
+	pct:ClearAllPoints()
+	pct:SetPoint("RIGHT", f.health, "RIGHT", inset + db.hpPctX, db.hpPctY)
+	val:ClearAllPoints()
+	if db.hpPctShow then
+		val:SetPoint("RIGHT", pct, "LEFT", -6 + db.hpValueX - db.hpPctX, db.hpValueY - db.hpPctY)
+	else
+		val:SetPoint("RIGHT", f.health, "RIGHT", inset + db.hpValueX, db.hpValueY)
+	end
+	f.power.text:ClearAllPoints()
+	f.power.text:SetPoint("RIGHT", f.power, "RIGHT", inset + db.powerX, db.powerY)
+	f.level:ClearAllPoints()
+	f.level:SetPoint("CENTER", f.gemFrame, "CENTER", db.levelX, db.levelY)
+	-- in the bar, the name stops before the room the values need
+	if heraldic then
+		local room = (db.hpValueShow and db.hpValueSize * 3.2 or 0) + (db.hpPctShow and db.hpPctSize * 2.8 or 0)
+		f.name:SetPoint("RIGHT", f.health, "RIGHT", inset - room - 6 + db.nameX, db.nameY)
+	end
 
 	f.power:SetShown(db.showPower)
 	if db.showPower then
