@@ -315,6 +315,23 @@ function CH:PlaceDock()
 	d:SetPoint("BOTTOMLEFT", cf, "TOPLEFT", -6, 3 + self.db.tabGap)
 	d:SetPoint("BOTTOMRIGHT", cf, "TOPRIGHT", 0, 3 + self.db.tabGap)
 	d.hLock = false
+
+	-- the docked tabs follow the first tab, and the game anchors that one to the chat
+	-- window itself (not to the dock): it has to be moved too, or the gap goes above the tabs
+	local tab = ChatFrame1Tab
+	if tab then
+		if not tab.hPlaced then
+			tab.hPlaced = true
+			hooksecurefunc(tab, "SetPoint", function()
+				if tab.hLock then return end
+				C_Timer.After(0, function() CH:PlaceDock() end)
+			end)
+		end
+		tab.hLock = true
+		tab:ClearAllPoints()
+		tab:SetPoint("BOTTOMLEFT", cf, "TOPLEFT", -6, 3 + self.db.tabGap)
+		tab.hLock = false
+	end
 end
 
 -- the input line below the scroll
