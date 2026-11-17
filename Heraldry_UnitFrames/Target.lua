@@ -38,6 +38,7 @@ local UF = H:NewModule("UnitFrames", {
 		rails = "class",         -- class | neutral (players: the class rod's rails, or the hostile rails)
 		capSize = 72,            -- height of the ornament
 		railSize = 8,            -- thickness of each rail
+		bothEnds = true,         -- the ornament on both ends of the bars (the level is on the left one)
 		width = 240,
 		healthHeight = 18,
 		powerHeight = 8,
@@ -172,7 +173,11 @@ function UF:Create()
 	local cap = CreateFrame("Frame", nil, f)
 	cap:SetFrameLevel(f:GetFrameLevel() + 6)
 	cap:SetAllPoints()
-	f.cap = cap:CreateTexture(nil, "ARTWORK")
+	-- each end: the ornament, and a strip where it fades into the rails
+	f.ends = {}
+	for i = 1, 2 do
+		f.ends[i] = { main = cap:CreateTexture(nil, "ARTWORK"), fade = cap:CreateTexture(nil, "ARTWORK") }
+	end
 	f.capLevel = cap:CreateFontString(nil, "OVERLAY")
 	f.capLevel:SetShadowColor(0, 0, 0, 1)
 	f.capLevel:SetShadowOffset(1, -1)
@@ -324,14 +329,12 @@ function UF:ArtKey()
 	return "Friendly"
 end
 
-local function paint(tex, tint)
-	if tint then
-		local t = UF.ART_TINT[tint]
-		tex:SetDesaturation(t[1])
-		tex:SetVertexColor(t[2][1], t[2][2], t[2][3])
-	else
-		Themes:Paint(tex)
-	end
+-- desaturation and colour: the rare/boss tint, or the theme's finish
+local function tone(tint)
+	local t = tint and UF.ART_TINT[tint]
+	if t then return t[1], t[2][1], t[2][2], t[2][3] end
+	local f = Themes.FINISHES[Themes:FinishKey()]
+	return f.desat, f.color[1], f.color[2], f.color[3]
 end
 
 -- Texture work only: safe in combat.
@@ -345,19 +348,60 @@ function UF:UpdateArt()
 		railArt = self.ART.Hostile
 	end
 
-	-- ornament: its gem on the middle of the bars, its right end over the bars' start
+	-- ornaments: the gem on the middle of the bars, the inner end over the bars' ends
 	local c = art.cap
 	local k = db.capSize / (c.rows[2] - c.rows[1]) * (c.scale or 1)
-	local w, h = c.crop * k, c.size[2] * k
-	f.cap:SetTexture(c.file)
-	f.cap:SetTexCoord(0, c.crop / c.size[1], 0, 1)
-	f.cap:SetSize(w, h)
-	f.cap:ClearAllPoints()
+	local fade = c.fade or 0
+	local solid = c.crop - fade
+	local h = c.size[2] * k
+	local y = (c.gem[2] - c.size[2] / 2) * k
 	local overlap = 8
-	f.cap:SetPoint("LEFT", f, "LEFT", overlap - w, (c.gem[2] - c.size[2] / 2) * k)
-	paint(f.cap, tint)
+	local desat, cr, cg, cb = tone(tint)
+	for i, e in ipairs(f.ends) do
+		local shown = i == 1 or db.bothEnds
+		e.main:SetShown(shown)
+		e.fade:SetShown(shown and fade > 0)
+		if shown then
+			local left = i == 1
+			local u0, u1 = 0, solid / c.size[1]
+			local f0, f1 = solid / c.size[1], c.crop / c.size[1]
+			if not left then u0, u1, f0, f1 = u1, u0, f1, f0 end   -- mirrored
+			e.main:SetTexture(c.file)
+			e.main:SetTexCoord(u0, u1, 0, 1)
+			e.main:SetSize(solid * k, h)
+			e.main:SetDesaturation(desat)
+			e.main:SetVertexColor(cr, cg, cb)
+			e.main:ClearAllPoints()
+			e.fade:ClearAllPoints()
+			if left then
+				e.main:SetPoint("LEFT", f, "LEFT", overlap - c.crop * k, y)
+			else
+				e.main:SetPoint("RIGHT", f, "RIGHT", c.crop * k - overlap, y)
+			end
+			if fade > 0 then
+				e.fade:SetTexture(c.file)
+				e.fade:SetTexCoord(f0, f1, 0, 1)
+				e.fade:SetSize(fade * k, h)
+				e.fade:SetDesaturation(desat)
+				if left then
+					e.fade:SetPoint("LEFT", e.main, "RIGHT")
+				else
+					e.fade:SetPoint("RIGHT", e.main, "LEFT")
+				end
+				local solidC, clearC = { cr, cg, cb, 1 }, { cr, cg, cb, 0 }
+				local a, b = solidC, clearC
+				if not left then a, b = clearC, solidC end
+				if CreateColor and e.fade.SetGradient and not pcall(e.fade.SetGradient, e.fade, "HORIZONTAL",
+					CreateColor(a[1], a[2], a[3], a[4]), CreateColor(b[1], b[2], b[3], b[4])) then
+					if e.fade.SetGradientAlpha then
+						e.fade:SetGradientAlpha("HORIZONTAL", a[1], a[2], a[3], a[4], b[1], b[2], b[3], b[4])
+					end
+				end
+			end
+		end
+	end
 	f.capLevel:ClearAllPoints()
-	f.capLevel:SetPoint("CENTER", f, "LEFT", overlap - w + c.gem[1] * k, 0)
+	f.capLevel:SetPoint("CENTER", f, "LEFT", overlap - c.crop * k + c.gem[1] * k, 0)
 
 	-- rails
 	local r = railArt.rail
@@ -373,7 +417,7 @@ function UF:UpdateArt()
 		tex:SetPoint(edge .. "LEFT", f, edge .. "LEFT", -4, 0)
 		tex:SetPoint(edge .. "RIGHT", f, edge .. "RIGHT", 0, 0)
 		tex:SetHeight(rs)
-		paint(tex, nil)
+		Themes:Paint(tex)
 	end
 	band(f.railTop, r.top, false, true)
 	band(f.railBottom, r.bottom or r.top, not r.bottom, false)
@@ -462,6 +506,8 @@ function UF:Layout()
 		end
 	end
 	f.health:SetHeight(db.healthHeight)
+	f.health.text:ClearAllPoints()
+	f.health.text:SetPoint("RIGHT", (heraldic and db.bothEnds) and -14 or -4, 0)
 
 	f.power:SetShown(db.showPower)
 	if db.showPower then

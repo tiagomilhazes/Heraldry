@@ -13,6 +13,8 @@
 
 	  cap   file, size {w, h}
 	        crop   only columns 0..crop are drawn (the rest would run under the bars)
+	        fade   optional: the last "fade" columns before crop melt into the rails
+	               (for ornaments whose art ends in a straight cut)
 	        rows   {top, bottom} of the ornament: its height is what gets scaled
 	               to the "Ornament size" setting
 	        gem    {x, y}: centre of the gem; it sits on the middle of the bars
@@ -25,9 +27,9 @@
 local UF = Heraldry.Modules.byName.UnitFrames
 local M = "Interface\\AddOns\\Heraldry_UnitFrames\\Media\\Target\\"
 
-local function npc(name, crop, rows, gem, top, bottom)
+local function npc(name, crop, fade, rows, gem, top, bottom)
 	return {
-		cap = { file = M .. name .. "_Cap", size = { 256, 256 }, crop = crop, rows = rows, gem = gem },
+		cap = { file = M .. name .. "_Cap", size = { 256, 256 }, crop = crop, fade = fade, rows = rows, gem = gem },
 		rail = { file = M .. name .. "_Rail", size = { 512, 256 }, top = top, bottom = bottom },
 	}
 end
@@ -41,9 +43,9 @@ local function rod(name, crop, gemX, band)
 end
 
 UF.ART = {
-	Hostile  = npc("Hostile",  240, { 5, 192 },  { 160, 128 }, { 66, 102 }, { 154, 190 }),
-	Friendly = npc("Friendly", 230, { 19, 218 }, { 205, 128 }, { 69, 101 }, { 155, 187 }),
-	Elite    = npc("Elite",    200, { 19, 237 }, { 128, 128 }, { 76, 111 }, { 144, 177 }),
+	Hostile  = npc("Hostile",  256, 56, { 5, 192 },  { 160, 128 }, { 66, 102 }, { 154, 190 }),
+	Friendly = npc("Friendly", 256, 40, { 19, 218 }, { 205, 128 }, { 69, 101 }, { 155, 187 }),
+	Elite    = npc("Elite",    240, 36, { 19, 237 }, { 128, 128 }, { 76, 111 }, { 144, 177 }),
 
 	MAGE    = rod("Mage",    206, 31,  { 29, 97 }),
 	PALADIN = rod("Paladin", 247, 95,  { 36, 91 }),

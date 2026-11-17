@@ -79,6 +79,8 @@ H:RegisterOptionsPage({
 				end,
 				get = get, set = set,
 			})
+			get, set = field("bothEnds")
+			page:Toggle({ label = "Ornament on both ends", desc = "The level stays on the left ornament.", get = get, set = set })
 			get, set = field("capSize")
 			page:Slider({ label = "Ornament size", min = 40, max = 140, step = 2, get = get, set = set })
 			get, set = field("railSize")
