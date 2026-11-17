@@ -11,6 +11,8 @@
 	          ends (lion medallions, jewels) keep their shape
 	  gems    {x, y, radius} of the left and right jewels; they are drawn again
 	          on top, desaturated and tinted, to recolour them
+	  level   the ring (TimelessUI Paladin PortraitRing) that holds the level,
+	          set into the left medallion; it takes the plaque's finish
 
 	What the target is shows only as colour, never as a different shape:
 	  FINISH       { desaturation, { r, g, b } } of the metal
@@ -26,6 +28,12 @@ UF.PLAQUE = {
 	slot = { 208, 84, 814, 174 },
 	split = { 300, 724 },
 	gems = { { 195, 130, 18 }, { 827, 130, 18 } },
+	-- the level's ring, set into the left medallion (above its jewel)
+	level = {
+		file = "Interface\\AddOns\\Heraldry_UnitFrames\\Media\\Target\\LevelRing",
+		x = 186, y = 58, size = 96,   -- centre and size in plaque pixels
+		hole = 0.58,                  -- dark disc behind the number, as a share of the size
+	},
 }
 
 UF.FINISH = {

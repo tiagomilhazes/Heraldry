@@ -178,6 +178,11 @@ function UF:Create()
 	plaque:SetAllPoints()
 	f.plaque = plaque
 	f.slices = { plaque:CreateTexture(nil, "ARTWORK"), plaque:CreateTexture(nil, "ARTWORK"), plaque:CreateTexture(nil, "ARTWORK") }
+	-- the level's ring, part of the left medallion
+	f.levelBack = plaque:CreateTexture(nil, "ARTWORK", nil, 2)
+	f.levelBack:SetTexture(MASK)
+	f.levelBack:SetVertexColor(0.07, 0.055, 0.04, 1)
+	f.levelRing = plaque:CreateTexture(nil, "OVERLAY")
 	local jewels = CreateFrame("Frame", nil, f)
 	jewels:SetAllPoints()
 	f.jewelFrame = jewels
@@ -363,6 +368,8 @@ function UF:UpdateArt()
 		t:SetDesaturation(fin[1])
 		t:SetVertexColor(fin[2][1], fin[2][2], fin[2][3])
 	end
+	f.levelRing:SetDesaturation(fin[1])
+	f.levelRing:SetVertexColor(fin[2][1], fin[2][2], fin[2][3])
 	local r, g, b = self:JewelColor(kind)
 	for _, j in ipairs(f.jewels) do
 		j:SetDesaturation(1)
@@ -407,8 +414,20 @@ function UF:LayoutPlaque(barsH)
 			j:SetPoint("CENTER", f, "TOPRIGHT", (x - sr) * k, -(y - st) * k)
 		end
 	end
+	-- the level's ring
+	local lv = P.level
+	local ring, back = f.levelRing, f.levelBack
+	ring:SetTexture(lv.file)
+	ring:SetSize(lv.size * k, lv.size * k)
+	ring:ClearAllPoints()
+	ring:SetPoint("CENTER", f, "TOPLEFT", (lv.x - sl) * k, -(lv.y - st) * k)
+	back:SetSize(lv.size * lv.hole * k, lv.size * lv.hole * k)
+	back:ClearAllPoints()
+	back:SetPoint("CENTER", ring)
+	ring:SetShown(db.levelShow)
+	back:SetShown(db.levelShow)
 	f.capLevel:ClearAllPoints()
-	f.capLevel:SetPoint("CENTER", f.jewels[1], "CENTER", db.levelX, db.levelY)
+	f.capLevel:SetPoint("CENTER", ring, "CENTER", db.levelX, db.levelY)
 end
 
 function UF:UpdateAll()
