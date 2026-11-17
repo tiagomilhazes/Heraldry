@@ -20,6 +20,8 @@ local CH = H.Modules.byName.Chat
 local DEFAULTS = {
 	channelStyle = "short",   -- "full" | "short" | "number" | "none"
 	dropSays = true,
+	nameBrackets = false,     -- [Name] -> Name (channels keep theirs)
+	plainBody = true,         -- the message in plain ink, the channel and name in the channel's colour
 	timeDim = true,
 	fade = true,
 	fadeTime = 120,
@@ -110,6 +112,24 @@ function CH:FormatLine(text)
 		local at = text:find(" says: ", 1, true)
 		if at and at < 120 then
 			text = text:sub(1, at - 1) .. ": " .. text:sub(at + 7)
+		end
+	end
+
+	-- player names without brackets: brackets belong to channels
+	if not db.nameBrackets then
+		text = text:gsub("(|H[B]?N?player:[^|]*|h)%[(.-)%]|h", "%1%2|h")
+	end
+
+	-- channel and name keep the line's colour; the message itself is written in plain ink
+	if db.plainBody then
+		local _, linkEnd = text:find("|H[B]?N?player:[^|]*|h.-|h")
+		if linkEnd then
+			local colon = text:find(": ", linkEnd + 1, true)
+			if colon and colon - linkEnd < 40 then
+				local c = self:Paper().text or { 0.86, 0.81, 0.71 }
+				local hex = ("%02x%02x%02x"):format(math.floor(c[1] * 255), math.floor(c[2] * 255), math.floor(c[3] * 255))
+				text = text:sub(1, colon + 1) .. "|cff" .. hex .. text:sub(colon + 2) .. "|r"
+			end
 		end
 	end
 
