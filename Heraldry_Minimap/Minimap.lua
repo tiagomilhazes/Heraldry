@@ -152,6 +152,12 @@ function MM:TakeMinimapSteps()
 		end)
 	end
 
+	for _, fn in ipairs({ "SetSize", "SetWidth", "SetHeight", "SetPoint", "SetScale" }) do
+		hooksecurefunc(mm, fn, function()
+			if not MM.fitting then C_Timer.After(0, function() MM:FitMap() end) end
+		end)
+	end
+
 	-- the cluster's own dressing goes away
 	for _, name in ipairs({ "MinimapBorder", "MinimapBorderTop", "MinimapZoomIn", "MinimapZoomOut",
 		"MinimapZoneTextButton", "MiniMapWorldMapButton", "MinimapCompassTexture", "MinimapBackdrop",
@@ -325,6 +331,24 @@ end
 
 --[[ Layout ]]
 
+-- The map fills the window; the game resizes and re-anchors it at times
+-- (its edit mode, the cluster's layout), so it is put back every time.
+function MM:FitMap()
+	local mm, f = Minimap, self.frame
+	if not mm or mm:GetParent() ~= f.holder or not self.mapSize then return end
+	self.fitting = true
+	mm:SetScale(1)
+	mm:SetSize(self.mapSize, self.mapSize)
+	mm:ClearAllPoints()
+	mm:SetPoint("CENTER", f.holder, "CENTER")
+	self.fitting = nil
+	-- the map only redraws at its new size after a zoom change
+	local z = mm:GetZoom()
+	mm:SetZoom(z > 0 and z - 1 or z + 1)
+	mm:SetZoom(z)
+end
+
+
 function MM:Layout()
 	local f, db, F = self.frame, self.db, self.FRAME
 	local size = db.size
@@ -338,11 +362,8 @@ function MM:Layout()
 	f.holder:ClearAllPoints()
 	f.holder:SetPoint("TOPLEFT", f, "TOPLEFT", w[1] * k, -w[2] * k)
 	f.holder:SetSize(ww, wh)
-	if Minimap and Minimap:GetParent() == f.holder then
-		Minimap:SetSize(ww, ww)
-		Minimap:ClearAllPoints()
-		Minimap:SetPoint("CENTER", f.holder, "CENTER")
-	end
+	self.mapSize = ww
+	self:FitMap()
 
 	-- sockets
 	local s = F.socketSize * k
@@ -387,6 +408,7 @@ function MM:OnEnable()
 	})
 	self:Layout()
 	self:TakeMinimap()
+	self:Layout()
 
 	local ev = CreateFrame("Frame")
 	for _, e in ipairs({ "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA", "PLAYER_ENTERING_WORLD" }) do
