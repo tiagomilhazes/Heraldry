@@ -14,6 +14,7 @@ Each top-level folder is one addon. Copy them into `Interface\AddOns\`.
 | `Heraldry_Test` | Test module for the module system (temporary) |
 | `Heraldry_ActionBars` | Action bars 1 to 8, stance and pet bars, the block (bars 1+2) |
 | `Heraldry_Orbs` | Life and power orbs docked to the block |
+| `Heraldry_UnitFrames` | Target frame (focus, target of target, party later) |
 
 ## Status
 
@@ -31,6 +32,7 @@ Each top-level folder is one addon. Copy them into `Interface\AddOns\`.
 | M1.1 | Stance bar and pet bar | done (pet, vehicle untested) |
 | M1.5 | Theme system (Standard + Paladin), the block | done |
 | M2 | Orbs | done |
+| M3 | Unit frames: target | in test |
 
 ## Commands
 

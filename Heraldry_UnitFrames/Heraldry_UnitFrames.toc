@@ -1,0 +1,12 @@
+## Interface: 16001
+## Title: |cffE8B04BHeraldry|r Unit Frames
+## Notes: Target frame in the Heraldry style (more unit frames later).
+## Author: Tiago
+## Version: 0.1.0
+## Dependencies: Heraldry
+## X-Heraldry-Module: 1
+## X-Heraldry-Label: Unit frames
+## IconTexture: Interface\Icons\INV_Shield_06
+
+Target.lua
+Settings.lua

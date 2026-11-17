@@ -28,6 +28,10 @@
 	      hole: centre and radius of the glass; reach: how far the ring goes
 	      from that centre towards the bars (it tucks against the plate)
 
+	  frame.gem                         gem on the edge of a unit frame (the target's level)
+	      file, size = { w, h }
+	      Drawn square and centred; tinted for elite, rare and boss units.
+
 	A theme can also give:
 	  accent = { r, g, b }               metal colour for thin lines (button borders)
 	  finish = "bronze"                  default finish (see FINISHES): tones the art down
@@ -86,6 +90,9 @@ TYPES["orb.health"] = function(p)
 		or "needs file, size {w,h}, hole {cx,cy,r} and reach"
 end
 TYPES["orb.power"] = TYPES["orb.health"]
+TYPES["frame.gem"] = function(p)
+	return p.file and nums(p.size, 2) or "needs file and size {w,h}"
+end
 
 -- desaturation (0-1), colour multiplied over the art
 Themes.FINISHES = {

@@ -20,5 +20,6 @@ Heraldry:RegisterTheme("PALADIN", {
 		["orb.health"]       = { file = P .. "OrbHealth",       size = { 512, 512 },  hole = { 296.4, 287.7, 135.1 }, reach = 209 },
 		["orb.power"]        = { file = P .. "OrbPower",        size = { 512, 512 },  hole = { 215.9, 258.6, 127.1 }, reach = 214 },
 		["bar.cap"]          = { file = P .. "Cap",             size = { 256, 256 },  join = { 256, 194, 94 } },
+		["frame.gem"]        = { file = P .. "Gem",             size = { 64, 64 } },
 	},
 })
