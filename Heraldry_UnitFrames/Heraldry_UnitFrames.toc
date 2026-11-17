@@ -2,7 +2,7 @@
 ## Title: |cffE8B04BHeraldry|r Unit Frames
 ## Notes: Target frame: heraldic art per target (class, hostile, friendly, elite, rare, boss) or minimal glass.
 ## Author: Tiago
-## Version: 0.3.0
+## Version: 0.3.1
 ## Dependencies: Heraldry
 ## X-Heraldry-Module: 1
 ## X-Heraldry-Label: Unit frames

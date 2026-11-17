@@ -36,8 +36,6 @@ local UF = H:NewModule("UnitFrames", {
 	defaults = {
 		style = "heraldic",      -- heraldic | minimal
 		rails = "class",         -- class | neutral (players: the class rod's rails, or the hostile rails)
-		capSize = 72,            -- height of the ornament
-		railSize = 8,            -- thickness of each rail
 		bothEnds = true,         -- the ornament on both ends of the bars (the level is on the left one)
 		capOverlap = 8,          -- how far the ornaments reach over the ends of the bars (negative: a gap)
 		width = 240,
@@ -57,6 +55,10 @@ local UF = H:NewModule("UnitFrames", {
 		hideBlizzard = true,
 	},
 })
+
+-- Class rods: ornament scale and rail thickness per pixel of bar height.
+local ROD_K = 0.5625 / 28   -- x the rod's scale (0.8): 0.45 at 28 px of bars
+local ROD_RAIL = 0.3
 
 -- The frame's texts, in the order the Text tab lists them.
 UF.TEXTS = {
@@ -361,13 +363,30 @@ function UF:UpdateArt()
 		railArt = self.ART.Hostile
 	end
 
-	-- ornaments: the gem on the middle of the bars, the inner end over the bars' ends
+	-- Scale. NPC ornaments come with their own rails: the art's gap between
+	-- the rails is fitted to the bars, so the rails and the ornament always
+	-- join exactly, at any bar height. Class rods have no rails of their own:
+	-- they are sized from the bars.
+	local barsH = db.healthHeight + (db.showPower and (2 + db.powerHeight) or 0)
 	local c = art.cap
-	local k = db.capSize / (c.rows[2] - c.rows[1]) * (c.scale or 1)
+	local joined = art.rail.bottom ~= nil
+	local k, topT, botT, mid
+	if joined then
+		local rt, rb = art.rail.top, art.rail.bottom
+		k = barsH / (rb[1] - rt[2] - 1)
+		topT, botT = (rt[2] - rt[1] + 1) * k, (rb[2] - rb[1] + 1) * k
+		mid = (rt[2] + 1 + rb[1]) / 2
+	else
+		k = ROD_K * barsH * (c.scale or 1)
+		topT, botT = ROD_RAIL * barsH, ROD_RAIL * barsH
+		mid = c.gem[2]
+	end
+
+	-- ornaments: the middle of their rails on the middle of the bars
 	local fade = c.fade or 0
 	local solid = c.crop - fade
 	local h = c.size[2] * k
-	local y = (c.gem[2] - c.size[2] / 2) * k
+	local y = (mid - c.size[2] / 2) * k
 	local overlap = db.capOverlap
 	local desat, cr, cg, cb = tone(tint)
 	for i, e in ipairs(f.ends) do
@@ -416,24 +435,26 @@ function UF:UpdateArt()
 	f.capLevel:ClearAllPoints()
 	f.capLevel:SetPoint("CENTER", f, "LEFT", overlap - c.crop * k + c.gem[1] * k + db.levelX, db.levelY)
 
-	-- rails
+	-- rails: above and below the bars, from one ornament to the other
 	local r = railArt.rail
-	local rs = db.railSize
-	local function band(tex, rows, flip, top)
-		local tileW = rs * r.size[1] / (rows[2] - rows[1] + 1)
+	local inner = overlap - 2
+	local function band(tex, rows, flip, top, thick)
+		-- the ornament's own rails keep the art's proportions; borrowed ones are squeezed to fit
+		local tileW = (joined and railArt == art) and r.size[1] * k or thick * r.size[1] / (rows[2] - rows[1] + 1)
 		local t1, t2 = rows[1] / r.size[2], (rows[2] + 1) / r.size[2]
-		tex:SetTexture(r.file, "REPEAT", "CLAMP")
 		if flip then t1, t2 = t2, t1 end
-		tex:SetTexCoord(0, (db.width + 4) / tileW, t1, t2)
+		local len = db.width - inner - (db.bothEnds and inner or 0)
+		tex:SetTexture(r.file, "REPEAT", "CLAMP")
+		tex:SetTexCoord(0, len / tileW, t1, t2)
 		tex:ClearAllPoints()
-		local edge = top and "TOP" or "BOTTOM"
-		tex:SetPoint(edge .. "LEFT", f, edge .. "LEFT", -4, 0)
-		tex:SetPoint(edge .. "RIGHT", f, edge .. "RIGHT", 0, 0)
-		tex:SetHeight(rs)
+		local edge, side = top and "TOP" or "BOTTOM", top and "BOTTOM" or "TOP"
+		tex:SetPoint(side .. "LEFT", f, edge .. "LEFT", inner, 0)
+		tex:SetPoint(side .. "RIGHT", f, edge .. "RIGHT", db.bothEnds and -inner or 0, 0)
+		tex:SetHeight(thick)
 		Themes:Paint(tex)
 	end
-	band(f.railTop, r.top, false, true)
-	band(f.railBottom, r.bottom or r.top, not r.bottom, false)
+	band(f.railTop, r.top, false, true, topT)
+	band(f.railBottom, r.bottom or r.top, not r.bottom, false, botT)
 end
 
 function UF:UpdateAll()
@@ -489,11 +510,11 @@ function UF:Layout()
 	f.name:SetDrawLayer("OVERLAY")
 	f.health:ClearAllPoints()
 	if heraldic then
-		-- the frame is the bars plus the rails; the ornament hangs out on the left
-		local rs = db.railSize
-		f:SetSize(db.width, barsH + 2 * rs)
-		f.health:SetPoint("TOPLEFT", 0, -rs)
-		f.health:SetPoint("TOPRIGHT", 0, -rs)
+		-- the frame (and its click area) is the bars; rails and ornaments sit
+		-- around it and change with the target without resizing it in combat
+		f:SetSize(db.width, barsH)
+		f.health:SetPoint("TOPLEFT", 0, 0)
+		f.health:SetPoint("TOPRIGHT", 0, 0)
 		-- name inside the life bar, clear of the ornament
 		f.name:SetPoint("LEFT", f.health, "LEFT", 12 + db.nameX, db.nameY)
 		f.name:SetHeight(nameH)

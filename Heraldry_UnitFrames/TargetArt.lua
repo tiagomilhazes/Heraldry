@@ -9,14 +9,17 @@
 	  MAGE, PALADIN, ...           players, by class
 
 	The bars never change size or place between targets: only the ornament
-	changes around them. Numbers are pixels of the texture files.
+	changes around them. NPC ornaments come with their own rails (rail.top and
+	rail.bottom, rows of both the cap's right edge and the rail texture): the
+	gap between them is fitted to the bars, so rails and ornament always join.
+	Class rods have one band only and are sized from the bars.
+	Numbers are pixels of the texture files.
 
 	  cap   file, size {w, h}
 	        crop   only columns 0..crop are drawn (the rest would run under the bars)
 	        fade   optional: the last "fade" columns before crop melt into the rails
 	               (for ornaments whose art ends in a straight cut)
-	        rows   {top, bottom} of the ornament: its height is what gets scaled
-	               to the "Ornament size" setting
+	        rows   {top, bottom} of the ornament (its visible height)
 	        gem    {x, y}: centre of the gem; it sits on the middle of the bars
 	        scale  optional, evens out families of different weight
 	  rail  file, size {w, h}  (w must be a power of 2: it repeats sideways)
@@ -43,9 +46,9 @@ local function rod(name, crop, gemX, band)
 end
 
 UF.ART = {
-	Hostile  = npc("Hostile",  256, 40, { 5, 192 },  { 172, 128 }, { 66, 102 }, { 154, 190 }),
-	Friendly = npc("Friendly", 254, 0,  { 19, 218 }, { 218, 128 }, { 69, 101 }, { 155, 187 }),
-	Elite    = npc("Elite",    240, 36, { 19, 237 }, { 128, 128 }, { 76, 111 }, { 144, 177 }),
+	Hostile  = npc("Hostile",  256, 0,  { 5, 192 },  { 172, 128 }, { 66, 102 }, { 154, 190 }),
+	Friendly = npc("Friendly", 256, 0,  { 19, 218 }, { 218, 128 }, { 69, 101 }, { 155, 187 }),
+	Elite    = npc("Elite",    256, 0,  { 19, 237 }, { 128, 128 }, { 76, 111 }, { 144, 177 }),
 
 	MAGE    = rod("Mage",    206, 31,  { 29, 97 }),
 	PALADIN = rod("Paladin", 247, 105, { 36, 91 }),
