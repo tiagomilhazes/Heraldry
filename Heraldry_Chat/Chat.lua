@@ -467,6 +467,10 @@ function CH:ApplyFonts()
 	end
 	for _, cf in ipairs(chatFrames()) do
 		set(cf)
+		-- the game cuts the lines at the window's edge, which takes the bottom off the
+		-- last line's letters (g, p, y) with most fonts: let them draw a little past it
+		local box = cf.FontStringContainer
+		if box and box.SetClipsChildren then box:SetClipsChildren(false) end
 		local tab = _G[cf:GetName() .. "Tab"]
 		local text = tab and (tab.Text or _G[tab:GetName() .. "Text"])
 		if text then H.Fonts:Apply(text, "header", db.tabSize, self) end
