@@ -378,7 +378,7 @@ function Page:FontSection(mod, onChange)
 		label = "Font for this module",
 		desc = "Used while the global font is off.",
 		values = function()
-			local t = { { value = false, text = ("Global (%s)"):format(F:Get("header")) } }
+			local t = { { value = false, text = "Global" } }
 			for _, name in ipairs(F:List()) do t[#t + 1] = { value = name, text = name } end
 			return t
 		end,

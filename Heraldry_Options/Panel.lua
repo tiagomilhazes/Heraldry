@@ -1,7 +1,12 @@
 --[[
 	Heraldry_Options - Panel.lua
 	The settings window: sidebar with pages grouped as Heraldry / Modules,
-	header with the page title, scrolling content, footer with Reload.
+	header with the page title, an optional row of tabs, scrolling content,
+	footer with Reload.
+
+	A page is either one page (build) or a set of tabs:
+		tabs = { { key = "block", label = "Block", build = function(page) end }, ... }
+	The last tab opened on each page is remembered.
 	Drag it by any empty area. Escape closes it.
 	Position, scale and the last page are saved in HeraldryDB.global.options.
 ]]
@@ -16,6 +21,7 @@ H.Panel = Panel
 
 local PANEL_W, PANEL_H = 980, 640
 local SIDEBAR_W, HEADER_H, FOOTER_H, PAD = 210, 78, 46, 24
+local TAB_H = 34
 local CONTENT_W = PANEL_W - SIDEBAR_W - PAD * 2 - 12
 
 local GROUPS = {
@@ -26,9 +32,9 @@ local GROUPS = {
 H.global.options = H.global.options or {}
 local settings = H.global.options
 
-local frame, scroll, title, subtitle
-local navButtons = {}
-local current
+local frame, scroll, title, subtitle, tabBar
+local navButtons, tabButtons = {}, {}
+local current, currentPage
 
 local function groupOf(def)
 	return GROUPS[def.group] or GROUPS.modules
@@ -203,15 +209,91 @@ function Panel:Build()
 	scroll = CreateFrame("ScrollFrame", nil, frame)
 	scroll:SetPoint("TOPLEFT", SIDEBAR_W + PAD, -(HEADER_H + PAD))
 	scroll:SetPoint("BOTTOMRIGHT", -(PAD + 12), FOOTER_H + 10)
+
+	-- Tabs, under the header (shown only for pages that have them)
+	tabBar = CreateFrame("Frame", nil, frame)
+	tabBar:SetPoint("TOPLEFT", SIDEBAR_W + 1, -(HEADER_H + 1))
+	tabBar:SetPoint("TOPRIGHT", -1, -(HEADER_H + 1))
+	tabBar:SetHeight(TAB_H)
+	UI.Fill(tabBar, C.sidebar)
+	local tline = UI.Tex(tabBar, C.border, "ARTWORK")
+	tline:SetPoint("BOTTOMLEFT")
+	tline:SetPoint("BOTTOMRIGHT")
+	tline:SetHeight(1)
+	tabBar:Hide()
 	scroll:EnableMouseWheel(true)
 	buildScrollBar()
 end
 
-function Panel:Select(key)
+local function anchorScroll(withTabs)
+	scroll:ClearAllPoints()
+	scroll:SetPoint("TOPLEFT", SIDEBAR_W + PAD, -(HEADER_H + (withTabs and TAB_H or 0) + PAD))
+	scroll:SetPoint("BOTTOMRIGHT", -(PAD + 12), FOOTER_H + 10)
+end
+
+local function tabButton(i)
+	local b = tabButtons[i]
+	if b then return b end
+	b = CreateFrame("Button", nil, tabBar)
+	b:SetHeight(TAB_H)
+	b.text = UI.Text(b, 13, C.dim, nil, "CENTER")
+	b.text:SetPoint("CENTER", 0, 1)
+	b.line = UI.Tex(b, C.accent, "OVERLAY")
+	b.line:SetPoint("BOTTOMLEFT", 10, 0)
+	b.line:SetPoint("BOTTOMRIGHT", -10, 0)
+	b.line:SetHeight(2)
+	b:SetScript("OnEnter", function(self) if not self.on then self.text:SetTextColor(unpack(C.text)) end end)
+	b:SetScript("OnLeave", function(self) if not self.on then self.text:SetTextColor(unpack(C.dim)) end end)
+	b:SetScript("OnClick", function(self) Panel:Select(current, self.key) end)
+	tabButtons[i] = b
+	return b
+end
+
+local function showTabs(def, active)
+	local x = PAD - 10
+	for i, t in ipairs(def.tabs) do
+		local b = tabButton(i)
+		b.key = t.key
+		b.on = t.key == active
+		b.text:SetText(t.label)
+		b.text:SetTextColor(unpack(b.on and C.text or C.dim))
+		b.line:SetShown(b.on)
+		b:SetWidth(b.text:GetStringWidth() + 28)
+		b:ClearAllPoints()
+		b:SetPoint("BOTTOMLEFT", tabBar, "BOTTOMLEFT", x, 0)
+		x = x + b:GetWidth()
+		b:Show()
+	end
+	for i = #def.tabs + 1, #tabButtons do tabButtons[i]:Hide() end
+	tabBar:Show()
+end
+
+-- The page object for a page or one of its tabs, built the first time.
+local function pageFor(def, tabKey)
+	local holder, build = def, def.build
+	if tabKey then
+		def._tabs = def._tabs or {}
+		holder = def._tabs
+		for _, t in ipairs(def.tabs) do
+			if t.key == tabKey then build = t.build end
+		end
+		if not holder[tabKey] then
+			holder[tabKey] = UI.NewPage(scroll, CONTENT_W)
+			xpcall(build, geterrorhandler(), holder[tabKey])
+		end
+		return holder[tabKey]
+	end
+	if not def._page then
+		def._page = UI.NewPage(scroll, CONTENT_W)
+		xpcall(build, geterrorhandler(), def._page)
+	end
+	return def._page
+end
+
+function Panel:Select(key, tabKey)
 	local def = O.pages[key]
 	if not def then return end
-	local old = current and O.pages[current]
-	if old and old._page then old._page.frame:Hide() end
+	if currentPage then currentPage.frame:Hide() end
 
 	for k, b in pairs(navButtons) do
 		local on = k == key
@@ -222,11 +304,25 @@ function Panel:Select(key)
 	current = key
 	settings.page = key
 
-	if not def._page then
-		def._page = UI.NewPage(scroll, CONTENT_W)
-		xpcall(def.build, geterrorhandler(), def._page)
+	if def.tabs then
+		settings.tabs = settings.tabs or {}
+		tabKey = tabKey or settings.tabs[key]
+		local valid = false
+		for _, t in ipairs(def.tabs) do
+			if t.key == tabKey then valid = true end
+		end
+		if not valid then tabKey = def.tabs[1].key end
+		settings.tabs[key] = tabKey
+		showTabs(def, tabKey)
+		anchorScroll(true)
+	else
+		tabKey = nil
+		tabBar:Hide()
+		anchorScroll(false)
 	end
-	local page = def._page
+
+	local page = pageFor(def, tabKey)
+	currentPage = page
 	scroll:SetScrollChild(page.frame)
 	page.frame:Show()
 	scroll:SetVerticalScroll(0)
@@ -255,8 +351,7 @@ function Panel:IsShown()
 end
 
 function Panel:Refresh()
-	local def = current and O.pages[current]
-	if def and def._page then def._page:Refresh() end
+	if currentPage then currentPage:Refresh() end
 end
 
 function Panel:SetScale(scale)

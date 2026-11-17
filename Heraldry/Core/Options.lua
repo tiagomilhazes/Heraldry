@@ -10,6 +10,8 @@
 		group = "core" | "modules",
 		order = 10,
 		build = function(page) ... end,   -- runs once, the first time the page is shown
+		-- or, instead of build, tabs:
+		tabs = { { key = "look", label = "Look", build = function(page) end }, ... },
 	})
 	H:OpenOptions([key])  H:ToggleOptions()
 ]]
@@ -23,7 +25,7 @@ H.Options = O
 local OPTIONS_ADDON = "Heraldry_Options"
 
 function H:RegisterOptionsPage(def)
-	assert(type(def) == "table" and def.key and def.label and def.build, "RegisterOptionsPage: key, label and build are required")
+	assert(type(def) == "table" and def.key and def.label and (def.build or def.tabs), "RegisterOptionsPage: key, label and build (or tabs) are required")
 	O.pages[def.key] = def
 end
 
