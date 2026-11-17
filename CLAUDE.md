@@ -210,7 +210,7 @@ H:RegisterOptionsPage({
 | Level | What | Look |
 |---|---|---|
 | 1, hero | Action bar block (bars 1+2) and the orbs | Full ornament: double plate, rails, caps, theme rings, button frames |
-| 1.5, target | Target frame (Plaque style) | One fixed plaque (lion medallions, two jewels, a slot the bars fill). The target shows only as colour: metal finish (iron hostile, bronze friendly, gold elite/players, silver rare, red boss) and jewel colour (reaction or class). Shape never changes, so texts never move. Class emblems will replace the lions for players (art pending) |
+| 1.5, target | Target frame (Plaque style) | One fixed plaque (lion medallions, two jewels, a slot the bars fill). The target shows only as colour: metal finish on top of the theme finish (theme finish for elite/players, iron hostile, bronze friendly, silver rare, red boss, at the theme finish's brightness) and jewel colour (reaction or class). Shape never changes, so texts never move. Class emblems will replace the lions for players (art pending) |
 | 2, frames | Minimap, quest log (and the target's Minimal style) | Dark glass panel, a rim in the theme accent, **one** theme motif (the gem) |
 | 3, panels | Chat, damage meter, tooltips | Flat and dark, with a thin rim |
 

@@ -16,7 +16,9 @@
 
 	What the target is shows only as colour, never as a different shape:
 	  FINISH       { desaturation, { r, g, b } } of the metal
-	  KIND_FINISH  finish per kind of target
+	  KIND_FINISH  finish per kind of target; "theme" is the theme's own finish
+	               (Theme page), like the action bar block. The others are
+	               applied at the theme finish's brightness (UF:Finish)
 	  JEWEL        jewel colour per kind (players: their class colour)
 ]]
 
@@ -45,8 +47,8 @@ UF.FINISH = {
 }
 
 UF.KIND_FINISH = {
-	hostile = "iron", friendly = "bronze", elite = "gold",
-	rare = "silver", boss = "blood", player = "gold",
+	hostile = "iron", friendly = "bronze", elite = "theme",
+	rare = "silver", boss = "blood", player = "theme",
 }
 
 UF.JEWEL = {

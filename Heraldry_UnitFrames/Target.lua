@@ -358,18 +358,33 @@ function UF:JewelColor(kind)
 	return unpack(self.JEWEL[kind])
 end
 
+-- Finish of the plaque for a kind of target, on top of the theme's finish
+-- (Theme page), so the plaque sits in the same tone as the action bar block.
+-- "theme" kinds take the theme's finish as is; the others keep their own
+-- metal (iron, silver, ...) at the theme finish's brightness.
+function UF:Finish(kind)
+	local tf = Themes.FINISHES[Themes:FinishKey()]
+	local key = self.KIND_FINISH[kind]
+	if key == "theme" then
+		return tf.desat, tf.color[1], tf.color[2], tf.color[3]
+	end
+	local f = self.FINISH[key]
+	local light = 0.5 + 0.5 * (tf.color[1] + tf.color[2] + tf.color[3]) / 3
+	return math.max(f[1], tf.desat), f[2][1] * light, f[2][2] * light, f[2][3] * light
+end
+
 -- Finish and jewels for the current target. Texture work only: safe in combat.
 function UF:UpdateArt()
 	local f = self.frame
 	if not f or self:Style() ~= "plaque" or not UnitExists(UNIT) then return end
 	local kind = self:Kind()
-	local fin = self.FINISH[self.KIND_FINISH[kind]]
+	local desat, cr, cg, cb = self:Finish(kind)
 	for _, t in ipairs(f.slices) do
-		t:SetDesaturation(fin[1])
-		t:SetVertexColor(fin[2][1], fin[2][2], fin[2][3])
+		t:SetDesaturation(desat)
+		t:SetVertexColor(cr, cg, cb)
 	end
-	f.levelRing:SetDesaturation(fin[1])
-	f.levelRing:SetVertexColor(fin[2][1], fin[2][2], fin[2][3])
+	f.levelRing:SetDesaturation(desat)
+	f.levelRing:SetVertexColor(cr, cg, cb)
 	local r, g, b = self:JewelColor(kind)
 	for _, j in ipairs(f.jewels) do
 		j:SetDesaturation(1)
