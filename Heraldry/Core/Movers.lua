@@ -18,8 +18,11 @@
 	the orbs at the ends of the block). A docked frame follows its target,
 	ignores its own saved position and has no box in edit mode. Docking is
 	decided by the module from its own settings, so it is not saved here.
-	H.Movers:Dock(key, targetKey, point, relPoint, x, y)   (x, y in screen units)
+	H.Movers:Dock(key, targetKey, point, relPoint, x, y, movable)   (x, y in screen units)
 	H.Movers:Undock(key)
+	A movable dock keeps its box in edit mode: dragging it saves an offset
+	from the docked place ({ "DOCK", dx, dy, scale } in the layout), so the
+	frame still follows its target.
 
 	A saved position is { point, x, y, scale }. The point is picked from the
 	part of the screen the frame sits in (a frame near the top right corner is
@@ -45,7 +48,7 @@ end
 -- Saved position, or the default.
 function Movers:Get(m)
 	local pos = H.profile.layout[m.key]
-	if pos then return pos[1], pos[2], pos[3], pos[4] or 1 end
+	if pos and (pos[1] ~= "DOCK" or m.dock) then return pos[1], pos[2], pos[3], pos[4] or 1 end
 	local d = m.default
 	return d[1], d[2], d[3], d[4] or 1
 end
@@ -61,17 +64,19 @@ function Movers:Apply(m)
 		local d = m.dock
 		local target = d and self.byKey[d.target]
 		if target then
-			f:SetPoint(d.point, target.frame, d.relPoint, d.x / r, d.y / r)
+			local ox, oy = 0, 0
+			if p == "DOCK" then ox, oy = x, y end
+			f:SetPoint(d.point, target.frame, d.relPoint, (d.x + ox) / r, (d.y + oy) / r)
 		else
 			f:SetPoint(p, UIParent, p, x / r, y / r)
 		end
 	end, "mover:" .. m.key)
 end
 
-function Movers:Dock(key, targetKey, point, relPoint, x, y)
+function Movers:Dock(key, targetKey, point, relPoint, x, y, movable)
 	local m = self.byKey[key]
 	if not m or not self.byKey[targetKey] then return end
-	m.dock = { target = targetKey, point = point, relPoint = relPoint or point, x = x or 0, y = y or 0 }
+	m.dock = { target = targetKey, point = point, relPoint = relPoint or point, x = x or 0, y = y or 0, movable = movable }
 	self:Apply(m)
 end
 
@@ -84,7 +89,7 @@ end
 
 -- Whether a mover gets a box in edit mode.
 function Movers:IsMovable(m)
-	return not m.dock and (not m.isShown or m.isShown())
+	return (not m.dock or m.dock.movable) and (not m.isShown or m.isShown())
 end
 
 function Movers:ApplyAll()
@@ -117,7 +122,27 @@ function Movers:AnchorFor(left, bottom, w, h)
 end
 
 -- Saves a position from a rectangle in screen units and applies it.
+-- A point of a rectangle (screen units).
+local function pointOf(point, l, b, w, h)
+	local x = point:find("LEFT") and l or point:find("RIGHT") and l + w or l + w / 2
+	local y = point:find("BOTTOM") and b or point:find("TOP") and b + h or b + h / 2
+	return x, y
+end
+
 function Movers:SaveRect(m, left, bottom, w, h, scale)
+	local d = m.dock
+	local target = d and d.movable and self.byKey[d.target]
+	if target then
+		-- docked: keep following the target, save the offset from the docked place
+		local tl, tb, tw, th = self:RectOf(target)
+		if tl then
+			local px, py = pointOf(d.point, left, bottom, w, h)
+			local tx, ty = pointOf(d.relPoint, tl, tb, tw, th)
+			H.profile.layout[m.key] = { "DOCK", round(px - tx - d.x), round(py - ty - d.y), scale }
+			self:Apply(m)
+			return
+		end
+	end
 	local p, x, y = self:AnchorFor(left, bottom, w, h)
 	H.profile.layout[m.key] = { p, x, y, scale }
 	self:Apply(m)
@@ -126,7 +151,7 @@ end
 -- Live move while dragging in edit mode: positions the frame directly,
 -- saves nothing (SaveRect on release). Edit mode is never open in combat.
 function Movers:Preview(m, left, bottom, w, h)
-	if InCombatLockdown() or m.dock then return end
+	if InCombatLockdown() or (m.dock and not m.dock.movable) then return end
 	local p, x, y = self:AnchorFor(left, bottom, w, h)
 	local f = m.frame
 	local r = ratio(f)
@@ -150,7 +175,7 @@ end
 -- Centre a frame horizontally on the screen; its height on screen is kept.
 function Movers:CenterX(key)
 	local m = self.byKey[key]
-	if not m or m.dock then return end
+	if not m or (m.dock and not m.dock.movable) then return end
 	local l, b, w, h = self:RectOf(m)
 	if not l then return end
 	local _, _, _, s = self:Get(m)

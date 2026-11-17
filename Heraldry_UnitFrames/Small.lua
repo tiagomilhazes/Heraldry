@@ -7,7 +7,9 @@
 
 	Each frame has its own settings, stored with a prefix in the module's
 	profile ("tot..." and "focus...").
-	  totDock    the target of target sits at the right of the target's plaque
+	  totDock    the target of target sits at the right of the target's plaque;
+	             it can still be dragged in edit mode (a movable dock: it keeps
+	             following the target, at the offset you give it)
 ]]
 
 local H = Heraldry
@@ -247,7 +249,7 @@ function tot:OnLayout()
 		local tf = UF.frame
 		local tk = tf:GetHeight() / (P.slot[4] - P.slot[2])
 		local gap = (P.size[1] - P.slot[3]) * tk + P.slot[1] * self.k + 4
-		H.Movers:Dock(key, "UnitFrames.target", "LEFT", "RIGHT", gap, 0)
+		H.Movers:Dock(key, "UnitFrames.target", "LEFT", "RIGHT", gap, 0, true)
 	else
 		H.Movers:Undock(key)
 	end

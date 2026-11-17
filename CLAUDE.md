@@ -132,7 +132,7 @@ H:RegisterMover(frame, key, {
 ```
 
 - The position is saved as `{point, x, y, scale}`. The anchor point is chosen by which third of the screen the frame is in, so positions survive resolution changes.
-- Docking pins one mover to another: `mover.dock = { target, point, relPoint, x, y }`, or `Movers:Dock` / `Movers:Undock`. A docked frame follows its target and gets no box in edit mode.
+- Docking pins one mover to another: `mover.dock = { target, point, relPoint, x, y, movable }`, or `Movers:Dock(key, target, point, relPoint, x, y, movable)` / `Movers:Undock`. A docked frame follows its target. A plain dock gets no box in edit mode; a **movable dock** (the target of target) keeps its box, and dragging it saves an offset from the docked place (`{ "DOCK", dx, dy, scale }` in the layout), so it still follows its target.
 - Other functions: `Movers:Apply`, `Movers:Preview` (moves live without saving), `Movers:IsMovable`, `Movers:CenterX(key)` (centre horizontally, height kept), `H:RefreshEditMode()`.
 - Edit mode itself:
   - Boxes move with the native `StartMoving`. Snapping happens **only on release**, with gold guide lines while dragging; live snapping caused stutter.
