@@ -107,11 +107,13 @@ H:RegisterOptionsPage({
 		get, set = field("caps")
 		page:Toggle({ label = "End crests", desc = "Only on bars wider than tall.", get = get, set = set })
 		get, set = field("pad")
-		page:Slider({ label = "Plate margin", desc = "Space between the buttons and the edge of the plate.", min = 0, max = 24, step = 1, get = get, set = set })
+		page:Slider({ label = "Plate margin, sides", desc = "Space between the buttons and the ends of the plate.", min = 0, max = 24, step = 1, get = get, set = set })
+		get, set = field("padY")
+		page:Slider({ label = "Plate margin, top and bottom", desc = "Space between the buttons and the rails.", min = 0, max = 24, step = 1, get = get, set = set })
 		get, set = field("railSize")
 		page:Slider({ label = "Rail thickness", min = 4, max = 30, step = 1, get = get, set = set })
 		get, set = field("railExtend")
-		page:Slider({ label = "Rails past the plate", desc = "How far the rails run past each end (under the orbs).", min = 0, max = 120, step = 2, get = get, set = set })
+		page:Slider({ label = "Plate and rails past the bar", desc = "How far they run past each end, under the orbs.", min = 0, max = 120, step = 2, get = get, set = set })
 
 		page:Section("Visibility")
 		local pct = function(v) return math.floor(v * 100 + 0.5) .. "%" end

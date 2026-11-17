@@ -63,7 +63,8 @@ for _, def in ipairs(BARS) do
 	defaults[k .. "plate"] = def.n == 1
 	defaults[k .. "rails"] = true
 	defaults[k .. "caps"] = false
-	defaults[k .. "pad"] = 8
+	defaults[k .. "pad"] = 8        -- plate margin at the sides
+	defaults[k .. "padY"] = 8       -- plate margin at the top and bottom
 	defaults[k .. "railSize"] = 12
 	defaults[k .. "railExtend"] = 30
 end

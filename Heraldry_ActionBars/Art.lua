@@ -153,16 +153,20 @@ function AB:ApplyBarArt(bar)
 		for _, t in pairs(art) do t:Hide() end
 		return
 	end
-	local pad = self:Get(n, "pad") / scale
+	-- Sides: margin plus how far plate and rails run past the bar (under the
+	-- orbs, so no world shows between the plate and the rings).
+	local padX = (self:Get(n, "pad") + self:Get(n, "railExtend")) / scale
+	local padY = self:Get(n, "padY") / scale
 	local p = art.plate
 	p:ClearAllPoints()
 	if block then
-		p:SetPoint("BOTTOMLEFT", bar, "BOTTOMLEFT", -pad, -pad)
-		p:SetPoint("RIGHT", bar, "RIGHT", pad, 0)
-		p:SetPoint("TOP", self.bars[2], "TOP", 0, pad)
+		p:SetPoint("BOTTOMLEFT", bar, "BOTTOMLEFT", -padX, -padY)
+		p:SetPoint("RIGHT", bar, "RIGHT", padX, 0)
+		-- bar 2 may have another scale: convert the margin to its units
+		p:SetPoint("TOP", self.bars[2], "TOP", 0, padY * scale / self.bars[2]:GetScale())
 	else
-		p:SetPoint("TOPLEFT", bar, "TOPLEFT", -pad, pad)
-		p:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", pad, -pad)
+		p:SetPoint("TOPLEFT", bar, "TOPLEFT", -padX, padY)
+		p:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", padX, -padY)
 	end
 	if plate.file then
 		p:SetTexture(plate.file)
@@ -174,16 +178,15 @@ function AB:ApplyBarArt(bar)
 		p:SetColorTexture(unpack(plate.color))
 	end
 	p:Show()
-	local width = bar:GetWidth() + 2 * pad
-	local height = bar:GetHeight() + 2 * pad   -- one row: crests never grow with the block
+	local width = bar:GetWidth() + 2 * padX
+	local height = bar:GetHeight() + 2 * padY   -- one row: crests never grow with the block
 
-	-- Rails, running past the plate (under the orbs)
+	-- Rails along the top and bottom edges of the plate
 	local railPiece = self:Get(n, "rails") and Themes:Piece("bar.rail")
 	if railPiece then
 		local rh = self:Get(n, "railSize") / scale
-		local ext = self:Get(n, "railExtend") / scale
-		rail(art.railTop, railPiece, p, width + 2 * ext, rh, true, ext)
-		rail(art.railBottom, railPiece, p, width + 2 * ext, rh, false, ext)
+		rail(art.railTop, railPiece, p, width, rh, true, 0)
+		rail(art.railBottom, railPiece, p, width, rh, false, 0)
 	else
 		art.railTop:Hide()
 		art.railBottom:Hide()
