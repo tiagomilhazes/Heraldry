@@ -109,6 +109,11 @@ function MM:Create()
 	for i = 1, 3 do
 		local s = CreateFrame("Frame", nil, f)
 		s:SetFrameLevel(f:GetFrameLevel() + 12)
+		-- the game's buttons tell their parent to re-lay itself out (they live
+		-- in layout frames in the cluster): our sockets accept and ignore that
+		s.Layout = function() end
+		s.MarkDirty = function() end
+		s.MarkClean = function() end
 		f.sockets[i] = s
 	end
 
@@ -125,6 +130,11 @@ end
 
 -- Take the game's minimap out of its cluster and into our frame.
 function MM:TakeMinimap()
+	local ok, err = pcall(self.TakeMinimapSteps, self)
+	if not ok then H:Error("Minimap: " .. tostring(err)) end
+end
+
+function MM:TakeMinimapSteps()
 	local f, mm = self.frame, Minimap
 	if not mm then return end
 	mm:SetParent(f.holder)
@@ -154,8 +164,11 @@ function MM:TakeMinimap()
 	-- day/night and calendar, and the mail icon, into the sockets
 	local day = find("GameTimeFrame", "MinimapCluster.GameTimeFrame")
 	if day then self:Socket(1, day) end
+	-- the mail icon: the game's own frame for it (its parent re-lays it out,
+	-- see the sockets' Layout above)
 	local mail = find("MiniMapMailFrame", "MinimapCluster.IndicatorFrame.MailFrame", "MinimapCluster.MailFrame")
 	if mail then self:Socket(3, mail) end
+	H:Debug("Minimap: day/night", day and (day:GetName() or "found") or "missing", "- mail", mail and (mail:GetName() or "found") or "missing")
 
 	if MinimapCluster then MinimapCluster:SetParent(hidden) end
 
@@ -372,6 +385,7 @@ function MM:OnEnable()
 	f.mover = H:RegisterMover(f, "Minimap.frame", {
 		label = "Minimap", default = { "TOPRIGHT", -20, -20 }, scalable = true,
 	})
+	self:Layout()
 	self:TakeMinimap()
 
 	local ev = CreateFrame("Frame")
@@ -392,6 +406,9 @@ function MM:OnEnable()
 
 	-- addons create their buttons late: gather them once they are there
 	C_Timer.After(3, function()
+		if Minimap and Minimap:GetParent() ~= MM.frame.holder then
+			H:Print("Minimap: the game moved the map out of the frame (parent: " .. tostring(Minimap:GetParent() and Minimap:GetParent():GetName()) .. ").")
+		end
 		local p = MM.frame.addonPanel
 		MM:ArrangeAddons()
 		p:Hide()
