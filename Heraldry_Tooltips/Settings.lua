@@ -52,13 +52,24 @@ H:RegisterOptionsPage({
 			local get, set = field("anchor")
 			page:Dropdown({
 				label = "Place",
-				desc = "Fixed: move it in edit mode (\"Tooltips\"). Tooltips placed by their own window keep that place.",
+				desc = "Fixed: move the \"Tooltips\" box in edit mode; tooltips grow from its corner nearest the screen's edge. Tooltips placed by their own window keep that place.",
 				values = function() return {
+					{ value = "fixed", text = "Fixed place (edit mode)" },
 					{ value = "game", text = "Where the game puts them" },
-					{ value = "fixed", text = "Fixed place" },
 					{ value = "cursor", text = "Next to the cursor" },
 				} end,
 				get = get, set = set,
+			})
+			page:Button({
+				label = "Move it now",
+				desc = "Opens edit mode.",
+				text = "Edit mode",
+				onClick = function()
+					TT.db.anchor = "fixed"
+					page:Refresh()
+					if InCombatLockdown() then H:Error("Edit mode isn't available in combat.") return end
+					H:SetEditMode(true)
+				end,
 			})
 			page:Section("Next to the cursor")
 			get, set = field("cursorX")

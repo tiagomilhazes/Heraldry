@@ -2,7 +2,7 @@
 ## Title: |cffE8B04BHeraldry|r Tooltips
 ## Notes: The game's tooltips on parchment, with a thin metal rim.
 ## Author: Tiago
-## Version: 0.1.0
+## Version: 0.1.1
 ## Dependencies: Heraldry
 ## X-Heraldry-Module: 1
 ## X-Heraldry-Label: Tooltips

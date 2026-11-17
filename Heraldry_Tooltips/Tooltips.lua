@@ -27,7 +27,7 @@ local TT = H:NewModule("Tooltips", {
 		classNames = true,
 		healthBar = true,
 		barHeight = 4,
-		anchor = "game",          -- "game" | "fixed" | "cursor"
+		anchor = "fixed",         -- "fixed" (our mover) | "game" | "cursor"
 		cursorX = 20, cursorY = 10,
 		hideCombat = false,
 		headerSize = 14,
@@ -205,6 +205,20 @@ function TT:CreateAnchor()
 	})
 end
 
+-- the corner the tooltip grows from: the one nearest the screen's edges,
+-- so a tooltip on the right grows to the left, one at the top grows down
+function TT:AnchorPoint()
+	local f = self.anchorFrame
+	local x, y = f:GetCenter()
+	if not x then return "BOTTOMRIGHT" end
+	local s = f:GetEffectiveScale() / UIParent:GetEffectiveScale()
+	x, y = x * s, y * s
+	local W, Hh = UIParent:GetSize()
+	local v = y > Hh / 2 and "TOP" or "BOTTOM"
+	local h = x > W * 2 / 3 and "RIGHT" or x < W / 3 and "LEFT" or ""
+	return v .. h
+end
+
 function TT:Anchor(tt, parent)
 	local db = self.db
 	if db.anchor == "cursor" then
@@ -212,7 +226,8 @@ function TT:Anchor(tt, parent)
 	elseif db.anchor == "fixed" then
 		tt:SetOwner(parent, "ANCHOR_NONE")
 		tt:ClearAllPoints()
-		tt:SetPoint("BOTTOMRIGHT", self.anchorFrame, "BOTTOMRIGHT")
+		local p = self:AnchorPoint()
+		tt:SetPoint(p, self.anchorFrame, p)
 	end
 end
 
