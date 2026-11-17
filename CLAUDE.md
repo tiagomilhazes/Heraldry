@@ -51,7 +51,7 @@ Heraldry_Options/              settings panel, LoadOnDemand
   Pages/General|Profiles|Theme|Fonts|Layout|Modules.lua
 Heraldry_ActionBars/           ActionBars.lua Art.lua Text.lua Settings.lua
 Heraldry_Orbs/                 Orbs.lua Settings.lua Media/{Liquid1,Liquid2,Glass,Surface}.tga
-Heraldry_UnitFrames/           Target.lua TargetPlaque.lua Settings.lua Media/Target/Plaque.tga
+Heraldry_UnitFrames/           Target.lua TargetPlaque.lua Settings.lua Media/Target/{Plaque,LevelRing}.tga
 Heraldry_Test/                 temporary test module (to be deleted)
 ```
 
@@ -230,7 +230,7 @@ Art is designed **as a whole**, not as loose pieces. The first Paladin art (a pi
 | M2 | Orbs: theme rings, docked to bar 1, animated liquid, text, clickable life orb, player frame hidden | approved |
 | — | Fonts (core + per-module override), action bar texts | approved |
 | — | Tabs in every settings page | approved |
-| M3 | Unit frames: **target**. Styles Plaque (fixed plaque, finish and jewels by target, level on the left jewel; per-text size/offset settings) and Minimal (glass panel, theme gem, halo). Secure button, Blizzard target hidden | delivered, awaiting test |
+| M3 | Unit frames: **target**. Styles Plaque (fixed plaque with the slot cut out and the bars behind it, finish and jewels by target, level in a ring set into the left medallion; per-text size/offset settings) and Minimal (glass panel, theme gem, halo). Secure button, Blizzard target hidden | approved (class emblems pending) |
 
 Settings tabs per page:
 
