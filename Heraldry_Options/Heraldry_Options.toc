@@ -13,5 +13,6 @@ Panel.lua
 Pages\General.lua
 Pages\Profiles.lua
 Pages\Theme.lua
+Pages\Fonts.lua
 Pages\Layout.lua
 Pages\Modules.lua

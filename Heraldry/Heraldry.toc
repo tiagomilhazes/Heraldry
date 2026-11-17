@@ -17,6 +17,7 @@ Core\Modules.lua
 Core\Movers.lua
 Core\EditMode.lua
 Core\Themes.lua
+Core\Fonts.lua
 Themes\Standard.lua
 Themes\Paladin.lua
 Core\GameMenu.lua

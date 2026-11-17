@@ -219,9 +219,10 @@ function Orbs:Style(o, piece)
 		o.ring:Hide()
 	end
 	o.surface:SetSize(D, D / 11)
+	-- Font, outline and global scale come from the core (Fonts page).
 	local size = math.max(8, D * 0.15 * self.db.textSize)
-	o.text:SetFont(STANDARD_TEXT_FONT, size, "OUTLINE")
-	o.sub:SetFont(STANDARD_TEXT_FONT, size * 0.62, "OUTLINE")
+	H.Fonts:Apply(o.text, "header", size)
+	H.Fonts:Apply(o.sub, "header", size * 0.62)
 	return reach
 end
 
@@ -332,6 +333,7 @@ function Orbs:OnEnable()
 	end)
 
 	H:On("THEME_CHANGED", function() Orbs:Layout() end)
+	H:On("FONTS_CHANGED", function() Orbs:Layout() end)
 	self:Layout()
 end
 

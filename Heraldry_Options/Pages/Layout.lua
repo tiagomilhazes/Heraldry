@@ -16,7 +16,7 @@ H:RegisterOptionsPage({
 	label = "Layout",
 	desc = "Move and scale everything on screen. Positions are saved in the active profile.",
 	group = "core",
-	order = 4,
+	order = 5,
 	build = function(page)
 		page:Section("Edit mode")
 		page:Button({

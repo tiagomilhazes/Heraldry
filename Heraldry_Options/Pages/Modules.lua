@@ -13,7 +13,7 @@ H:RegisterOptionsPage({
 	label = "Modules",
 	desc = "Turn modules on or off. Changes apply after a reload.",
 	group = "core",
-	order = 5,
+	order = 6,
 	build = function(page)
 		local catalog = M:Catalog()
 		if #catalog == 0 then
