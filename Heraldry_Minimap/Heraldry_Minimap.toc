@@ -1,0 +1,12 @@
+## Interface: 16001
+## Title: |cffE8B04BHeraldry|r Minimap
+## Notes: The minimap in a heraldic frame: day/night, addon buttons and mail in its sockets, zone and clock on its plate.
+## Author: Tiago
+## Version: 0.1.0
+## Dependencies: Heraldry
+## X-Heraldry-Module: 1
+## X-Heraldry-Label: Minimap
+## IconTexture: Interface\Icons\INV_Misc_Map_01
+
+Minimap.lua
+Settings.lua

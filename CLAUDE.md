@@ -52,6 +52,7 @@ Heraldry_Options/              settings panel, LoadOnDemand
 Heraldry_ActionBars/           ActionBars.lua Art.lua Text.lua Settings.lua
 Heraldry_Orbs/                 Orbs.lua Settings.lua Media/{Liquid1,Liquid2,Glass,Surface}.tga
 Heraldry_UnitFrames/           Target.lua Cast.lua Small.lua TargetPlaque.lua Settings.lua Media/Target/{Plaque,LevelRing}.tga
+Heraldry_Minimap/              Minimap.lua Settings.lua Media/{Frame,Mask}.tga
 Heraldry_Test/                 temporary test module (to be deleted)
 ```
 
@@ -211,7 +212,7 @@ H:RegisterOptionsPage({
 |---|---|---|
 | 1, hero | Action bar block (bars 1+2) and the orbs | Full ornament: double plate, rails, caps, theme rings, button frames |
 | 1.5, target | Target frame (Plaque style) | One fixed plaque (lion medallions, two jewels, a slot the bars fill). The target shows only as colour: metal finish on top of the theme finish (theme finish for elite/players, iron hostile, bronze friendly, silver rare, red boss, at the theme finish's brightness) and jewel colour (reaction or class). Shape never changes, so texts never move. Class emblems will replace the lions for players (art pending) |
-| 2, frames | Minimap, quest log (and the target's Minimal style) | Dark glass panel, a rim in the theme accent, **one** theme motif (the gem) |
+| 2, frames | Quest log (and the target's Minimal style). The minimap moved to 1.5 (M1 frame) | Dark glass panel, a rim in the theme accent, **one** theme motif (the gem) |
 | 3, panels | Chat, damage meter, tooltips | Flat and dark, with a thin rim |
 
 Art is designed **as a whole**, not as loose pieces. The first Paladin art (a pink plate, shield crests and a gold frame on every button) was rejected as random. Paladin uses the bronze finish.
@@ -246,6 +247,7 @@ Settings tabs per page:
 | Orbs | Place / Text / Font / Behaviour |
 | Target | Size / Text / Look / Behaviour / Font |
 | Target of target, Focus | Size / Text / Behaviour |
+| Minimap | Size / Text / Addons / Behaviour / Font |
 
 ## Untested (needs the situation in game)
 
@@ -261,7 +263,7 @@ Settings tabs per page:
 
 1. ~~Target cast bar~~: approved as C4 — the target's casts take the power row (Cast.lua; gold interruptible, grey not, red interrupted/failed; game timer via SetTimerDuration when available, else GetTime maths in pcall). Pending for the target: class emblems in the medallions (Canva, needs Tiago's prompt wording).
 2. Target of target and focus delivered (Small.lua: smaller plaques, same finish/jewel rules, per-frame prefixed settings tot*/focus*, ToT docked right of the target). Party later (vertical cards, prototype P4).
-3. **Minimap** (level 2).
+3. **Minimap**: delivered as prototype M1 (TimelessUI Paladin_PlateM frame, level 1.5 like the target): map cut to the window by a mask, sockets = day/night (GameTimeFrame), addon buttons panel toggle, mail; zone + clock on the plate with per-text settings. Awaiting test.
 4. **Quest log / tracker** (level 2). Must coexist with Questie and Zygor.
 5. Delete `Heraldry_Test`.
 6. Swing bar styling.
