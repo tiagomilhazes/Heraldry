@@ -32,6 +32,13 @@
 	      file, size = { w, h }
 	      Drawn square and centred; tinted for elite, rare and boss units.
 
+	  scroll.rod                        rod on the top and bottom of a scroll (quest tracker)
+	      cap, capR, mid, size = { w, h }, capW, midW, shaft
+	      cap: the left end (the right end is capR, or cap mirrored); size is the
+	      cap file; capW: how many pixels of it are the end piece; mid: the shaft,
+	      tiled sideways when midW (its width in pixels) is given, else stretched;
+	      shaft: the share of the rod's height that is the plain shaft (0-1).
+
 	A theme can also give:
 	  accent = { r, g, b }               metal colour for thin lines (button borders)
 	  finish = "bronze"                  default finish (see FINISHES): tones the art down
@@ -92,6 +99,11 @@ end
 TYPES["orb.power"] = TYPES["orb.health"]
 TYPES["frame.gem"] = function(p)
 	return p.file and nums(p.size, 2) or "needs file and size {w,h}"
+end
+
+TYPES["scroll.rod"] = function(p)
+	return p.cap and p.mid and nums(p.size, 2) and isNum(p.capW) and isNum(p.shaft) and p.shaft > 0 and p.shaft <= 1
+		or "needs cap, mid, size {w,h}, capW and shaft"
 end
 
 -- desaturation (0-1), colour multiplied over the art

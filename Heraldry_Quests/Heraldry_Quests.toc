@@ -1,0 +1,12 @@
+## Interface: 16001
+## Title: |cffE8B04BHeraldry|r Quests
+## Notes: The quest tracker as a parchment scroll between two rods.
+## Author: Tiago
+## Version: 0.1.0
+## Dependencies: Heraldry
+## X-Heraldry-Module: 1
+## X-Heraldry-Label: Quests
+## IconTexture: Interface\Icons\INV_Misc_Note_01
+
+Quests.lua
+Settings.lua

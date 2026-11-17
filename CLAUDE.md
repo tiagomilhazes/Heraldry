@@ -45,7 +45,8 @@ Heraldry/                      core (always loaded)
   Core/GameMenu.lua            "Heraldry" button in the ESC menu
   Core/Commands.lua            /hui, /heraldry
   Media/Themes/Paladin/*.tga   ButtonFrame, ButtonFrameSlim, Plate, PlateDouble,
-                               Rail, Cap, OrbHealth, OrbPower, Gem
+                               Rail, Cap, OrbHealth, OrbPower, Gem, RodCap, RodMid
+  Media/Themes/Standard/*.tga  RodCap, RodCapR, RodMid (plain wooden scroll rod)
 Heraldry_Options/              settings panel, LoadOnDemand
   Style.lua Widgets.lua Panel.lua
   Pages/General|Profiles|Theme|Fonts|Layout|Modules.lua
@@ -53,6 +54,7 @@ Heraldry_ActionBars/           ActionBars.lua Art.lua Text.lua Settings.lua
 Heraldry_Orbs/                 Orbs.lua Settings.lua Media/{Liquid1,Liquid2,Glass,Surface}.tga
 Heraldry_UnitFrames/           Target.lua Cast.lua Small.lua TargetPlaque.lua Settings.lua Media/Target/{Plaque,LevelRing}.tga
 Heraldry_Minimap/              Minimap.lua Settings.lua Media/{Frame,Mask}.tga
+Heraldry_Quests/               Quests.lua Settings.lua Media/{PaperLight,PaperDark}.tga
 Heraldry_Test/                 temporary test module (to be deleted)
 ```
 
@@ -152,6 +154,7 @@ Each piece type says which numbers a theme must provide, measured in texture pix
 | `bar.cap` | `file, size, join{x,y,h}` |
 | `orb.health` / `orb.power` | `file, size, hole{cx,cy,r}, reach` |
 | `frame.gem` | `file, size` |
+| `scroll.rod` | `cap, capR?, mid, size, capW, midW?, shaft` (cap mirrored when no capR; mid tiled when midW, else stretched) |
 
 - Optional theme fields:
   - `accent = {r,g,b}`: the metal colour for thin lines.
@@ -248,6 +251,7 @@ Settings tabs per page:
 | Orbs | Place / Text / Font / Behaviour |
 | Unit frames | Target (Size / Text / Look / Behaviour) / Target of target (Size / Text / Behaviour) / Focus (Size / Text / Behaviour) / Font. Party and raid will be new top-level tabs |
 | Minimap | Size / Text / Addons / Behaviour / Font |
+| Quests | Look / Text / Behaviour / Font |
 
 ## Untested (needs the situation in game)
 
@@ -264,7 +268,7 @@ Settings tabs per page:
 1. ~~Target cast bar~~: approved as C4 — the target's casts take the power row (Cast.lua; gold interruptible, grey not, red interrupted/failed; game timer via SetTimerDuration when available, else GetTime maths in pcall). Pending for the target: class emblems in the medallions (Canva, needs Tiago's prompt wording).
 2. Target of target and focus delivered (Small.lua: smaller plaques, same finish/jewel rules, per-frame prefixed settings tot*/focus*, ToT docked right of the target). Party later (vertical cards, prototype P4).
 3. **Minimap**: delivered as prototype M1 (TimelessUI Paladin_PlateM frame, level 1.5 like the target): map cut to the window by a mask, sockets = day/night (GameTimeFrame), addon buttons panel toggle, mail; zone + clock on the plate with per-text settings. Approved.
-4. **Quest log / tracker** (level 2). Must coexist with Questie and Zygor.
+4. **Quest tracker**: delivered as Q4, a parchment scroll (`Heraldry_Quests`): theme rods top and bottom (`scroll.rod`), light (ink) or dark paper, click the top rod to roll up, own tracker reading C_QuestLog with classic fallbacks. The game's tracker is hidden with Hide() + an OnShow hook (Questie's approach on this client; the frame is protected, so it is not reparented). Steps aside when Questie's tracker is on. Awaiting test. The quest log window itself comes later.
 5. Delete `Heraldry_Test`.
 6. Swing bar styling.
 7. **C3 class overrides**, when the first module needs them.
