@@ -1,0 +1,12 @@
+## Interface: 16001
+## Title: |cffE8B04BHeraldry|r Tooltips
+## Notes: The game's tooltips on parchment, with a thin metal rim.
+## Author: Tiago
+## Version: 0.1.0
+## Dependencies: Heraldry
+## X-Heraldry-Module: 1
+## X-Heraldry-Label: Tooltips
+## IconTexture: Interface\Icons\INV_Misc_Note_02
+
+Tooltips.lua
+Settings.lua

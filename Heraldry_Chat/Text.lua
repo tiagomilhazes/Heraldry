@@ -259,32 +259,8 @@ function CH:InkFor(chatType)
 	return self.INK[chatType]
 end
 
--- any colour made into ink: same hue, dark and saturated; pale greys become brown ink
-local function hue2rgb(p, q, t)
-	if t < 0 then t = t + 1 elseif t > 1 then t = t - 1 end
-	if t < 1 / 6 then return p + (q - p) * 6 * t end
-	if t < 1 / 2 then return q end
-	if t < 2 / 3 then return p + (q - p) * (2 / 3 - t) * 6 end
-	return p
-end
-
-function CH:InkOf(r, g, b)
-	local mx, mn = math.max(r, g, b), math.min(r, g, b)
-	local l = (mx + mn) / 2
-	local d = mx - mn
-	if d < 0.15 then return 0.16, 0.11, 0.06 end
-	local s = l > 0.5 and d / (2 - mx - mn) or d / (mx + mn)
-	local h
-	if mx == r then h = (g - b) / d + (g < b and 6 or 0)
-	elseif mx == g then h = (b - r) / d + 2
-	else h = (r - g) / d + 4 end
-	h = h / 6
-	if h > 0.12 and h < 0.2 then h = 0.1 end   -- yellows read as mud on parchment: amber instead
-	s, l = math.max(s, 0.65), 0.3
-	local q = l < 0.5 and l * (1 + s) or l + s - l * s
-	local p = 2 * l - q
-	return hue2rgb(p, q, h + 1 / 3), hue2rgb(p, q, h), hue2rgb(p, q, h - 1 / 3)
-end
+-- any colour made into ink (Core/Paper.lua)
+function CH:InkOf(r, g, b) return H.Paper:InkOf(r, g, b) end
 
 function CH:InkLine(text, r, g, b, id)
 	local c = self:InkFor(chatTypeOf(id))
