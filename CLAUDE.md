@@ -186,6 +186,7 @@ H:RegisterOptionsPage({
 - Widgets:
   - `page:Section`, `page:Text`, `page:Toggle`, `page:Slider`, `page:Dropdown`, `page:Input`, `page:Button`, `page:FontSection`
   - `UI.Confirm` and `UI.OpenMenu`. The menu frame has mouse disabled, and clicks outside it are caught with `GLOBAL_MOUSE_DOWN`.
+- One page per module. A module with several things to set up (bars, unit frames) puts a picker at the top of each tab instead of one page per thing.
 - Usual pattern: a `field(name)` helper returns get/set pairs that write to `mod.db` and call `mod:Layout()`.
 
 ## Secure frames, taint and combat (rules)
@@ -245,8 +246,7 @@ Settings tabs per page:
 | Modules | (single page) |
 | Action bars | Block / Bars / Look / Visibility / Text / Font |
 | Orbs | Place / Text / Font / Behaviour |
-| Target | Size / Text / Look / Behaviour / Font |
-| Target of target, Focus | Size / Text / Behaviour |
+| Unit frames | Size / Text / Look / Behaviour / Font, with a frame picker on every tab (Target, Target of target, Focus; party and raid later). `H.Panel:Rebuild(key)` rebuilds a page's tabs when the picker changes |
 | Minimap | Size / Text / Addons / Behaviour / Font |
 
 ## Untested (needs the situation in game)

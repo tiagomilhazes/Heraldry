@@ -375,6 +375,20 @@ function Panel:Refresh()
 	if currentPage then currentPage:Refresh() end
 end
 
+-- Builds a page's tabs again (when what they show depends on a choice made
+-- on the page, like the unit picked on the Unit frames page).
+function Panel:Rebuild(key)
+	local def = O.pages[key]
+	if not def then return end
+	for _, pg in pairs(def._tabs or {}) do pg.frame:Hide() end
+	if def._page then def._page.frame:Hide() end
+	def._tabs, def._page = nil, nil
+	if current == key then
+		currentPage = nil
+		self:Select(key)
+	end
+end
+
 function Panel:SetScale(scale)
 	settings.scale = scale
 	if frame then frame:SetScale(scale) end
