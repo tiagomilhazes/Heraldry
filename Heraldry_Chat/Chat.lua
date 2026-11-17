@@ -486,17 +486,10 @@ function CH:HookMessages()
 			local orig = cf.AddMessage
 			cf.hAdd = orig
 			cf.AddMessage = function(fr, text, r, g, b, ...)
-				local k = CH.ink
-				if k and k ~= 1 then
-					if type(r) == "number" and type(g) == "number" and type(b) == "number" then
-						r, g, b = r * k, g * k, b * k
-					elseif r == nil then
-						local c = CH:Paper().text
-						if c then r, g, b = c[1], c[2], c[3] end
-					end
-					-- colours written in the text (names, links): darkened too, when the text can be read
-					local ok, inked = pcall(CH.Ink, CH, text, k)
-					if ok and inked then text = inked end
+				-- light paper: every line in ink (Text.lua)
+				if CH.ink and CH.ink ~= 1 and CH.InkLine then
+					local ok, t2, r2, g2, b2 = pcall(CH.InkLine, CH, text, r, g, b, ...)
+					if ok then text, r, g, b = t2, r2, g2, b2 end
 				end
 				-- abbreviations, timestamps and the like (Text.lua)
 				if CH.FormatLine then
@@ -508,16 +501,6 @@ function CH:HookMessages()
 			end
 		end
 	end
-end
-
--- |cffRRGGBB codes in a line, darkened; nil if the text cannot be touched (secret)
-function CH:Ink(text, k)
-	if type(text) ~= "string" then return nil end
-	if issecretvalue and issecretvalue(text) then return nil end
-	return (text:gsub("|c(%x%x)(%x%x)(%x%x)(%x%x)", function(a, rr, gg, bb)
-		local function d(h) return ("%02x"):format(math.floor(tonumber(h, 16) * k)) end
-		return "|c" .. a .. d(rr) .. d(gg) .. d(bb)
-	end))
 end
 
 --[[ Rolling ]]

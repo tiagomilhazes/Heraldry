@@ -137,12 +137,12 @@ H:RegisterOptionsPage({
 			})
 			page:Color({
 				label = "Colour",
-				desc = "The game's colour for this channel.",
+				desc = function() return CH:InkPaper() and "Ink on light paper (other papers use the game's colour)." or "The game's colour for this channel." end,
 				disabled = function() return not CH:ChatType(current()) and "Not joined" or nil end,
 				get = function() return CH:GetColor(CH:ChatType(current())) end,
 				set = function(r, g, b) CH:SetColor(CH:ChatType(current()), r, g, b) end,
 			})
-			page:Section("Speech colours")
+			page:Section("Speech colours", "On light paper these are ink colours of their own; on the other papers, the game's colours.")
 			for _, sp in ipairs(CH.SPEECH) do
 				page:Color({
 					label = sp.label,
@@ -150,6 +150,12 @@ H:RegisterOptionsPage({
 					set = function(r, g, b) CH:SetColor(sp.type, r, g, b) end,
 				})
 			end
+			page:Button({
+				label = "Ink colours back to the defaults",
+				desc = "Light paper only.",
+				text = "Reset",
+				onClick = function() CH:ResetInk(); page:Refresh() end,
+			})
 		end },
 
 		{ key = "input", label = "Input", build = function(page)

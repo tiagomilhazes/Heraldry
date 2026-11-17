@@ -137,17 +137,152 @@ function CH:ChatType(c)
 	end
 end
 
+function CH:InkPaper() return self.ink and self.ink ~= 1 end
+
 function CH:GetColor(chatType)
+	if self:InkPaper() then
+		local c = self:InkFor(chatType)
+		if c then return c[1], c[2], c[3] end
+	end
 	local info = chatType and ChatTypeInfo and ChatTypeInfo[chatType]
 	if info then return info.r, info.g, info.b end
 	return 1, 1, 1
 end
 
+-- light paper: our ink colour; other papers: the game's own colour
 function CH:SetColor(chatType, r, g, b)
 	if not chatType then return end
+	if self:InkPaper() then
+		self.db["ink_" .. self:InkKey(chatType)] = { r, g, b }
+		return
+	end
 	if ChangeChatColor then ChangeChatColor(chatType, r, g, b) end
 	local info = ChatTypeInfo and ChatTypeInfo[chatType]
 	if info then info.r, info.g, info.b = r, g, b end
+end
+
+--[[ Ink: on light paper every chat type has an ink colour of its own, picked to read
+     on parchment and to keep the types apart (the game's colours are pastel, made for
+     a dark background). Each can be changed on the Channels tab (ink_<key>). ]]
+
+CH.INK = {
+	SAY              = { 0.16, 0.11, 0.06 },   -- near-black brown
+	EMOTE            = { 0.52, 0.30, 0.06 },   -- burnt orange
+	TEXT_EMOTE       = { 0.52, 0.30, 0.06 },
+	YELL             = { 0.66, 0.07, 0.04 },   -- red
+	WHISPER          = { 0.56, 0.08, 0.46 },   -- plum
+	WHISPER_INFORM   = { 0.40, 0.08, 0.34 },
+	BN_WHISPER       = { 0.05, 0.36, 0.52 },
+	BN_WHISPER_INFORM = { 0.05, 0.28, 0.42 },
+	GUILD            = { 0.08, 0.42, 0.06 },   -- green
+	OFFICER          = { 0.04, 0.30, 0.14 },
+	PARTY            = { 0.10, 0.24, 0.62 },   -- blue
+	PARTY_LEADER     = { 0.06, 0.18, 0.52 },
+	RAID             = { 0.70, 0.32, 0.00 },   -- orange
+	RAID_LEADER      = { 0.62, 0.24, 0.00 },
+	RAID_WARNING     = { 0.72, 0.10, 0.00 },
+	INSTANCE_CHAT    = { 0.70, 0.32, 0.00 },
+	INSTANCE_CHAT_LEADER = { 0.62, 0.24, 0.00 },
+	MONSTER_SAY      = { 0.42, 0.30, 0.06 },   -- ochre
+	MONSTER_YELL     = { 0.60, 0.10, 0.04 },
+	MONSTER_EMOTE    = { 0.50, 0.32, 0.08 },
+	MONSTER_WHISPER  = { 0.50, 0.12, 0.42 },
+	SYSTEM           = { 0.36, 0.30, 0.04 },   -- olive
+	CHANNEL          = { 0.52, 0.18, 0.14 },   -- brick, every numbered channel unless set
+	LOOT             = { 0.06, 0.34, 0.30 },
+	MONEY            = { 0.06, 0.34, 0.30 },
+	SKILL            = { 0.10, 0.22, 0.50 },
+	COMBAT_XP_GAIN   = { 0.30, 0.20, 0.50 },
+	COMBAT_FACTION_CHANGE = { 0.20, 0.25, 0.50 },
+	ACHIEVEMENT      = { 0.42, 0.34, 0.02 },
+}
+
+-- chat type of a line, from the id the game passes after the colour
+local typeById
+local function chatTypeOf(id)
+	if type(id) ~= "number" or not ChatTypeInfo then return nil end
+	if not typeById or typeById[id] == nil then
+		typeById = typeById or {}
+		for k, v in pairs(ChatTypeInfo) do
+			if type(v) == "table" and v.id then typeById[v.id] = k end
+		end
+		if typeById[id] == nil then typeById[id] = false end
+	end
+	return typeById[id] or nil
+end
+
+-- numbered channel "CHANNEL4" -> our entry (Trade, General...), refreshed when channels change
+local channelEntry = {}
+function CH:RefreshChannels()
+	wipe(channelEntry)
+	for _, c in ipairs(self.CHANNELS) do
+		if c.numbered then
+			local t = self:ChatType(c)
+			if t then channelEntry[t] = c end
+		end
+	end
+end
+
+-- the key an ink colour is saved under: the chat type, or the channel's name
+function CH:InkKey(chatType)
+	local c = chatType and channelEntry[chatType]
+	return c and c.key or chatType
+end
+
+function CH:InkFor(chatType)
+	if not chatType then return nil end
+	local key = self:InkKey(chatType)
+	local own = self.db["ink_" .. key]
+	if type(own) == "table" then return own end
+	if self.INK[key] then return self.INK[key] end
+	if chatType:find("^CHANNEL%d") then return self.INK.CHANNEL end
+	return self.INK[chatType]
+end
+
+-- any colour made into ink: same hue, dark and saturated; pale greys become brown ink
+local function hue2rgb(p, q, t)
+	if t < 0 then t = t + 1 elseif t > 1 then t = t - 1 end
+	if t < 1 / 6 then return p + (q - p) * 6 * t end
+	if t < 1 / 2 then return q end
+	if t < 2 / 3 then return p + (q - p) * (2 / 3 - t) * 6 end
+	return p
+end
+
+function CH:InkOf(r, g, b)
+	local mx, mn = math.max(r, g, b), math.min(r, g, b)
+	local l = (mx + mn) / 2
+	local d = mx - mn
+	if d < 0.15 then return 0.16, 0.11, 0.06 end
+	local s = l > 0.5 and d / (2 - mx - mn) or d / (mx + mn)
+	local h
+	if mx == r then h = (g - b) / d + (g < b and 6 or 0)
+	elseif mx == g then h = (b - r) / d + 2
+	else h = (r - g) / d + 4 end
+	h = h / 6
+	if h > 0.12 and h < 0.2 then h = 0.1 end   -- yellows read as mud on parchment: amber instead
+	s, l = math.max(s, 0.65), 0.3
+	local q = l < 0.5 and l * (1 + s) or l + s - l * s
+	local p = 2 * l - q
+	return hue2rgb(p, q, h + 1 / 3), hue2rgb(p, q, h), hue2rgb(p, q, h - 1 / 3)
+end
+
+function CH:InkLine(text, r, g, b, id)
+	local c = self:InkFor(chatTypeOf(id))
+	if c then
+		r, g, b = c[1], c[2], c[3]
+	elseif type(r) == "number" and type(g) == "number" and type(b) == "number" then
+		r, g, b = self:InkOf(r, g, b)
+	else
+		r, g, b = 0.16, 0.11, 0.06
+	end
+	-- colours written in the text (names, links), when the text can be read
+	if readable(text) then
+		text = text:gsub("|c(%x%x)(%x%x)(%x%x)(%x%x)", function(a, rr, gg, bb)
+			local nr, ng, nb = CH:InkOf(tonumber(rr, 16) / 255, tonumber(gg, 16) / 255, tonumber(bb, 16) / 255)
+			return ("|c%s%02x%02x%02x"):format(a, math.floor(nr * 255), math.floor(ng * 255), math.floor(nb * 255))
+		end)
+	end
+	return text, r, g, b
 end
 
 --[[ Applied with the layout: fading and the input lines ]]
@@ -163,6 +298,19 @@ function CH:ApplyText()
 		local eb = _G["ChatFrame" .. i .. "EditBox"]
 		if eb then self:SetupHistory(eb) end
 	end
+	self:RefreshChannels()
+	if not self.channelEvents then
+		self.channelEvents = CreateFrame("Frame")
+		for _, e in ipairs({ "CHANNEL_UI_UPDATE", "CHAT_MSG_CHANNEL_NOTICE", "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA" }) do
+			pcall(self.channelEvents.RegisterEvent, self.channelEvents, e)
+		end
+		self.channelEvents:SetScript("OnEvent", function() C_Timer.After(0.5, function() CH:RefreshChannels() end) end)
+	end
+end
+
+function CH:ResetInk()
+	for k in pairs(self.INK) do self.db["ink_" .. k] = nil end
+	for _, c in ipairs(self.CHANNELS) do self.db["ink_" .. (c.type or c.key)] = nil end
 end
 
 --[[ Input history ]]
