@@ -1,9 +1,8 @@
 --[[
 	Heraldry_UnitFrames - Settings.lua
-	One page for the whole module, "Unit frames". The frame picker at the top
-	of every tab (Target, Target of target, Focus; party and raid later)
-	chooses which frame the tab sets up. Tabs: Size | Text | Look | Behaviour |
-	Font (the font is the module's, for every frame).
+	One page for the whole module, "Unit frames". One tab per frame (Target,
+	Target of target, Focus; party and raid later), each with its own row of
+	tabs for the settings, plus a Font tab (the module's font, for every frame).
 ]]
 
 local H = Heraldry
@@ -25,31 +24,7 @@ local function smallField(prefix, name)
 end
 
 local selectedText = "name"
-local unit = "target"
-
-local FRAMES = {
-	{ value = "target", text = "Target" },
-	{ value = "tot",    text = "Target of target" },
-	{ value = "focus",  text = "Focus" },
-}
-
 local function pctFormat(v) return math.floor(v * 100 + 0.5) .. "%" end
-
--- The frame picker, at the top of every tab; picking builds the tabs again.
-local function picker(page)
-	page:Section("Frame")
-	page:Dropdown({
-		label = "Frame to set up",
-		desc = "Every option on this tab applies to this frame.",
-		values = function() return FRAMES end,
-		get = function() return unit end,
-		set = function(v)
-			if v == unit then return end
-			unit = v
-			C_Timer.After(0, function() H.Panel:Rebuild("unitframes") end)
-		end,
-	})
-end
 
 --[[ Target ]]
 
@@ -159,10 +134,6 @@ local function small(prefix, extra)
 			get, set = smallField(prefix, "PctSize")
 			page:Slider({ label = "Percentage size", min = 6, max = 20, step = 1, get = get, set = set })
 		end,
-		look = function(page)
-			page:Section("Look")
-			page:Text("This frame follows the target's plaque: the same metal and jewel colours for each kind of unit, and the target's class colour option.", 36)
-		end,
 		behaviour = function(page)
 			page:Section("Behaviour")
 			local get, set = smallField(prefix, "Show")
@@ -179,30 +150,32 @@ local function small(prefix, extra)
 	}
 end
 
-local BUILD = {
-	target = target,
-	tot = small("tot", { dock = true }),
-	focus = small("focus", { power = true, blizzard = true }),
-}
-
-local function tab(key)
-	return function(page)
-		picker(page)
-		BUILD[unit][key](page)
-	end
-end
+local tot = small("tot", { dock = true })
+local focus = small("focus", { power = true, blizzard = true })
 
 H:RegisterOptionsPage({
 	key = "unitframes",
 	label = "Unit frames",
-	desc = "Target, target of target and focus. Pick the frame at the top of each tab.",
+	desc = "Target, target of target and focus.",
 	group = "modules",
 	order = 30,
 	tabs = {
-		{ key = "size", label = "Size", build = tab("size") },
-		{ key = "text", label = "Text", build = tab("text") },
-		{ key = "look", label = "Look", build = tab("look") },
-		{ key = "behaviour", label = "Behaviour", build = tab("behaviour") },
+		{ key = "target", label = "Target", tabs = {
+			{ key = "size", label = "Size", build = target.size },
+			{ key = "text", label = "Text", build = target.text },
+			{ key = "look", label = "Look", build = target.look },
+			{ key = "behaviour", label = "Behaviour", build = target.behaviour },
+		} },
+		{ key = "tot", label = "Target of target", tabs = {
+			{ key = "size", label = "Size", build = tot.size },
+			{ key = "text", label = "Text", build = tot.text },
+			{ key = "behaviour", label = "Behaviour", build = tot.behaviour },
+		} },
+		{ key = "focus", label = "Focus", tabs = {
+			{ key = "size", label = "Size", build = focus.size },
+			{ key = "text", label = "Text", build = focus.text },
+			{ key = "behaviour", label = "Behaviour", build = focus.behaviour },
+		} },
 		{ key = "font", label = "Font", build = function(page)
 			page:Text("The font is the module's: it applies to every unit frame.", 20)
 			page:FontSection(UF, function() UF:Layout() end)

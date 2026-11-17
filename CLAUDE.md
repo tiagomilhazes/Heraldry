@@ -186,7 +186,7 @@ H:RegisterOptionsPage({
 - Widgets:
   - `page:Section`, `page:Text`, `page:Toggle`, `page:Slider`, `page:Dropdown`, `page:Input`, `page:Button`, `page:FontSection`
   - `UI.Confirm` and `UI.OpenMenu`. The menu frame has mouse disabled, and clicks outside it are caught with `GLOBAL_MOUSE_DOWN`.
-- One page per module. A module with several things to set up (bars, unit frames) puts a picker at the top of each tab instead of one page per thing.
+- One page per module. When a module sets up several separate things (unit frames: target, ToT, focus), each thing is a top-level tab with its own row of sub-tabs (`tabs = { { key, label, tabs = { {key,label,build}, ... } } }`; the panel remembers the sub-tab per tab). Module-wide settings (Font) stay a plain top-level tab. Action bars still use a bar picker inside its tabs.
 - Usual pattern: a `field(name)` helper returns get/set pairs that write to `mod.db` and call `mod:Layout()`.
 
 ## Secure frames, taint and combat (rules)
@@ -246,7 +246,7 @@ Settings tabs per page:
 | Modules | (single page) |
 | Action bars | Block / Bars / Look / Visibility / Text / Font |
 | Orbs | Place / Text / Font / Behaviour |
-| Unit frames | Size / Text / Look / Behaviour / Font, with a frame picker on every tab (Target, Target of target, Focus; party and raid later). `H.Panel:Rebuild(key)` rebuilds a page's tabs when the picker changes |
+| Unit frames | Target (Size / Text / Look / Behaviour) / Target of target (Size / Text / Behaviour) / Focus (Size / Text / Behaviour) / Font. Party and raid will be new top-level tabs |
 | Minimap | Size / Text / Addons / Behaviour / Font |
 
 ## Untested (needs the situation in game)
@@ -263,7 +263,7 @@ Settings tabs per page:
 
 1. ~~Target cast bar~~: approved as C4 — the target's casts take the power row (Cast.lua; gold interruptible, grey not, red interrupted/failed; game timer via SetTimerDuration when available, else GetTime maths in pcall). Pending for the target: class emblems in the medallions (Canva, needs Tiago's prompt wording).
 2. Target of target and focus delivered (Small.lua: smaller plaques, same finish/jewel rules, per-frame prefixed settings tot*/focus*, ToT docked right of the target). Party later (vertical cards, prototype P4).
-3. **Minimap**: delivered as prototype M1 (TimelessUI Paladin_PlateM frame, level 1.5 like the target): map cut to the window by a mask, sockets = day/night (GameTimeFrame), addon buttons panel toggle, mail; zone + clock on the plate with per-text settings. Awaiting test.
+3. **Minimap**: delivered as prototype M1 (TimelessUI Paladin_PlateM frame, level 1.5 like the target): map cut to the window by a mask, sockets = day/night (GameTimeFrame), addon buttons panel toggle, mail; zone + clock on the plate with per-text settings. Approved.
 4. **Quest log / tracker** (level 2). Must coexist with Questie and Zygor.
 5. Delete `Heraldry_Test`.
 6. Swing bar styling.
