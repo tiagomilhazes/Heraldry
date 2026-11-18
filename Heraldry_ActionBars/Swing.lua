@@ -24,7 +24,6 @@ local Themes = H.Themes
 if not (Enum and Enum.PlayerSwingType) then return end
 local SWING = Enum.PlayerSwingType
 
-local SPARK = "Interface\\CastingBar\\UI-CastingBar-Spark"
 local SHOT_WINDOW = 0.5   -- seconds at the end of a ranged swing where moving holds the shot
 
 local DEFAULTS = {
@@ -68,73 +67,14 @@ end
 
 --[[ Frame ]]
 
+local RL = AB.RailLight
 local f
 
 local function build()
 	if f then return f end
-	f = CreateFrame("Frame", "HeraldrySwingBar", AB.bars[1] or UIParent)
-	f:SetIgnoreParentAlpha(true)   -- the scale of bar 1 is undone in LayoutSwing
-	f:SetFrameStrata("MEDIUM")
-	f:SetFrameLevel(20)
-	f.dim = f:CreateTexture(nil, "BACKGROUND")
-	f.mh = f:CreateTexture(nil, "ARTWORK")
-	f.oh = f:CreateTexture(nil, "ARTWORK")
-	f.shot = f:CreateTexture(nil, "ARTWORK", nil, 2)
-	f.shot:SetColorTexture(1, 0.15, 0.1, 0.45)
-	f.shot:SetBlendMode("ADD")
-	f.sparkL = f:CreateTexture(nil, "OVERLAY")
-	f.sparkR = f:CreateTexture(nil, "OVERLAY")
-	for _, t in ipairs({ f.sparkL, f.sparkR }) do
-		t:SetTexture(SPARK)
-		t:SetBlendMode("ADD")
-	end
-	f:SetAlpha(0)
-	-- the place of the separate bar (the mover); on the rail the art follows the rail
-	f.holder = CreateFrame("Frame", "HeraldrySwingHolder", UIParent)
-	f.holder:SetSize(10, 10)
-	f.mover = H:RegisterMover(f.holder, "ActionBars.swing", {
-		label = "Swing bar",
-		default = { "BOTTOM", 0, 150 },
-		scalable = true,
-		isShown = function() return AB.db.swingShow and AB.db.swingPlace == "bar" end,
-	})
+	f = RL.New("HeraldrySwingBar", "ActionBars.swing", "Swing bar", { "BOTTOM", 0, 150 },
+		function() return AB.db.swingShow and AB.db.swingPlace == "bar" end)
 	return f
-end
-
--- rail texture coordinates: tiles of the theme's rail, `tileW` pixels long
-local function railGeometry(h)
-	local piece = Themes:Piece("bar.rail")
-	if not piece then return nil, 1, 0, 1 end   -- a theme without rails (Standard): a plain bar
-	local band = piece.band
-	return piece, h * piece.size[1] / (band[2] - band[1]), band[1] / piece.size[2], band[2] / piece.size[2]
-end
-
-local function paint(t, piece, bright)
-	if not piece then
-		-- plain bar in the theme's metal (or the brand gold)
-		local r, g, b = Themes:Accent()
-		if not r then r, g, b = 0.91, 0.69, 0.29 end
-		t:SetDesaturation(0)
-		t:SetVertexColor(1, 1, 1)
-		t:SetColorTexture(r * bright, g * bright, b * bright, 1)
-		return
-	end
-	t:SetTexture(piece.file, "REPEAT", "CLAMP")
-	Themes:Paint(t)
-	if bright < 1 then
-		local r, g, b = t:GetVertexColor()
-		t:SetVertexColor(r * bright, g * bright, b * bright)
-	end
-end
-
--- width of the block's rails, in UIParent pixels
-local function blockWidth()
-	local bar = AB.bars[1]
-	local plate = bar and bar.hdArt and bar.hdArt.plate
-	if plate and plate:IsShown() then
-		local w = plate:GetWidth()
-		if w and w > 0 then return w * bar:GetScale() end
-	end
 end
 
 function AB:LayoutSwing()
@@ -148,41 +88,15 @@ function AB:LayoutSwing()
 	f:SetShown(db.swingShow)
 	if not db.swingShow then return end
 
-	-- undo bar 1's scale: the swing bar is measured in UIParent pixels
-	local bar1 = AB.bars[1]
-	f:SetScale(1 / bar1:GetScale())
-	local rail = bar1.hdArt and bar1.hdArt.railTop
-	local onRail = db.swingPlace == "rail" and rail and rail:IsShown()
-	local W, h
-	f:ClearAllPoints()
-	if onRail then
-		-- right over the block's top rail, tiles lined up with it
-		f:SetAllPoints(rail)
-		W, h = rail:GetWidth() * bar1:GetScale(), rail:GetHeight() * bar1:GetScale()
-	else
-		W = db.swingMatch and blockWidth() or db.swingWidth
-		h = db.swingHeight
-		f.holder:SetSize(W, h)
-		f:SetAllPoints(f.holder)
-	end
-	f.h = h
-	local piece, tileW, t1, t2 = railGeometry(h)
-	f.tileW, f.t1, f.t2, f.W, f.flat = tileW, t1, t2, W, not piece
+	local art = AB.bars[1].hdArt
+	local onRail = RL.Layout(f, {
+		rail = db.swingPlace == "rail" and art and art.railTop or nil,
+		width = db.swingMatch and RL.BlockWidth() or db.swingWidth,
+		height = db.swingHeight,
+		dim = db.swingDim,
+	})
 
-	paint(f.dim, piece, db.swingDim)
-	f.dim:SetTexCoord(0, piece and W / tileW or 1, t1, t2)
-	f.dim:SetAllPoints(f)
-	paint(f.mh, piece, 1)
-	paint(f.oh, piece, 1)
-	f.mh:ClearAllPoints()
-	f.mh:SetPoint("TOPLEFT")
-	f.mh:SetPoint("BOTTOMLEFT")
-	f.oh:ClearAllPoints()
-	f.oh:SetPoint("TOPRIGHT")
-	f.oh:SetPoint("BOTTOMRIGHT")
-	for _, t in ipairs({ f.sparkL, f.sparkR }) do t:SetSize(h * 0.9, h * 2.2) end
-
-	-- on top of the block: the bottom of the swing rail meets the block's top rail
+	-- the separate bar sits on top of the block (movable from there)
 	local key = self:IsJoined() and "ActionBars.bar2" or "ActionBars.bar1"
 	if not onRail and db.swingDock and H.Movers.byKey[key] then
 		local y = self:Get(1, "padY") + (self:Get(1, "rails") and self:Get(1, "railSize") / 2 or 0) + db.swingGap
@@ -192,27 +106,6 @@ function AB:LayoutSwing()
 	end
 	H.Movers:Apply(f.mover)
 	self:PaintSwing()
-end
-
--- light one side: `w` pixels from the left (main) or the right (off)
-local function light(t, w, fromRight)
-	if w < 0.5 then t:Hide() return end
-	t:SetWidth(w)
-	if f.flat then
-		t:SetTexCoord(0, 1, 0, 1)
-	elseif fromRight then
-		t:SetTexCoord((f.W - w) / f.tileW, f.W / f.tileW, f.t1, f.t2)
-	else
-		t:SetTexCoord(0, w / f.tileW, f.t1, f.t2)
-	end
-	t:Show()
-end
-
-local function spark(t, x, shown)
-	if not shown or not AB.db.swingSpark then t:Hide() return end
-	t:ClearAllPoints()
-	t:SetPoint("CENTER", f, "LEFT", x, 0)
-	t:Show()
 end
 
 -- what to draw: "ranged", "dual" or "single"
@@ -232,21 +125,18 @@ function AB:PaintSwing()
 	local m = mode(now)
 	local main = progress(swings[m == "ranged" and SWING.Ranged or SWING.MainHand], now)
 	local off = m == "dual" and progress(swings[SWING.OffHand], now)
-	light(f.mh, main and W * main or 0, false)
-	light(f.oh, off and W * off or 0, true)
-	spark(f.sparkL, main and W * main or 0, main)
-	spark(f.sparkR, off and W * (1 - off) or 0, off)
+	local sp = self.db.swingSpark
+	RL.Light(f, f.left, main and W * main or 0, false)
+	RL.Light(f, f.right, off and W * off or 0, true)
+	RL.Spark(f, f.sparkL, main and W * main or 0, sp and main)
+	RL.Spark(f, f.sparkR, off and W * (1 - off) or 0, sp and off)
 
 	-- ranged: the end window in red
 	local r = swings[SWING.Ranged]
 	if m == "ranged" and self.db.swingShotWindow and r.duration and r.duration > SHOT_WINDOW then
-		f.shot:ClearAllPoints()
-		f.shot:SetPoint("TOPRIGHT")
-		f.shot:SetPoint("BOTTOMRIGHT")
-		f.shot:SetWidth(W * SHOT_WINDOW / r.duration)
-		f.shot:Show()
+		RL.Warn(f, W * SHOT_WINDOW / r.duration)
 	else
-		f.shot:Hide()
+		RL.Warn(f, false)
 	end
 
 	local active = main or off or S.meleeOn or S.repeatOn

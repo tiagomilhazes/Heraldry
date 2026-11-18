@@ -1,6 +1,6 @@
 --[[
 	Heraldry_ActionBars - Settings.lua
-	Tabs: Block | Bars | Look | Visibility | Text | Swing | Font.
+	Tabs: Block | Bars | Look | Visibility | Text | Swing | Cast | Font.
 	Bars, Look and Visibility work on one bar, picked at the top of each of
 	them (the same choice in all three). Block, Text and Font are for every bar.
 ]]
@@ -230,6 +230,56 @@ H:RegisterOptionsPage({
 			page:Toggle({ label = "Ranged swings", desc = "Auto shot and wands light the rail too.", get = get, set = set })
 			get, set = sw("swingShotWindow")
 			page:Toggle({ label = "Red end on ranged", desc = "The last half second of a shot, where moving holds it.", get = get, set = set })
+		end },
+
+		{ key = "cast", label = "Cast", build = function(page)
+			local function cs(name)
+				return function() return AB.db[name] end, function(v)
+					AB.db[name] = v
+					AB:LayoutCast()
+					AB:CastBlizzard()
+				end
+			end
+			page:Text("Your cast bar is the block's bottom rail: it lights from the left as you cast, a channel empties, an interrupted cast flashes red. The spell and the time left show under the block.")
+			page:Section("Cast bar")
+			local get, set = cs("castShow")
+			page:Toggle({ label = "Show the cast bar", get = get, set = set })
+			get, set = cs("castPlace")
+			page:Dropdown({
+				label = "Where",
+				desc = "On the block's rail: the block's own bottom rail lights up. A bar of its own: a separate rail you can place and size.",
+				values = function() return { { value = "rail", text = "On the block's bottom rail" }, { value = "bar", text = "A bar of its own" } } end,
+				get = get, set = set,
+			})
+			get, set = cs("castHideBlizzard")
+			page:Toggle({ label = "Hide the game's cast bar", get = get, set = set })
+			page:Section("Text")
+			get, set = cs("castNameShow")
+			page:Toggle({ label = "Spell name", get = get, set = set })
+			get, set = cs("castNameSize")
+			page:Slider({ label = "Spell name size", min = 8, max = 24, step = 1, get = get, set = set })
+			get, set = cs("castTimeShow")
+			page:Toggle({ label = "Time left", get = get, set = set })
+			get, set = cs("castTimeSize")
+			page:Slider({ label = "Time size", min = 8, max = 24, step = 1, get = get, set = set })
+			get, set = cs("castTextY")
+			page:Slider({ label = "Gap under the rail", min = -30, max = 30, step = 1, get = get, set = set })
+			page:Section("Look")
+			get, set = cs("castDim")
+			page:Slider({ label = "Unlit rail brightness", min = 0, max = 0.8, step = 0.05, format = pct, get = get, set = set })
+			get, set = cs("castSpark")
+			page:Toggle({ label = "Spark at the edge", get = get, set = set })
+			page:Section("A bar of its own")
+			get, set = cs("castDock")
+			page:Toggle({ label = "On top of the block", desc = "Follows the block; you can still drag it in edit mode.", get = get, set = set })
+			get, set = cs("castGap")
+			page:Slider({ label = "Gap above the block", min = -10, max = 80, step = 1, get = get, set = set })
+			get, set = cs("castMatch")
+			page:Toggle({ label = "As long as the block", get = get, set = set })
+			get, set = cs("castWidth")
+			page:Slider({ label = "Length", min = 100, max = 1200, step = 10, get = get, set = set })
+			get, set = cs("castHeight")
+			page:Slider({ label = "Thickness", min = 6, max = 40, step = 1, get = get, set = set })
 		end },
 
 		{ key = "font", label = "Font", build = function(page)
