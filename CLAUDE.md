@@ -63,6 +63,7 @@ Heraldry_Quests/               Quests.lua Settings.lua
 Heraldry_Chat/                 Chat.lua Text.lua Settings.lua
 Heraldry_Tooltips/             Tooltips.lua Settings.lua
 Heraldry_Auras/                Auras.lua Settings.lua (auras in the orbs' gems)
+Heraldry_ClickCast/            ClickCast.lua Settings.lua (click casting on unit frames)
 ```
 
 ### `.toc` conventions
@@ -269,6 +270,7 @@ Settings tabs per page:
 | Chat | Look / Size / Text / Channels / Input / Behaviour / Font |
 | Tooltips | Look / Position / Text / Behaviour / Font |
 | Auras | Power orb / Life orb / Font |
+| Click casting | Bindings / Behaviour |
 
 ## Untested (needs the situation in game)
 
@@ -294,7 +296,8 @@ Settings tabs per page:
 9. **C3 class overrides**, when the first module needs them.
 8. **C7:** installer, presets ("Altar" plus a Healer variant), import/export.
 9. **Auras** (`Heraldry_Auras`, prototype P2, step 1 delivered): the power orb's gems hold chosen auras per character (`H.char.auraSockets`, names or spell IDs; paladin defaults to seals), icon round in the gem, darkening via a Cooldown from `C_UnitAuras.GetAuraDuration`; the life orb's gems light in debuff-type colours (top magic, right curse, bottom poison, left disease), pulsing when removable. Step 2 to come: long buffs in a small row by the minimap (the game's BuffFrame moved), big icons only for serious debuffs, extra short buffs. Then themes for the other classes. These start only once Standard and Paladin are complete.
-10. **Pending tuning:** default margins of the block, waiting for Tiago's preferred values.
+10. **Click casting** (`Heraldry_ClickCast`, step 1 delivered): bindings per character (`H.char.clickcast`: mods + button 1-5 + action spell/macro/item/target/menu/focus/assist), spells by name so the highest rank is cast (pin with "Name(Rank n)"); a spell may have an enemy and a dead alternative, then the click is a `/cast [@unit,dead,help] ..; [@unit,harm] ..; [@unit] ..` macro built per frame. Applied to every frame in `ClickCastFrames` (a metatable catches frames added later); attributes we set are tracked per frame and cleared before re-applying; combat defers. Steps aside when Clique is loaded. Capture box in the panel (click with the combination). Steps 2-3: hovercast keys, bindings in the tooltip, out-of-combat set, copy between characters.
+11. **Pending tuning:** default margins of the block, waiting for Tiago's preferred values.
 
 ## Workflow
 

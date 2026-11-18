@@ -1,0 +1,12 @@
+## Interface: 16001
+## Title: |cffE8B04BHeraldry|r Click Casting
+## Notes: Cast on unit frames with mouse clicks; spells always use your highest rank.
+## Author: Tiago
+## Version: 0.1.0
+## Dependencies: Heraldry
+## X-Heraldry-Module: 1
+## X-Heraldry-Label: Click casting
+## IconTexture: Interface\Icons\Spell_Holy_FlashHeal
+
+ClickCast.lua
+Settings.lua
