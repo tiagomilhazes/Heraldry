@@ -44,6 +44,7 @@ Heraldry/                      core (always loaded)
   Themes/Standard.lua          neutral theme (colours only)
   Themes/Paladin.lua           Paladin theme (art pieces, accent, bronze finish)
   Themes/Priest.lua            PRIEST (Holy Light) and PRIEST_SHADOW themes (Canva kits, see project doc arte-classes-prompts)
+  Themes/Druid.lua             DRUID (Ancient Grove) theme; form variants (bear, cat, moonkin) to come
   Core/GameMenu.lua            "Heraldry" button in the ESC menu
   Core/Commands.lua            /hui, /heraldry
   Media/Themes/Paladin/*.tga   ButtonFrame, ButtonFrameSlim, Plate, PlateDouble,

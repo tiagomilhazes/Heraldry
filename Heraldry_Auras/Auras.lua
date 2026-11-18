@@ -52,6 +52,7 @@ AU.DEBUFF_COLORS = {
 AU.CLASS_DEFAULTS = {
 	PALADIN = { "Seal of Righteousness", "Seal of Command", "Seal of Wisdom", "Seal of Light" },
 	PRIEST = { "Inner Fire", "Power Word: Fortitude", "Divine Spirit", "Shadow Protection" },
+	DRUID = { "Mark of the Wild", "Thorns", "Omen of Clarity", "Rejuvenation" },
 }
 -- themes that change the defaults (a shadow priest keeps other auras up)
 AU.THEME_DEFAULTS = {
