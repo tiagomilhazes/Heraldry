@@ -277,7 +277,7 @@ Settings tabs per page:
 | Tooltips | Look / Position / Text / Behaviour / Font |
 | Auras | Power orb / Life orb / Buffs / Debuffs / Font |
 | Click casting | Bindings / Behaviour |
-| Data bar | Bar / Blocks / Text / Behaviour / Font |
+| Data bar | Bar / Rail / Blocks / Text / Behaviour / Font |
 
 ## Untested (needs the situation in game)
 

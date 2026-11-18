@@ -1,20 +1,24 @@
 --[[
 	Heraldry_DataBar - DataBar.lua
-	A thin flat bar along the top (or bottom) edge of the screen, end to end
-	(prototype D1, level 3 of the visual hierarchy: flat, dark, a thin rim).
-	Its inner edge is the theme's rail, lit by experience (gold) with the rested
-	part in blue; at the level cap it follows the watched reputation instead.
+	A thin flat bar along the top (or bottom) edge of the screen (prototype D1,
+	level 3 of the visual hierarchy: flat, dark, a thin rim). Its inner edge is
+	the theme's rail, lit by experience (gold) with the rested part in blue; at
+	the level cap (or always, option) it follows the watched reputation.
 
-	Three slots, left / centre / right, hold blocks; each block has a place and
-	an order (settings "<block>Place", "<block>Order"):
+	Three slots, left / centre / right, hold blocks; each block has a place, an
+	order and options of its own (settings "<block>Place", "<block>Order", ...):
 	  micro       the game's micro menu buttons, scaled to the bar
 	  xp          level and experience (or the watched reputation)
 	  gold        money
-	  bags        free and total bag slots; click opens the bags
-	  durability  the most worn item, coloured
+	  bags        bag slots; click opens the bags
+	  durability  the most worn item
 	  perf        frames per second and latency
 	  clock       the time (off by default: the minimap shows it)
-	The game's experience/reputation bars and bag bar are hidden (option).
+	  zone        the zone / subzone
+	  coords      the player's map coordinates
+	  friends     friends online; click opens the friends list
+	  guild       guild members online; click opens the guild
+	The game's experience/reputation bars and bag buttons are hidden (option).
 ]]
 
 local H = Heraldry
@@ -24,22 +28,53 @@ local DB = H:NewModule("DataBar", {
 	label = "Data bar",
 	fonts = true,
 	defaults = {
+		-- bar
 		edge = "top",            -- top | bottom
 		height = 30,
+		widthMode = "full",      -- full | fixed
+		width = 1200,
+		offsetY = 0,
+		background = "flat",     -- flat | dark | light | glass (papers)
 		bgAlpha = 0.85,
+		bgColor = { 0.035, 0.03, 0.025 },
+		rim = true,              -- thin line on the inner edge (when the rail is off)
+		rimOuter = false,        -- a thin line on the outer edge too
+		strata = "MEDIUM",
+		-- rail
 		rail = true,
 		railSize = 8,
+		railPlace = "inner",     -- inner | outer
+		railDim = 0.3,
+		xpColor = { 1.00, 0.92, 0.75 },
+		restColor = { 0.40, 0.55, 0.95 },
+		repColor = { 0.45, 0.85, 0.45 },
+		railRep = "cap",         -- cap (only at the level cap) | always | never
+		-- text
 		textSize = 15,
-		gap = 18,
+		gap = 22,
+		pad = 12,
+		labels = true,           -- "Bags", "Armour"... before the values
+		labelColor = { 0.85, 0.80, 0.70 },
+		valueColors = true,      -- green/yellow/red for bags, durability, latency
+		separator = "·",
+		-- behaviour
 		hideBlizzard = true,
-		microPlace = "left",      microOrder = 1,
-		xpPlace = "center",       xpOrder = 1,
-		goldPlace = "right",      goldOrder = 1,
-		bagsPlace = "right",      bagsOrder = 2,
-		durabilityPlace = "right", durabilityOrder = 3,
-		perfPlace = "right",      perfOrder = 4,
-		clockPlace = "off",       clockOrder = 5,
-		clock24 = true,
+		fade = false,            -- fade out when the mouse is away
+		fadeAlpha = 0.25,
+		hideCombat = false,
+		tooltips = true,
+		-- blocks
+		microPlace = "left",      microOrder = 1,  microScale = 1,
+		xpPlace = "center",       xpOrder = 1,     xpFormat = "percent", xpLevel = true, xpRested = true,
+		goldPlace = "right",      goldOrder = 1,   goldFormat = "full",
+		bagsPlace = "right",      bagsOrder = 2,   bagsFormat = "free", bagsWarn = 4,
+		durabilityPlace = "right", durabilityOrder = 3, durabilityWarn = 0.3,
+		perfPlace = "right",      perfOrder = 4,   perfFps = true, perfLatency = "max",
+		clockPlace = "off",       clockOrder = 5,  clock24 = true, clockServer = false, clockSeconds = false,
+		zonePlace = "off",        zoneOrder = 2,   zoneSub = true,
+		coordsPlace = "off",      coordsOrder = 3, coordsDecimals = 1,
+		friendsPlace = "off",     friendsOrder = 6,
+		guildPlace = "off",       guildOrder = 7,
 	},
 })
 
@@ -51,37 +86,27 @@ DB.BLOCKS = {
 	{ key = "durability", label = "Durability" },
 	{ key = "perf", label = "FPS and latency" },
 	{ key = "clock", label = "Clock" },
+	{ key = "zone", label = "Zone" },
+	{ key = "coords", label = "Coordinates" },
+	{ key = "friends", label = "Friends online" },
+	{ key = "guild", label = "Guild online" },
 }
 
 local hidden = CreateFrame("Frame")
 hidden:Hide()
 
-local XP_GOLD = { 0.90, 0.72, 0.30 }
-local RESTED = { 0.40, 0.55, 0.95 }
-
 --[[ Values ]]
 
 local function plain(v) return v ~= nil and not (issecretvalue and issecretvalue(v)) end
+local function hex(c) return ("%02x%02x%02x"):format(c[1] * 255, c[2] * 255, c[3] * 255) end
+local function num(n) return BreakUpLargeNumbers and BreakUpLargeNumbers(n) or tostring(n) end
 
 local function maxLevel()
-	local m = GetMaxLevelForPlayerExpansion and GetMaxLevelForPlayerExpansion() or MAX_PLAYER_LEVEL or 60
-	return m
+	return GetMaxLevelForPlayerExpansion and GetMaxLevelForPlayerExpansion() or MAX_PLAYER_LEVEL or 60
 end
 
--- share of the bar lit (0-1), the rested share after it, and the text
-function DB:Progress()
-	local level = UnitLevel("player")
-	if level < maxLevel() and not (IsXPUserDisabled and IsXPUserDisabled()) then
-		local cur, max = UnitXP("player"), UnitXPMax("player")
-		if not (plain(cur) and plain(max)) or max <= 0 then return 0, 0, ("Level %d"):format(level) end
-		local rested = GetXPExhaustion and GetXPExhaustion() or 0
-		local p = cur / max
-		local r = math.min(1 - p, (rested or 0) / max)
-		local text = ("Level %d  ·  %d%%"):format(level, math.floor(p * 100))
-		if r > 0 then text = text .. ("  ·  rested %d%%"):format(math.floor(r * 100)) end
-		return p, r, text, cur, max, rested
-	end
-	-- at the cap: the watched reputation
+-- the watched reputation: name, standing label, share (0-1), value, max
+local function reputation()
 	local name, standing, lo, hi, value
 	if C_Reputation and C_Reputation.GetWatchedFactionData then
 		local d = C_Reputation.GetWatchedFactionData()
@@ -90,30 +115,107 @@ function DB:Progress()
 		name, standing, lo, hi, value = GetWatchedFactionInfo()
 	end
 	if name and hi and lo and hi > lo then
-		local p = (value - lo) / (hi - lo)
-		local label = _G["FACTION_STANDING_LABEL" .. (standing or 4)] or ""
-		return p, 0, ("%s  ·  %s %d%%"):format(name, label, math.floor(p * 100))
+		return name, _G["FACTION_STANDING_LABEL" .. (standing or 4)] or "", (value - lo) / (hi - lo), value - lo, hi - lo
 	end
-	return 0, 0, ("Level %d"):format(level)
 end
 
-local function money()
+-- experience: share, rested share, cur, max, rested
+local function experience()
+	if UnitLevel("player") >= maxLevel() or (IsXPUserDisabled and IsXPUserDisabled()) then return nil end
+	local cur, max = UnitXP("player"), UnitXPMax("player")
+	if not (plain(cur) and plain(max)) or max <= 0 then return nil end
+	local rested = GetXPExhaustion and GetXPExhaustion() or 0
+	return cur / max, math.min(1 - cur / max, (rested or 0) / max), cur, max, rested or 0
+end
+
+-- what the rail shows: share, rested share, colours
+function DB:RailProgress()
+	local db = self.db
+	local p, r = experience()
+	if p and db.railRep ~= "always" then return p, r, db.xpColor, db.restColor end
+	if db.railRep ~= "never" then
+		local _, _, rp = reputation()
+		if rp then return rp, 0, db.repColor end
+	end
+	if p then return p, r, db.xpColor, db.restColor end
+	return 0, 0, db.xpColor
+end
+
+local function label(text)
+	if not DB.db.labels then return "" end
+	return ("|cff%s%s|r "):format(hex(DB.db.labelColor), text)
+end
+
+-- green / yellow / red for a share where higher is better
+local function grade(p)
+	if not DB.db.valueColors then return "ffffff" end
+	if p >= 0.5 then return "9ccf7a" elseif p >= 0.2 then return "e8c35a" end
+	return "e2604f"
+end
+
+local TEXT = {}
+
+TEXT.xp = function(db)
+	local sep = " " .. db.separator .. " "
+	local p, r, cur, max = experience()
+	if not p then
+		local name, standing, rp = reputation()
+		if name then return ("%s%s%s %d%%"):format(name, sep, standing, math.floor(rp * 100)) end
+		return ("Level %d"):format(UnitLevel("player"))
+	end
+	local parts = {}
+	if db.xpLevel then parts[#parts + 1] = ("Level %d"):format(UnitLevel("player")) end
+	if db.xpFormat == "numbers" then
+		parts[#parts + 1] = ("%s / %s"):format(num(cur), num(max))
+	elseif db.xpFormat == "left" then
+		parts[#parts + 1] = ("%s to go"):format(num(max - cur))
+	elseif db.xpFormat == "both" then
+		parts[#parts + 1] = ("%d%% (%s / %s)"):format(math.floor(p * 100), num(cur), num(max))
+	else
+		parts[#parts + 1] = ("%d%%"):format(math.floor(p * 100))
+	end
+	if db.xpRested and r > 0 then parts[#parts + 1] = ("|cff%srested %d%%|r"):format(hex(db.restColor), math.floor(r * 100)) end
+	return table.concat(parts, sep)
+end
+
+TEXT.gold = function(db)
 	local c = GetMoney()
 	local g, s, k = math.floor(c / 10000), math.floor(c / 100) % 100, c % 100
-	if g > 0 then return ("|cffffd34a%sg|r |cffd8d8d8%ds|r"):format(BreakUpLargeNumbers and BreakUpLargeNumbers(g) or g, s) end
-	if s > 0 then return ("|cffd8d8d8%ds|r |cffe0a070%dc|r"):format(s, k) end
-	return ("|cffe0a070%dc|r"):format(k)
+	local G, S, C = "|cffffd34a", "|cffd8d8d8", "|cffe0a070"
+	if db.goldFormat == "short" then
+		if g >= 1000 then return ("%s%.1fk g|r"):format(G, g / 1000) end
+		if g > 0 then return ("%s%dg|r"):format(G, g) end
+		return ("%s%ds|r"):format(S, s)
+	elseif db.goldFormat == "gold" then
+		return ("%s%sg|r"):format(G, num(g))
+	elseif db.goldFormat == "icons" and GetCoinTextureString then
+		return GetCoinTextureString(c, db.textSize)
+	end
+	local t = {}
+	if g > 0 then t[#t + 1] = ("%s%sg|r"):format(G, num(g)) end
+	if g > 0 or s > 0 then t[#t + 1] = ("%s%ds|r"):format(S, s) end
+	t[#t + 1] = ("%s%dc|r"):format(C, k)
+	return table.concat(t, " ")
 end
 
-local function bags()
+local function bagSlots()
 	local free, total = 0, 0
-	local n = NUM_BAG_SLOTS or 4
-	for b = 0, n do
+	for b = 0, NUM_BAG_SLOTS or 4 do
 		local f = (C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(b)
 		local t = (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(b)
 		free, total = free + (f or 0), total + (t or 0)
 	end
 	return free, total
+end
+
+TEXT.bags = function(db)
+	local free, total = bagSlots()
+	local col = (db.valueColors and free <= db.bagsWarn) and "e2604f" or grade(total > 0 and free / total or 1)
+	local v
+	if db.bagsFormat == "used" then v = ("|cff%s%d|r/%d"):format(col, total - free, total)
+	elseif db.bagsFormat == "freeOnly" then v = ("|cff%s%d|r"):format(col, free)
+	else v = ("|cff%s%d|r/%d"):format(col, free, total) end
+	return label("Bags") .. v
 end
 
 local function durability()
@@ -128,9 +230,70 @@ local function durability()
 	return low
 end
 
-local function colourFor(p)
-	if p >= 0.5 then return "9ccf7a" elseif p >= 0.2 then return "e8c35a" end
-	return "e2604f"
+TEXT.durability = function(db)
+	local d = durability()
+	if not d then return label("Armour") .. "—" end
+	local col = db.valueColors and (d <= db.durabilityWarn and "e2604f" or grade(d)) or "ffffff"
+	return label("Armour") .. ("|cff%s%d%%|r"):format(col, math.floor(d * 100))
+end
+
+TEXT.perf = function(db)
+	local t = {}
+	if db.perfFps then t[#t + 1] = ("%d fps"):format(GetFramerate() or 0) end
+	if db.perfLatency ~= "off" then
+		local _, _, home, world = GetNetStats()
+		local ms = db.perfLatency == "home" and home or db.perfLatency == "world" and world or math.max(home or 0, world or 0)
+		ms = ms or 0
+		local col = db.valueColors and (ms < 120 and "9ccf7a" or ms < 300 and "e8c35a" or "e2604f") or "ffffff"
+		t[#t + 1] = ("|cff%s%d ms|r"):format(col, ms)
+	end
+	return table.concat(t, "  ")
+end
+
+TEXT.clock = function(db)
+	local h, m, s
+	if db.clockServer and GetGameTime then
+		h, m = GetGameTime()
+		s = 0
+	else
+		h, m, s = tonumber(date("%H")), tonumber(date("%M")), tonumber(date("%S"))
+	end
+	local sec = db.clockSeconds and (":%02d"):format(s) or ""
+	if db.clock24 then return ("%02d:%02d%s"):format(h, m, sec) end
+	return ("%d:%02d%s %s"):format((h - 1) % 12 + 1, m, sec, h < 12 and "am" or "pm")
+end
+
+TEXT.zone = function(db)
+	local zone = GetRealZoneText and GetRealZoneText() or GetZoneText() or ""
+	local sub = GetSubZoneText and GetSubZoneText() or ""
+	if db.zoneSub and sub ~= "" and sub ~= zone then return zone .. " " .. db.separator .. " " .. sub end
+	return zone
+end
+
+TEXT.coords = function(db)
+	local ok, x, y = pcall(function()
+		local map = C_Map.GetBestMapForUnit("player")
+		local pos = map and C_Map.GetPlayerMapPosition(map, "player")
+		if pos then return pos:GetXY() end
+	end)
+	if not ok or not x then return "—" end
+	local f = "%." .. db.coordsDecimals .. "f"
+	return (f .. ", " .. f):format(x * 100, y * 100)
+end
+
+TEXT.friends = function(db)
+	local n = 0
+	pcall(function()
+		if C_FriendList and C_FriendList.GetNumOnlineFriends then n = C_FriendList.GetNumOnlineFriends() or 0
+		elseif GetNumFriends then n = select(2, GetNumFriends()) or 0 end
+	end)
+	return label("Friends") .. n
+end
+
+TEXT.guild = function(db)
+	if not IsInGuild() then return label("Guild") .. "—" end
+	local _, online = GetNumGuildMembers()
+	return label("Guild") .. (online or 0)
 end
 
 --[[ Building ]]
@@ -144,19 +307,18 @@ local function block(key)
 	b.text:SetShadowOffset(1, -1)
 	b:SetHeight(1)
 	b:RegisterForClicks("AnyUp")
-	b:SetScript("OnEnter", function(self) if self.tip then DB:Tip(self) end end)
+	b:SetScript("OnEnter", function(self) if DB.db.tooltips then DB:Tip(self) end end)
 	b:SetScript("OnLeave", function() GameTooltip:Hide() end)
 	return b
 end
 
 function DB:Create()
 	local f = CreateFrame("Frame", "HeraldryDataBar", UIParent)
-	f:SetFrameStrata("MEDIUM")
-	f:SetFrameLevel(2)
 	self.frame = f
 	f.bg = f:CreateTexture(nil, "BACKGROUND")
 	f.bg:SetAllPoints()
 	f.line = f:CreateTexture(nil, "BORDER")
+	f.outer = f:CreateTexture(nil, "BORDER")
 	f.dim = f:CreateTexture(nil, "ARTWORK", nil, 0)
 	f.lit = f:CreateTexture(nil, "ARTWORK", nil, 1)
 	f.rest = f:CreateTexture(nil, "ARTWORK", nil, 1)
@@ -164,12 +326,27 @@ function DB:Create()
 	self.blocks = {}
 	for _, d in ipairs(self.BLOCKS) do self.blocks[d.key] = block(d.key) end
 	local B = self.blocks
-	B.xp.tip = "xp"
 	B.bags:SetScript("OnClick", function() if ToggleAllBags then ToggleAllBags() end end)
-	B.bags.tip = "bags"
-	B.durability.tip = "durability"
-	B.perf.tip = "perf"
 	B.clock:SetScript("OnClick", function() if ToggleCalendar then pcall(ToggleCalendar) end end)
+	B.friends:SetScript("OnClick", function() if ToggleFriendsFrame then pcall(ToggleFriendsFrame, 1) end end)
+	B.guild:SetScript("OnClick", function()
+		if ToggleGuildFrame then pcall(ToggleGuildFrame) elseif ToggleFriendsFrame then pcall(ToggleFriendsFrame, 3) end
+	end)
+	B.zone:SetScript("OnClick", function() if ToggleWorldMap then pcall(ToggleWorldMap) end end)
+	B.coords:SetScript("OnClick", function() if ToggleWorldMap then pcall(ToggleWorldMap) end end)
+
+	-- fading when the mouse is away
+	f:SetScript("OnUpdate", function(self, elapsed)
+		self.t = (self.t or 0) + elapsed
+		if self.t < 0.1 then return end
+		self.t = 0
+		local db = DB.db
+		local want = (db.fade and not self:IsMouseOver()) and db.fadeAlpha or 1
+		-- in combat: invisible (alpha only: the micro menu inside must not be hidden in combat)
+		if db.hideCombat and DB.inCombat then want = 0 end
+		local a = self:GetAlpha()
+		if math.abs(a - want) > 0.01 then self:SetAlpha(a + (want - a) * 0.5) end
+	end)
 	return f
 end
 
@@ -193,7 +370,7 @@ function DB:TakeMicro()
 		m:ClearAllPoints()
 		m:SetPoint("LEFT", b, "LEFT", 0, 0)
 		local h = m:GetHeight()
-		local s = h and h > 0 and (self.db.height - 2) / h or 0.6
+		local s = (h and h > 0 and (self.db.height - 2) / h or 0.6) * self.db.microScale
 		m:SetScale(s)
 		b.width = (m:GetWidth() or 200) * s
 		if not self.hookedMicro then
@@ -245,7 +422,6 @@ function DB:Blizzard()
 		_G.MainMenuBarBackpackButton, _G.KeyRingButton, _G.BagBarExpandToggle, _G.CharacterReagentBag0Slot,
 	}
 	for i = 0, 3 do list[#list + 1] = _G["CharacterBag" .. i .. "Slot"] end
-	-- with the micro menu in our bar, the bag buttons go too (our block opens the bags)
 	for _, fr in ipairs(list) do
 		if fr then
 			if hide and not self.moved[fr] then
@@ -269,19 +445,42 @@ function DB:Layout()
 		return
 	end
 	local top = db.edge ~= "bottom"
+	f:SetFrameStrata(db.strata)
+	f:SetFrameLevel(2)
 	f:ClearAllPoints()
-	f:SetPoint(top and "TOPLEFT" or "BOTTOMLEFT", UIParent, top and "TOPLEFT" or "BOTTOMLEFT", 0, 0)
-	f:SetPoint(top and "TOPRIGHT" or "BOTTOMRIGHT", UIParent, top and "TOPRIGHT" or "BOTTOMRIGHT", 0, 0)
+	local y = top and -db.offsetY or db.offsetY
+	if db.widthMode == "fixed" then
+		f:SetPoint(top and "TOP" or "BOTTOM", UIParent, top and "TOP" or "BOTTOM", 0, y)
+		f:SetWidth(db.width)
+	else
+		f:SetPoint(top and "TOPLEFT" or "BOTTOMLEFT", UIParent, top and "TOPLEFT" or "BOTTOMLEFT", 0, y)
+		f:SetPoint(top and "TOPRIGHT" or "BOTTOMRIGHT", UIParent, top and "TOPRIGHT" or "BOTTOMRIGHT", 0, y)
+	end
 	f:SetHeight(db.height)
-	f.bg:SetColorTexture(0.035, 0.03, 0.025, db.bgAlpha)
 
-	-- the inner edge: the theme's rail (dim, lit by progress), or a thin line
+	-- background: flat colour, or one of the papers
+	if db.background == "flat" then
+		local c = db.bgColor
+		f.bg:SetTexCoord(0, 1, 0, 1)
+		f.bg:SetColorTexture(c[1], c[2], c[3], 1)
+		f.bg:SetAlpha(db.bgAlpha)
+	else
+		H.Paper:Apply(f.bg, db.background, db.bgAlpha)
+		local w = f:GetWidth()
+		H.Paper:Crop(f.bg, db.background, (w and w > 0) and w or 1920, db.height)
+	end
+
+	-- the rail: on the inner edge (towards the screen's middle) or the outer one
 	local piece = db.rail and Themes:Piece("bar.rail")
+	local inner = db.railPlace ~= "outer"
+	local bottomSide = (top and inner) or (not top and not inner)
+	local edge = bottomSide and "BOTTOM" or "TOP"
+	self.railEdge, self.railFlip = edge, not bottomSide
 	local rh = db.railSize
-	for _, t in ipairs({ f.dim, f.lit, f.rest, f.line }) do t:ClearAllPoints() end
-	local edge = top and "BOTTOM" or "TOP"
-	f.dim:SetPoint(edge .. "LEFT", f, edge .. "LEFT", 0, top and -rh / 2 or rh / 2)
-	f.dim:SetPoint(edge .. "RIGHT", f, edge .. "RIGHT", 0, top and -rh / 2 or rh / 2)
+	local oy = bottomSide and -rh / 2 or rh / 2
+	for _, t in ipairs({ f.dim, f.lit, f.rest, f.line, f.outer }) do t:ClearAllPoints() end
+	f.dim:SetPoint(edge .. "LEFT", f, edge .. "LEFT", 0, oy)
+	f.dim:SetPoint(edge .. "RIGHT", f, edge .. "RIGHT", 0, oy)
 	f.dim:SetHeight(rh)
 	self.railPiece = piece
 	if piece then
@@ -289,31 +488,42 @@ function DB:Layout()
 			t:SetTexture(piece.file, "REPEAT", "CLAMP")
 			Themes:Paint(t)
 		end
-		f.dim:SetVertexColor(0.3, 0.27, 0.22)
+		f.dim:SetVertexColor(db.railDim, db.railDim * 0.9, db.railDim * 0.75)
 		f.dim:SetDesaturation(0.6)
 	else
 		local r, g, b = Themes:Accent()
-		f.dim:SetColorTexture((r or 0.8) * 0.3, (g or 0.65) * 0.3, (b or 0.3) * 0.3, 1)
-		f.lit:SetColorTexture(XP_GOLD[1], XP_GOLD[2], XP_GOLD[3], 1)
-		f.rest:SetColorTexture(RESTED[1], RESTED[2], RESTED[3], 1)
+		f.dim:SetColorTexture((r or 0.8) * db.railDim, (g or 0.65) * db.railDim, (b or 0.3) * db.railDim, 1)
 	end
-	f.line:SetPoint(edge .. "LEFT")
-	f.line:SetPoint(edge .. "RIGHT")
-	f.line:SetHeight(1)
-	local r, g, b = Themes:Accent()
-	f.line:SetColorTexture(r or 0.8, g or 0.65, b or 0.3, 0.6)
-	f.line:SetShown(not piece)
 	f.dim:SetShown(db.rail)
 
-	-- blocks
-	for key, bl in pairs(self.blocks) do
+	-- thin lines in the theme's metal
+	local r, g, b = Themes:Accent()
+	r, g, b = r or 0.8, g or 0.65, b or 0.3
+	local innerEdge = top and "BOTTOM" or "TOP"
+	f.line:SetPoint(innerEdge .. "LEFT")
+	f.line:SetPoint(innerEdge .. "RIGHT")
+	f.line:SetHeight(1)
+	f.line:SetColorTexture(r, g, b, 0.6)
+	f.line:SetShown(db.rim and not (db.rail and inner))
+	local outerEdge = top and "TOP" or "BOTTOM"
+	f.outer:SetPoint(outerEdge .. "LEFT")
+	f.outer:SetPoint(outerEdge .. "RIGHT")
+	f.outer:SetHeight(1)
+	f.outer:SetColorTexture(r, g, b, 0.6)
+	f.outer:SetShown(db.rimOuter and not (db.rail and not inner))
+
+	for _, bl in pairs(self.blocks) do
 		H.Fonts:Apply(bl.text, "body", db.textSize, self)
 		bl:SetHeight(db.height)
 	end
 	self:TakeMicro()
 	self:Update()
-	self:Arrange()
 	self:Blizzard()
+	self:UpdateVisibility()
+end
+
+function DB:UpdateVisibility()
+	-- the fade loop (OnUpdate) applies combat and mouseover alpha
 end
 
 -- places the blocks in their slots, by order
@@ -329,12 +539,11 @@ function DB:Arrange()
 	for _, list in pairs(slots) do
 		table.sort(list, function(a, b) return (db[a.key .. "Order"] or 0) < (db[b.key .. "Order"] or 0) end)
 	end
-	local gap, pad = db.gap, 10
+	local gap, pad = db.gap, db.pad
 	local function width(bl)
 		if bl.key == "micro" then return bl.width or 0 end
 		return math.max(bl.text:GetStringWidth(), 1)
 	end
-	-- left: from the left edge
 	local x = pad
 	for _, bl in ipairs(slots.left) do
 		local w = width(bl)
@@ -343,7 +552,6 @@ function DB:Arrange()
 		bl:SetWidth(w)
 		x = x + w + gap
 	end
-	-- right: from the right edge
 	x = pad
 	for i = #slots.right, 1, -1 do
 		local bl = slots.right[i]
@@ -353,7 +561,6 @@ function DB:Arrange()
 		bl:SetWidth(w)
 		x = x + w + gap
 	end
-	-- centre: the group centred on the screen
 	local total = 0
 	for i, bl in ipairs(slots.center) do total = total + width(bl) + (i > 1 and gap or 0) end
 	x = -total / 2
@@ -370,76 +577,69 @@ end
 
 function DB:UpdateRail()
 	local f = self.frame
-	if not f or not self.db.rail then
-		if f then f.lit:Hide() f.rest:Hide() end
+	if not f then return end
+	if not self.db.rail then
+		f.lit:Hide()
+		f.rest:Hide()
 		return
 	end
-	local p, r = self:Progress()
+	local p, r, litC, restC = self:RailProgress()
 	local W = f:GetWidth()
 	if not W or W <= 0 then return end
 	local piece, rh = self.railPiece, self.db.railSize
-	local top = self.db.edge ~= "bottom"
-	local edge = top and "BOTTOM" or "TOP"
-	local oy = top and -rh / 2 or rh / 2
-	local function place(t, x0, x1, light)
+	local edge, flip = self.railEdge, self.railFlip
+	local oy = edge == "BOTTOM" and -rh / 2 or rh / 2
+	local tileW, t1, t2
+	if piece then
+		tileW = piece.size[1] * rh / (piece.band[2] - piece.band[1])
+		t1, t2 = piece.band[1] / piece.size[2], piece.band[2] / piece.size[2]
+		if flip then f.dim:SetTexCoord(0, W / tileW, t2, t1) else f.dim:SetTexCoord(0, W / tileW, t1, t2) end
+	end
+	local function place(t, x0, x1, c)
 		local w = (x1 - x0) * W
 		t:ClearAllPoints()
-		if w < 1 then t:Hide() return end
+		if not c or w < 1 then t:Hide() return end
 		t:SetPoint(edge .. "LEFT", f, edge .. "LEFT", x0 * W, oy)
 		t:SetSize(w, rh)
 		if piece then
-			-- tiles lined up with the dim rail under it
-			local tileW = piece.size[1] * rh / ((piece.band[2] - piece.band[1]))
-			local t1, t2 = piece.band[1] / piece.size[2], piece.band[2] / piece.size[2]
 			local u0, u1 = x0 * W / tileW, x1 * W / tileW
-			if top then t:SetTexCoord(u0, u1, t1, t2) else t:SetTexCoord(u0, u1, t2, t1) end
-			t:SetVertexColor(light[1] * 1.15, light[2] * 1.15, light[3] * 1.15)
+			if flip then t:SetTexCoord(u0, u1, t2, t1) else t:SetTexCoord(u0, u1, t1, t2) end
+			t:SetVertexColor(math.min(1, c[1] * 1.15), math.min(1, c[2] * 1.15), math.min(1, c[3] * 1.15))
 			t:SetDesaturation(0.5)
+		else
+			t:SetColorTexture(c[1], c[2], c[3], 1)
 		end
 		t:Show()
 	end
-	place(f.lit, 0, p, piece and { 1, 0.92, 0.75 } or XP_GOLD)
-	place(f.rest, p, p + r, RESTED)
-	if piece then
-		local tileW = piece.size[1] * rh / ((piece.band[2] - piece.band[1]))
-		local t1, t2 = piece.band[1] / piece.size[2], piece.band[2] / piece.size[2]
-		if top then f.dim:SetTexCoord(0, W / tileW, t1, t2) else f.dim:SetTexCoord(0, W / tileW, t2, t1) end
-	end
+	place(f.lit, 0, p, litC)
+	place(f.rest, p, p + (r or 0), restC)
 end
 
 function DB:Update()
-	local B = self.blocks
+	local B, db = self.blocks, self.db
 	if not B then return end
-	local _, _, xpText = self:Progress()
-	B.xp.text:SetText(xpText)
-	B.gold.text:SetText(money())
-	local free, total = bags()
-	B.bags.text:SetFormattedText("Bags |cff%s%d|r/%d", colourFor(total > 0 and free / total or 1), free, total)
-	local d = durability()
-	if d then
-		B.durability.text:SetFormattedText("Armour |cff%s%d%%|r", colourFor(d), math.floor(d * 100))
-	else
-		B.durability.text:SetText("Armour —")
+	for key, fn in pairs(TEXT) do
+		if db[key .. "Place"] ~= "off" then B[key].text:SetText(fn(db)) end
 	end
-	self:UpdatePerf()
-	self:UpdateClock()
 	self:UpdateRail()
+	self:Arrange()
 end
 
-function DB:UpdatePerf()
-	local fps = GetFramerate() or 0
-	local _, _, home, world = GetNetStats()
-	local ms = math.max(home or 0, world or 0)
-	self.blocks.perf.text:SetFormattedText("%d fps  |cff%s%d ms|r", fps, ms < 120 and "9ccf7a" or ms < 300 and "e8c35a" or "e2604f", ms)
-end
-
-function DB:UpdateClock()
-	local h, m = tonumber(date("%H")), tonumber(date("%M"))
-	if self.db.clock24 then
-		self.blocks.clock.text:SetFormattedText("%02d:%02d", h, m)
-	else
-		self.blocks.clock.text:SetFormattedText("%d:%02d %s", (h - 1) % 12 + 1, m, h < 12 and "am" or "pm")
+-- the blocks that change by themselves (time, fps, position)
+function DB:Tick()
+	local B, db = self.blocks, self.db
+	if not B then return end
+	local changed = false
+	for _, key in ipairs({ "perf", "clock", "coords", "zone" }) do
+		if db[key .. "Place"] ~= "off" then
+			local t = TEXT[key](db)
+			if t ~= B[key].text:GetText() then
+				B[key].text:SetText(t)
+				changed = true
+			end
+		end
 	end
+	if changed then self:Arrange() end
 end
 
 -- block tooltips
@@ -447,34 +647,56 @@ function DB:Tip(b)
 	local top = self.db.edge ~= "bottom"
 	GameTooltip:SetOwner(b, top and "ANCHOR_BOTTOM" or "ANCHOR_TOP")
 	GameTooltip:ClearLines()
-	if b.tip == "xp" then
-		local p, r, text, cur, max, rested = self:Progress()
-		GameTooltip:AddLine(text, 1, 0.82, 0.3)
-		if cur and max then
-			GameTooltip:AddDoubleLine("Experience", ("%s / %s"):format(BreakUpLargeNumbers(cur), BreakUpLargeNumbers(max)), 1, 1, 1, 1, 1, 1)
-			GameTooltip:AddDoubleLine("To level", BreakUpLargeNumbers(max - cur), 1, 1, 1, 1, 1, 1)
-			if rested and rested > 0 then GameTooltip:AddDoubleLine("Rested", BreakUpLargeNumbers(rested), 0.5, 0.65, 1, 0.5, 0.65, 1) end
+	local k = b.key
+	if k == "xp" then
+		local p, r, cur, max, rested = experience()
+		GameTooltip:AddLine(("Level %d"):format(UnitLevel("player")), 1, 0.82, 0.3)
+		if p then
+			GameTooltip:AddDoubleLine("Experience", ("%s / %s"):format(num(cur), num(max)), 1, 1, 1, 1, 1, 1)
+			GameTooltip:AddDoubleLine("To level", num(max - cur), 1, 1, 1, 1, 1, 1)
+			if rested > 0 then GameTooltip:AddDoubleLine("Rested", num(rested), 0.5, 0.65, 1, 0.5, 0.65, 1) end
 		end
-	elseif b.tip == "bags" then
-		local free, total = bags()
+		local name, standing, _, v, m = reputation()
+		if name then GameTooltip:AddDoubleLine(name, ("%s  %s / %s"):format(standing, num(v), num(m)), 0.5, 0.9, 0.5, 1, 1, 1) end
+	elseif k == "bags" then
+		local free, total = bagSlots()
 		GameTooltip:AddLine("Bags", 1, 0.82, 0.3)
 		GameTooltip:AddDoubleLine("Free", free .. " / " .. total, 1, 1, 1, 1, 1, 1)
 		GameTooltip:AddLine("Click to open the bags.", 0.7, 0.7, 0.7)
-	elseif b.tip == "durability" then
+	elseif k == "durability" then
 		GameTooltip:AddLine("Durability", 1, 0.82, 0.3)
 		for slot = 1, 18 do
 			local cur, max = GetInventoryItemDurability(slot)
 			if cur and max and max > 0 and cur < max then
-				local link = GetInventoryItemLink("player", slot)
-				GameTooltip:AddDoubleLine(link or ("Slot " .. slot), math.floor(cur / max * 100) .. "%", 1, 1, 1, 1, 1, 1)
+				GameTooltip:AddDoubleLine(GetInventoryItemLink("player", slot) or ("Slot " .. slot), math.floor(cur / max * 100) .. "%", 1, 1, 1, 1, 1, 1)
 			end
 		end
-	elseif b.tip == "perf" then
+	elseif k == "perf" then
 		local _, _, home, world = GetNetStats()
 		GameTooltip:AddLine("Performance", 1, 0.82, 0.3)
 		GameTooltip:AddDoubleLine("Frame rate", ("%d fps"):format(GetFramerate() or 0), 1, 1, 1, 1, 1, 1)
 		GameTooltip:AddDoubleLine("Latency (home)", (home or 0) .. " ms", 1, 1, 1, 1, 1, 1)
 		GameTooltip:AddDoubleLine("Latency (world)", (world or 0) .. " ms", 1, 1, 1, 1, 1, 1)
+	elseif k == "gold" then
+		GameTooltip:AddLine("Gold", 1, 0.82, 0.3)
+		GameTooltip:AddLine(GetCoinTextureString and GetCoinTextureString(GetMoney()) or TEXT.gold(self.db), 1, 1, 1)
+	elseif k == "clock" then
+		GameTooltip:AddLine("Time", 1, 0.82, 0.3)
+		local h, m = GetGameTime()
+		GameTooltip:AddDoubleLine("Server", ("%02d:%02d"):format(h, m), 1, 1, 1, 1, 1, 1)
+		GameTooltip:AddDoubleLine("Local", date("%H:%M"), 1, 1, 1, 1, 1, 1)
+		GameTooltip:AddLine("Click for the calendar.", 0.7, 0.7, 0.7)
+	elseif k == "friends" then
+		GameTooltip:AddLine("Friends", 1, 0.82, 0.3)
+		GameTooltip:AddLine("Click to open the friends list.", 0.7, 0.7, 0.7)
+	elseif k == "guild" then
+		GameTooltip:AddLine(GetGuildInfo and GetGuildInfo("player") or "Guild", 1, 0.82, 0.3)
+		GameTooltip:AddLine("Click to open the guild.", 0.7, 0.7, 0.7)
+	elseif k == "zone" or k == "coords" then
+		GameTooltip:AddLine(TEXT.zone(self.db), 1, 0.82, 0.3)
+		GameTooltip:AddLine("Click for the world map.", 0.7, 0.7, 0.7)
+	else
+		return
 	end
 	GameTooltip:Show()
 end
@@ -486,23 +708,26 @@ function DB:OnEnable()
 	self:Layout()
 	local ev = CreateFrame("Frame")
 	for _, e in ipairs({ "PLAYER_XP_UPDATE", "PLAYER_LEVEL_UP", "UPDATE_EXHAUSTION", "UPDATE_FACTION",
-		"PLAYER_MONEY", "BAG_UPDATE_DELAYED", "UPDATE_INVENTORY_DURABILITY", "PLAYER_ENTERING_WORLD" }) do
+		"PLAYER_MONEY", "BAG_UPDATE_DELAYED", "UPDATE_INVENTORY_DURABILITY", "PLAYER_ENTERING_WORLD",
+		"ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA", "FRIENDLIST_UPDATE", "GUILD_ROSTER_UPDATE",
+		"PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }) do
 		pcall(ev.RegisterEvent, ev, e)
 	end
 	ev:SetScript("OnEvent", function(_, e)
 		if e == "PLAYER_ENTERING_WORLD" then
 			DB:Layout()
 			C_Timer.After(2, function() DB:Layout() end)
+		elseif e == "PLAYER_REGEN_DISABLED" then
+			DB.inCombat = true
+			DB:UpdateVisibility()
+		elseif e == "PLAYER_REGEN_ENABLED" then
+			DB.inCombat = false
+			DB:UpdateVisibility()
 		else
 			DB:Update()
-			DB:Arrange()
 		end
 	end)
-	C_Timer.NewTicker(1, function()
-		DB:UpdatePerf()
-		DB:UpdateClock()
-	end)
-	-- the width of the screen (UI scale, resolution) changes the lit share
+	C_Timer.NewTicker(1, function() DB:Tick() end)
 	self.frame:SetScript("OnSizeChanged", function() DB:UpdateRail() end)
 	H:On("THEME_CHANGED", function() DB:Layout() end)
 	H:On("FONTS_CHANGED", function() DB:Layout() end)

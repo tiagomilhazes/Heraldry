@@ -2,7 +2,7 @@
 ## Title: |cffE8B04BHeraldry|r Data Bar
 ## Notes: A thin bar along the top of the screen: micro menu, experience on the theme's rail, gold, bags, durability, FPS and latency.
 ## Author: Tiago
-## Version: 0.1.2
+## Version: 0.2.0
 ## Dependencies: Heraldry
 ## X-Heraldry-Module: 1
 ## X-Heraldry-Label: Data bar
