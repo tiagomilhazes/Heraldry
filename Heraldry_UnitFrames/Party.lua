@@ -54,6 +54,9 @@ local DEFAULTS = {
 	partyShow = true,
 	partyStyle = "cartouche",     -- "cartouche" | "compact"
 	partyHeight = 56,             -- cartouche: height of the whole frame (the art scales with it)
+	partyLifeFill = 1,            -- cartouche: share of the life slot the bar fills
+	partyPowerFill = 0.6,         -- cartouche: share of the mana slot the bar fills
+	partyMuted = true,            -- bar colours toned down to sit with the metal
 	partyWidth = 210, partyHealthHeight = 16, partyPowerHeight = 5, partyShowPower = true,
 	partyNameSize = 11, partyPctSize = 10,
 	partyDirection = "down",      -- "down" | "up" | "right" | "left"
@@ -89,6 +92,13 @@ local function classRGB(class)
 	local c = class and ((C_ClassColor and C_ClassColor.GetClassColor(class)) or (RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]))
 	if c then return c.r, c.g, c.b end
 	return 0.8, 0.8, 0.8
+end
+
+-- a colour toned down towards painted metal: less bright, less saturated
+local function mute(r, g, b)
+	local grey = (r + g + b) / 3
+	local function m(c) return (c + (grey - c) * 0.3) * 0.72 end
+	return m(r), m(g), m(b)
 end
 
 local function accent()
@@ -154,10 +164,12 @@ function Member:Create()
 	m2:SetTexture(MASK)
 	m2:SetAllPoints(f.dotRim)
 	f.dotRim:AddMaskTexture(m2)
-	-- cartouche: the class symbol sits behind the frame, in its window
+	-- cartouche: dark slots behind the bars, and the class symbol in its window
+	f.slotBg = { f:CreateTexture(nil, "BACKGROUND"), f:CreateTexture(nil, "BACKGROUND") }
+	for _, t in ipairs(f.slotBg) do t:SetColorTexture(0.03, 0.025, 0.02, 0.95) end
 	f.symHolder = CreateFrame("Frame", nil, f)
 	f.symbolBg = f.symHolder:CreateTexture(nil, "BACKGROUND")
-	f.symbolBg:SetColorTexture(0.04, 0.035, 0.03, 1)
+	f.symbolBg:SetColorTexture(0.015, 0.012, 0.01, 1)
 	f.symbol = f.symHolder:CreateTexture(nil, "ARTWORK")
 	if self.unit == "player" then
 		-- the player is there anyway: show it only in a group
@@ -193,6 +205,7 @@ function Member:Layout()
 
 	f.plaque:SetShown(not compact)
 	f.symHolder:SetShown(not compact)
+	for _, t in ipairs(f.slotBg) do t:SetShown(not compact) end
 	for _, t in ipairs(f.rim) do t:SetShown(compact) end
 	f.dot:SetShown(compact)
 	f.dotRim:SetShown(compact)
@@ -250,15 +263,24 @@ function Member:LayoutCartouche()
 	M:SetPoint("TOPLEFT", L, "TOPRIGHT")
 	M:SetPoint("BOTTOMRIGHT", R, "BOTTOMLEFT")
 
-	-- bars behind the slots (a pixel larger, so no gap shows at the rims)
-	local function slot(bar, s)
+	-- each slot gets a dark ground (a pixel larger, so no gap shows at the rims);
+	-- the bar fills the share of its height set in the options, centred
+	local function slot(bar, bg, s, fill)
+		local top, bottom = s[2] * k - 1, s[4] * k + 1
+		bg:ClearAllPoints()
+		bg:SetPoint("TOPLEFT", f, "TOPLEFT", s[1] * k - 1, -top)
+		bg:SetPoint("BOTTOMRIGHT", f, "TOPRIGHT", -(AW - s[3]) * k + 1, -bottom)
+		local h = (bottom - top) * fill
+		local mid = (top + bottom) / 2
 		bar:ClearAllPoints()
-		bar:SetPoint("TOPLEFT", f, "TOPLEFT", s[1] * k - 1, -s[2] * k + 1)
-		bar:SetPoint("BOTTOMRIGHT", f, "TOPRIGHT", -(AW - s[3]) * k + 1, -s[4] * k - 1)
+		bar:SetPoint("TOPLEFT", f, "TOPLEFT", s[1] * k - 1, -(mid - h / 2))
+		bar:SetPoint("BOTTOMRIGHT", f, "TOPRIGHT", -(AW - s[3]) * k + 1, -(mid + h / 2))
 	end
-	slot(f.health, C.life)
+	slot(f.health, f.slotBg[1], C.life, self:Get("LifeFill"))
 	f.power:Show()
-	slot(f.power, C.power)
+	slot(f.power, f.slotBg[2], C.power, self:Get("PowerFill"))
+	f.health.bg:SetColorTexture(0, 0, 0, 0)
+	f.power.bg:SetColorTexture(0, 0, 0, 0)
 
 	-- the class symbol fills the window
 	local w = C.window
@@ -287,6 +309,16 @@ function Member:LayoutCartouche()
 	f.pct:SetPoint("RIGHT", f.health, "RIGHT", -4, 0)
 end
 
+-- bar colours toned down to sit with the metal (option)
+function Member:ToneBars()
+	if not self:Get("Muted") then return end
+	local f = self.frame
+	for _, bar in ipairs({ f.health, f.power }) do
+		local r, g, b = bar:GetStatusBarColor()
+		if type(r) == "number" then bar:SetStatusBarColor(mute(r, g, b)) end
+	end
+end
+
 function Member:SetClass(class, off)
 	local f = self.frame
 	if self:Compact() then
@@ -295,8 +327,9 @@ function Member:SetClass(class, off)
 		return
 	end
 	if class then f.symbol:SetTexture(SYMBOLS .. class) end
-	Themes:Paint(f.symbol)
-	if off then f.symbol:SetDesaturation(1) end
+	-- bright gold against the frame's finished metal, so the symbol stands out
+	f.symbol:SetVertexColor(1, 1, 1)
+	f.symbol:SetDesaturation(off and 1 or 0)
 	f.symbol:SetAlpha(off and 0.6 or 1)
 end
 
@@ -340,6 +373,7 @@ function Member:Update()
 	f.name:SetAlpha(off and 0.6 or 1)
 	f.leader:SetShown(self:Get("Leader") and UnitIsGroupLeader(unit) or false)
 	self:SetClass(select(2, UnitClass(unit)), off)
+	self:ToneBars()
 	self:UpdateDebuff()
 	self:UpdateRange()
 	if self:Compact() then self:UpdateRim(unit) else self:SetRimColor(false) end
@@ -377,6 +411,7 @@ function Member:UpdatePreview(p)
 		t:SetVertexColor(cr, cg, cb)
 	end
 	self:SetClass(p.class, p.dead)
+	self:ToneBars()
 	self:SetDebuff(p.debuff and DEBUFF[p.debuff])
 	f:SetAlpha(1)
 	self:SetRimColor(self:Compact() and not p.dead and p.life < self:Get("LowLife"))

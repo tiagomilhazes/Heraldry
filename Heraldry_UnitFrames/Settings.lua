@@ -166,6 +166,10 @@ local party = {
 		page:Slider({ label = "Width", desc = "Cartouche: only the middle of the frame stretches.", min = 80, max = 400, step = 2, get = get, set = set })
 		get, set = pf("Height")
 		page:Slider({ label = "Height (cartouche)", desc = "The whole frame; the bars and the symbol follow the art.", min = 30, max = 120, step = 1, get = get, set = set })
+		get, set = pf("LifeFill")
+		page:Slider({ label = "Life bar thickness (cartouche)", desc = "Share of its slot the bar fills.", min = 0.3, max = 1, step = 0.05, format = pctFormat, get = get, set = set })
+		get, set = pf("PowerFill")
+		page:Slider({ label = "Mana bar thickness (cartouche)", min = 0.2, max = 1, step = 0.05, format = pctFormat, get = get, set = set })
 		page:Section("Compact style")
 		get, set = pf("HealthHeight")
 		page:Slider({ label = "Life bar height", min = 6, max = 40, step = 1, get = get, set = set })
@@ -205,6 +209,8 @@ local party = {
 			values = function() return { { value = "cartouche", text = "Cartouche" }, { value = "compact", text = "Compact" } } end,
 			get = get, set = set,
 		})
+		get, set = pf("Muted")
+		page:Toggle({ label = "Toned-down bar colours", desc = "Class and power colours darkened to sit with the metal. Off: the game's bright colours.", get = get, set = set })
 		get, set = pf("LowLife")
 		page:Slider({ label = "Low life (compact)", desc = "The rim turns red below this.", min = 0.1, max = 0.6, step = 0.05,
 			format = pctFormat, get = get, set = set })
