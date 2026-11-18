@@ -197,11 +197,18 @@ H:RegisterOptionsPage({
 			page:Section("Swing bar")
 			local get, set = sw("swingShow")
 			page:Toggle({ label = "Show the swing bar", get = get, set = set })
+			get, set = sw("swingPlace")
+			page:Dropdown({
+				label = "Where",
+				desc = "On the block's rail: the block's own top rail dims and lights up, nothing is added. A bar of its own: a separate rail you can place and size (the options below).",
+				values = function() return { { value = "rail", text = "On the block's top rail" }, { value = "bar", text = "A bar of its own" } } end,
+				get = get, set = set,
+			})
 			get, set = sw("swingHideIdle")
 			page:Toggle({ label = "Hide when idle", desc = "Fades out when nothing is swinging and auto attack is off.", get = get, set = set })
 			get, set = sw("swingHideBlizzard")
 			page:Toggle({ label = "Hide the game's swing bars", get = get, set = set })
-			page:Section("Place and size")
+			page:Section("A bar of its own")
 			get, set = sw("swingDock")
 			page:Toggle({ label = "On top of the block", desc = "Sits on the block's top rail and follows it; you can still drag it in edit mode. Off: on its own.", get = get, set = set })
 			get, set = sw("swingGap")

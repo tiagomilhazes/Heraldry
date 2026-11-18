@@ -29,6 +29,7 @@ local SHOT_WINDOW = 0.5   -- seconds at the end of a ranged swing where moving h
 
 local DEFAULTS = {
 	swingShow = true,
+	swingPlace = "rail",       -- "rail": the block's own top rail lights up; "bar": a bar of its own
 	swingHideIdle = true,      -- fade out when nothing swings
 	swingDock = true,          -- sits on top of the block (movable from there)
 	swingGap = 2,
@@ -72,8 +73,7 @@ local f
 local function build()
 	if f then return f end
 	f = CreateFrame("Frame", "HeraldrySwingBar", AB.bars[1] or UIParent)
-	f:SetIgnoreParentScale(true)
-	f:SetIgnoreParentAlpha(true)
+	f:SetIgnoreParentAlpha(true)   -- the scale of bar 1 is undone in LayoutSwing
 	f:SetFrameStrata("MEDIUM")
 	f:SetFrameLevel(20)
 	f.dim = f:CreateTexture(nil, "BACKGROUND")
@@ -89,20 +89,22 @@ local function build()
 		t:SetBlendMode("ADD")
 	end
 	f:SetAlpha(0)
-	f.mover = H:RegisterMover(f, "ActionBars.swing", {
+	-- the place of the separate bar (the mover); on the rail the art follows the rail
+	f.holder = CreateFrame("Frame", "HeraldrySwingHolder", UIParent)
+	f.holder:SetSize(10, 10)
+	f.mover = H:RegisterMover(f.holder, "ActionBars.swing", {
 		label = "Swing bar",
 		default = { "BOTTOM", 0, 150 },
 		scalable = true,
-		isShown = function() return AB.db.swingShow end,
+		isShown = function() return AB.db.swingShow and AB.db.swingPlace == "bar" end,
 	})
 	return f
 end
 
 -- rail texture coordinates: tiles of the theme's rail, `tileW` pixels long
-local function railGeometry()
+local function railGeometry(h)
 	local piece = Themes:Piece("bar.rail")
 	if not piece then return nil, 1, 0, 1 end   -- a theme without rails (Standard): a plain bar
-	local h = AB.db.swingHeight
 	local band = piece.band
 	return piece, h * piece.size[1] / (band[2] - band[1]), band[1] / piece.size[2], band[2] / piece.size[2]
 end
@@ -146,10 +148,25 @@ function AB:LayoutSwing()
 	f:SetShown(db.swingShow)
 	if not db.swingShow then return end
 
-	local W = db.swingMatch and blockWidth() or db.swingWidth
-	local h = db.swingHeight
-	f:SetSize(W, h)
-	local piece, tileW, t1, t2 = railGeometry()
+	-- undo bar 1's scale: the swing bar is measured in UIParent pixels
+	local bar1 = AB.bars[1]
+	f:SetScale(1 / bar1:GetScale())
+	local rail = bar1.hdArt and bar1.hdArt.railTop
+	local onRail = db.swingPlace == "rail" and rail and rail:IsShown()
+	local W, h
+	f:ClearAllPoints()
+	if onRail then
+		-- right over the block's top rail, tiles lined up with it
+		f:SetAllPoints(rail)
+		W, h = rail:GetWidth() * bar1:GetScale(), rail:GetHeight() * bar1:GetScale()
+	else
+		W = db.swingMatch and blockWidth() or db.swingWidth
+		h = db.swingHeight
+		f.holder:SetSize(W, h)
+		f:SetAllPoints(f.holder)
+	end
+	f.h = h
+	local piece, tileW, t1, t2 = railGeometry(h)
 	f.tileW, f.t1, f.t2, f.W, f.flat = tileW, t1, t2, W, not piece
 
 	paint(f.dim, piece, db.swingDim)
@@ -167,7 +184,7 @@ function AB:LayoutSwing()
 
 	-- on top of the block: the bottom of the swing rail meets the block's top rail
 	local key = self:IsJoined() and "ActionBars.bar2" or "ActionBars.bar1"
-	if db.swingDock and H.Movers.byKey[key] then
+	if not onRail and db.swingDock and H.Movers.byKey[key] then
 		local y = self:Get(1, "padY") + (self:Get(1, "rails") and self:Get(1, "railSize") / 2 or 0) + db.swingGap
 		H.Movers:Dock("ActionBars.swing", key, "BOTTOM", "TOP", 0, y, true)
 	else
@@ -274,19 +291,32 @@ end
 
 --[[ The game's own swing bars ]]
 
+-- Blizzard_SwingTimer's frames: the known names, else any top-level frame
+-- whose name says swing (the client's naming is not documented).
 local moved = {}
+local function blizzardFrames()
+	local list = {}
+	for name, obj in pairs(_G) do
+		if type(name) == "string" and type(obj) == "table" and name:lower():find("swing")
+			and not name:find("^Heraldry") and not name:find("^ERB_") and not name:find("^EllesmereUI")
+			and type(obj.GetObjectType) == "function" then
+			local ok, parent = pcall(obj.GetParent, obj)
+			if ok and (parent == UIParent or moved[obj]) then list[#list + 1] = obj end
+		end
+	end
+	return list
+end
+
 function AB:SwingBlizzard()
 	local hide = self.db.swingHideBlizzard
-	for _, name in ipairs({ "SwingTimerMainHandFrame", "SwingTimerOffHandFrame", "SwingTimerRangedFrame", "SwingTimerFrame" }) do
-		local fr = _G[name]
-		if fr then
-			if hide and not moved[fr] then
-				moved[fr] = fr:GetParent()
-				pcall(fr.SetParent, fr, hidden)
-			elseif not hide and moved[fr] then
-				pcall(fr.SetParent, fr, moved[fr])
-				moved[fr] = nil
-			end
+	for _, fr in ipairs(blizzardFrames()) do
+		if hide and not moved[fr] then
+			moved[fr] = fr:GetParent()
+			pcall(fr.SetParent, fr, hidden)
+			H:Debug("Swing bar: hid the game's " .. tostring(fr:GetName()))
+		elseif not hide and moved[fr] then
+			pcall(fr.SetParent, fr, moved[fr])
+			moved[fr] = nil
 		end
 	end
 end
