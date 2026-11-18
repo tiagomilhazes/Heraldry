@@ -194,6 +194,42 @@ local function blizzardFrames()
 			if ok and (parent == UIParent or moved[obj]) then list[#list + 1] = obj end
 		end
 	end
+	-- frames with no telling name: found by their label ("Main Hand"...)
+	local labels = {}
+	for _, key in ipairs({ "INVTYPE_WEAPONMAINHAND", "INVTYPE_WEAPONOFFHAND", "INVTYPE_RANGED" }) do
+		if type(_G[key]) == "string" then labels[_G[key]] = true end
+	end
+	labels["Main Hand"], labels["Off Hand"], labels["Ranged"] = true, true, true
+	local seen = {}
+	for _, o in ipairs(list) do seen[o] = true end
+	local f = EnumerateFrames()
+	while f do
+		if f:IsObjectType("StatusBar") and not f:IsForbidden() then
+			local found = false
+			local regions = { f:GetRegions() }
+			local par = f:GetParent()
+			if par and par ~= UIParent then
+				for _, r in ipairs({ par:GetRegions() }) do regions[#regions + 1] = r end
+			end
+			for _, r in ipairs(regions) do
+				if r:IsObjectType("FontString") then
+					local ok, t = pcall(r.GetText, r)
+					if ok and t and labels[t] then found = true break end
+				end
+			end
+			if found then
+				-- the top-level frame holding it
+				local top = f
+				while top:GetParent() and top:GetParent() ~= UIParent and top:GetParent() ~= hidden do top = top:GetParent() end
+				local name = top:GetName() or ""
+				if not seen[top] and not name:find("^Heraldry") and (top:GetParent() == UIParent or moved[top]) then
+					seen[top] = true
+					list[#list + 1] = top
+				end
+			end
+		end
+		f = EnumerateFrames(f)
+	end
 	return list
 end
 
@@ -242,6 +278,8 @@ H:RegisterEvent("ADDON_LOADED", function(_, name)
 end)
 H:RegisterEvent("PLAYER_ENTERING_WORLD", function()
 	H:RunOutOfCombat(function() AB:SwingBlizzard() end, "actionbars-swing-blizz")
+	-- the game may build its bars a moment later
+	C_Timer.After(3, function() H:RunOutOfCombat(function() AB:SwingBlizzard() end, "actionbars-swing-blizz") end)
 end)
 
 H.previews = H.previews or {}
