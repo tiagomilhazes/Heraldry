@@ -211,7 +211,7 @@ local function tick()
 	local now, any = GetTime(), false
 	for s, exp in pairs(counted) do
 		local left = exp - now
-		if left > 0 and s:IsShown() then
+		if left > 0 then   -- a socket that hides stops its own count (stopTime)
 			s.time:SetText(short(left))
 			any = true
 		else

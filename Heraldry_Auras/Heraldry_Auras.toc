@@ -2,7 +2,7 @@
 ## Title: |cffE8B04BHeraldry|r Auras
 ## Notes: Your auras set into the orbs: chosen buffs in the power orb's gems, debuff types in the life orb's.
 ## Author: Tiago
-## Version: 0.1.3
+## Version: 0.1.4
 ## Dependencies: Heraldry
 ## OptionalDeps: Heraldry_Orbs
 ## X-Heraldry-Module: 1
