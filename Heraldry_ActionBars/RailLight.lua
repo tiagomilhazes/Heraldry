@@ -72,6 +72,14 @@ local function paint(t, piece, bright)
 	end
 end
 
+-- the block's rail for a "Where" setting: "top" or "bottom"; nil for a bar of its own
+function RL.BlockRail(place)
+	local art = AB.bars[1] and AB.bars[1].hdArt
+	if not art then return nil end
+	if place == "top" then return art.railTop end
+	if place == "bottom" then return art.railBottom end
+end
+
 -- width of the block's rails, in UIParent pixels
 function RL.BlockWidth()
 	local bar = AB.bars[1]

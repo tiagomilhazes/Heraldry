@@ -28,7 +28,7 @@ local SHOT_WINDOW = 0.5   -- seconds at the end of a ranged swing where moving h
 
 local DEFAULTS = {
 	swingShow = true,
-	swingPlace = "rail",       -- "rail": the block's own top rail lights up; "bar": a bar of its own
+	swingPlace = "bottom",     -- "top" / "bottom": that rail of the block lights up; "bar": a bar of its own
 	swingHideIdle = true,      -- fade out when nothing swings
 	swingDock = true,          -- sits on top of the block (movable from there)
 	swingGap = 2,
@@ -88,9 +88,9 @@ function AB:LayoutSwing()
 	f:SetShown(db.swingShow)
 	if not db.swingShow then return end
 
-	local art = AB.bars[1].hdArt
 	local onRail = RL.Layout(f, {
-		rail = db.swingPlace == "rail" and art and art.railTop or nil,
+		rail = RL.BlockRail(db.swingPlace),
+		flip = db.swingPlace == "bottom",
 		width = db.swingMatch and RL.BlockWidth() or db.swingWidth,
 		height = db.swingHeight,
 		dim = db.swingDim,

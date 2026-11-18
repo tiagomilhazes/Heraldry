@@ -200,8 +200,8 @@ H:RegisterOptionsPage({
 			get, set = sw("swingPlace")
 			page:Dropdown({
 				label = "Where",
-				desc = "On the block's rail: the block's own top rail dims and lights up, nothing is added. A bar of its own: a separate rail you can place and size (the options below).",
-				values = function() return { { value = "rail", text = "On the block's top rail" }, { value = "bar", text = "A bar of its own" } } end,
+				desc = "On one of the block's rails: that rail dims and lights up, nothing is added (keep the swing and the cast on different rails). A bar of its own: a separate rail you can place and size.",
+				values = function() return { { value = "top", text = "The block's top rail" }, { value = "bottom", text = "The block's bottom rail" }, { value = "bar", text = "A bar of its own" } } end,
 				get = get, set = set,
 			})
 			get, set = sw("swingHideIdle")
@@ -210,7 +210,7 @@ H:RegisterOptionsPage({
 			page:Toggle({ label = "Hide the game's swing bars", get = get, set = set })
 			page:Section("A bar of its own")
 			get, set = sw("swingDock")
-			page:Toggle({ label = "On top of the block", desc = "Sits on the block's top rail and follows it; you can still drag it in edit mode. Off: on its own.", get = get, set = set })
+			page:Toggle({ label = "On top of the block", desc = "Sits on top of the block and follows it; you can still drag it in edit mode. Off: on its own.", get = get, set = set })
 			get, set = sw("swingGap")
 			page:Slider({ label = "Gap above the block", min = -10, max = 30, step = 1, get = get, set = set })
 			get, set = sw("swingMatch")
@@ -240,15 +240,15 @@ H:RegisterOptionsPage({
 					AB:CastBlizzard()
 				end
 			end
-			page:Text("Your cast bar is the block's bottom rail: it lights from the left as you cast, a channel empties, an interrupted cast flashes red. The spell and the time left show under the block.")
+			page:Text("Your cast bar is one of the block's rails (the top one by default): it lights from the left as you cast, a channel empties, an interrupted cast flashes red. The spell and the time left show outside the block.")
 			page:Section("Cast bar")
 			local get, set = cs("castShow")
 			page:Toggle({ label = "Show the cast bar", get = get, set = set })
 			get, set = cs("castPlace")
 			page:Dropdown({
 				label = "Where",
-				desc = "On the block's rail: the block's own bottom rail lights up. A bar of its own: a separate rail you can place and size.",
-				values = function() return { { value = "rail", text = "On the block's bottom rail" }, { value = "bar", text = "A bar of its own" } } end,
+				desc = "On one of the block's rails: that rail lights up and the text sits outside the block (keep the swing and the cast on different rails). A bar of its own: a separate rail you can place and size.",
+				values = function() return { { value = "top", text = "The block's top rail" }, { value = "bottom", text = "The block's bottom rail" }, { value = "bar", text = "A bar of its own" } } end,
 				get = get, set = set,
 			})
 			get, set = cs("castHideBlizzard")
@@ -263,7 +263,7 @@ H:RegisterOptionsPage({
 			get, set = cs("castTimeSize")
 			page:Slider({ label = "Time size", min = 8, max = 24, step = 1, get = get, set = set })
 			get, set = cs("castTextY")
-			page:Slider({ label = "Gap under the rail", min = -30, max = 30, step = 1, get = get, set = set })
+			page:Slider({ label = "Gap between the rail and the text", min = -30, max = 30, step = 1, get = get, set = set })
 			page:Section("Look")
 			get, set = cs("castDim")
 			page:Slider({ label = "Unlit rail brightness", min = 0, max = 0.8, step = 0.05, format = pct, get = get, set = set })

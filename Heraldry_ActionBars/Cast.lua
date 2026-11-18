@@ -1,6 +1,6 @@
 --[[
 	Heraldry_ActionBars - Cast.lua
-	The player's cast bar as the block's bottom rail (the swing is the top one).
+	The player's cast bar as one of the block's rails (top by default; the swing takes the other).
 	While you cast, the rail dims and lights from the left; a channel starts
 	lit and empties. Interrupted or failed: the rail flashes red. The spell's
 	name and the time left sit under the block, in small text.
@@ -15,7 +15,7 @@ local RL = AB.RailLight
 
 local DEFAULTS = {
 	castShow = true,
-	castPlace = "rail",        -- "rail": the block's bottom rail; "bar": a bar of its own
+	castPlace = "top",         -- "top" / "bottom": that rail of the block lights up; "bar": a bar of its own
 	castDock = true,           -- the separate bar sits on top of the block
 	castGap = 24,
 	castMatch = true,
@@ -69,22 +69,26 @@ function AB:LayoutCast()
 	f:SetShown(db.castShow)
 	if not db.castShow then return end
 
-	local art = AB.bars[1].hdArt
 	local onRail = RL.Layout(f, {
-		rail = db.castPlace == "rail" and art and art.railBottom or nil,
-		flip = true,
+		rail = RL.BlockRail(db.castPlace),
+		flip = db.castPlace == "bottom",
 		width = db.castMatch and RL.BlockWidth() or db.castWidth,
 		height = db.castHeight,
 		dim = db.castDim,
 	})
 
-	-- texts: under the rail (on the block, that is under the block)
+	-- texts: outside the block (above the top rail, under the bottom rail or the bar)
 	H.Fonts:Apply(f.name, "body", db.castNameSize, self)
 	H.Fonts:Apply(f.time, "body", db.castTimeSize, self)
 	f.name:ClearAllPoints()
-	f.name:SetPoint("TOP", f, "BOTTOM", 0, -db.castTextY)
 	f.time:ClearAllPoints()
-	f.time:SetPoint("TOPRIGHT", f, "BOTTOMRIGHT", -f.h, -db.castTextY)
+	if onRail and db.castPlace == "top" then
+		f.name:SetPoint("BOTTOM", f, "TOP", 0, db.castTextY)
+		f.time:SetPoint("BOTTOMRIGHT", f, "TOPRIGHT", -f.h, db.castTextY)
+	else
+		f.name:SetPoint("TOP", f, "BOTTOM", 0, -db.castTextY)
+		f.time:SetPoint("TOPRIGHT", f, "BOTTOMRIGHT", -f.h, -db.castTextY)
+	end
 
 	local key = self:IsJoined() and "ActionBars.bar2" or "ActionBars.bar1"
 	if not onRail and db.castDock and H.Movers.byKey[key] then
