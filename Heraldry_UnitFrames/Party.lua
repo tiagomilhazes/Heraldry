@@ -23,6 +23,12 @@ local UF = H.Modules.byName.UnitFrames
 local Small = UF.Small
 
 local FLAT = "Interface\\Buttons\\WHITE8X8"
+local MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
+local CIRCLES = "Interface\\TargetingFrame\\UI-Classes-Circles"
+
+-- the lion faces in the plaque (pixels of the file): centre and radius of the inner circle
+local FACES = { { 115, 128 }, { 907, 128 } }
+local FACE_R = 54
 local LEADER = "Interface\\GroupFrame\\UI-Group-LeaderIcon"
 
 local hidden = CreateFrame("Frame")
@@ -34,7 +40,9 @@ local DEFAULTS = {
 	partyWidth = 170, partyHealthHeight = 16, partyPowerHeight = 5, partyShowPower = true,
 	partyNameSize = 11, partyPctSize = 10,
 	partyDirection = "down",      -- "down" | "up" | "right" | "left"
-	partySpacing = 8,
+	partySpacing = 22,            -- plaque: from one life bar to the next; the medallions interlock
+	partyCompactSpacing = 4,      -- compact: between rows
+	partyEmblems = true,          -- class emblems in the medallions
 	partyPlayer = false,
 	partyRange = true, partyRangeAlpha = 0.45,
 	partyLeader = true,
@@ -80,6 +88,16 @@ function Member:Create()
 	f.diamond:SetTexture(FLAT)
 	f.diamondRim = f.texts:CreateTexture(nil, "BORDER")
 	f.diamondRim:SetTexture(FLAT)
+	-- class emblems over the lions (the game's class icons until our own emblems exist)
+	f.emblems = {}
+	for i = 1, 2 do
+		local e = f.plaque:CreateTexture(nil, "OVERLAY", nil, -1)
+		local m = f.plaque:CreateMaskTexture()
+		m:SetTexture(MASK)
+		m:SetAllPoints(e)
+		e:AddMaskTexture(m)
+		f.emblems[i] = e
+	end
 	if self.unit == "player" then
 		-- the player is there anyway: show it only in a group
 		UnregisterUnitWatch(f)
@@ -121,12 +139,43 @@ function Member:Layout()
 		f.diamondRim:SetVertexColor(ar or 0.85, ag or 0.7, ab or 0.37)
 	end
 
+	-- emblems on the lion faces
+	if not compact then
+		local P, k = UF.PLAQUE, self.k
+		for i, c in ipairs(FACES) do
+			local e = f.emblems[i]
+			e:SetSize(2 * FACE_R * k, 2 * FACE_R * k)
+			e:ClearAllPoints()
+			if i == 1 then
+				e:SetPoint("CENTER", f, "TOPLEFT", (c[1] - P.slot[1]) * k, -(c[2] - P.slot[2]) * k)
+			else
+				e:SetPoint("CENTER", f, "TOPRIGHT", (c[1] - P.slot[3]) * k, -(c[2] - P.slot[2]) * k)
+			end
+		end
+	end
+
 	-- the crown sits on the top left corner of the life bar
 	local cs = math.max(10, f.health:GetHeight() * 0.8)
 	f.leader:SetSize(cs, cs)
 	f.leader:ClearAllPoints()
 	f.leader:SetPoint("CENTER", f.health, "TOPLEFT", compact and 4 or 10, 2)
 	self:Update()
+end
+
+function Member:SetEmblem(class)
+	local f = self.frame
+	local show = self:Get("Emblems") and not self:Compact() and class ~= nil
+	for _, e in ipairs(f.emblems) do
+		e:SetShown(show)
+		if show then
+			local atlas = "classicon-" .. class:lower()
+			if not (C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(atlas) and e:SetAtlas(atlas) ~= false) then
+				local c = CLASS_ICON_TCOORDS and CLASS_ICON_TCOORDS[class]
+				e:SetTexture(CIRCLES)
+				if c then e:SetTexCoord(c[1], c[2], c[3], c[4]) end
+			end
+		end
+	end
 end
 
 function Member:Fake()
@@ -151,6 +200,7 @@ function Member:Update()
 	f.name:SetAlpha(off and 0.6 or 1)
 
 	f.leader:SetShown(self:Get("Leader") and UnitIsGroupLeader(unit) or false)
+	self:SetEmblem(select(2, UnitClass(unit)))
 	self:UpdateRange()
 
 	if self:Compact() then
@@ -190,6 +240,7 @@ function Member:UpdatePreview(p)
 	end
 	f.diamond:SetVertexColor(r, g, b)
 	f.leader:SetShown(self:Get("Leader") and p.leader or false)
+	self:SetEmblem(p.class)
 	f:SetAlpha(1)
 	self:SetRimColor(not p.dead and p.life < self:Get("LowLife"))
 end
@@ -264,34 +315,37 @@ function UF:LayoutParty()
 		return
 	end
 	local db = self.db
+	-- each member above the one before, so the medallions overlap in order
+	for i, m in ipairs(P.members) do m.frame:SetFrameLevel(P.container:GetFrameLevel() + 2 + (i - 1) * 12) end
 	for _, m in ipairs(P.members) do m:Layout() end
 	local first = P.members[1]
 	if not first then return end
 	local f = first.frame
 	local w, h = f:GetSize()
 	local l, t, r, b = overhang(first)
-	local cellW, cellH = w + l + r, h + t + b
-	local gap = db.partySpacing
+	-- the gap is from one member's bars to the next: with the plaque the
+	-- medallions reach further than that and interlock, like links of a chain
+	local gap = first:Compact() and db.partyCompactSpacing or db.partySpacing
 	local dir = db.partyDirection
 	local n = #P.members
 	local c = P.container
 	if dir == "right" or dir == "left" then
-		c:SetSize(n * cellW + (n - 1) * gap, cellH)
+		c:SetSize(n * w + (n - 1) * gap + l + r, h + t + b)
 	else
-		c:SetSize(cellW, n * cellH + (n - 1) * gap)
+		c:SetSize(w + l + r, n * h + (n - 1) * gap + t + b)
 	end
 	for i, m in ipairs(P.members) do
 		local mf = m.frame
-		local o = (i - 1)
+		local o = i - 1
 		mf:ClearAllPoints()
 		if dir == "down" then
-			mf:SetPoint("TOPLEFT", c, "TOPLEFT", l, -t - o * (cellH + gap))
+			mf:SetPoint("TOPLEFT", c, "TOPLEFT", l, -t - o * (h + gap))
 		elseif dir == "up" then
-			mf:SetPoint("BOTTOMLEFT", c, "BOTTOMLEFT", l, b + o * (cellH + gap))
+			mf:SetPoint("BOTTOMLEFT", c, "BOTTOMLEFT", l, b + o * (h + gap))
 		elseif dir == "right" then
-			mf:SetPoint("TOPLEFT", c, "TOPLEFT", l + o * (cellW + gap), -t)
+			mf:SetPoint("TOPLEFT", c, "TOPLEFT", l + o * (w + gap), -t)
 		else
-			mf:SetPoint("TOPRIGHT", c, "TOPRIGHT", -r - o * (cellW + gap), -t)
+			mf:SetPoint("TOPRIGHT", c, "TOPRIGHT", -r - o * (w + gap), -t)
 		end
 	end
 	RegisterStateDriver(c, "visibility", (P.preview or db.partyInRaid) and "show" or "[group:raid] hide; show")

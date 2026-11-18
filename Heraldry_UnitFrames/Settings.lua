@@ -183,7 +183,9 @@ local party = {
 			get = get, set = set,
 		})
 		get, set = pf("Spacing")
-		page:Slider({ label = "Space between members", min = 0, max = 40, step = 1, get = get, set = set })
+		page:Slider({ label = "Space between members (plaque)", desc = "From one life bar to the next; the medallions interlock below about 40.", min = 0, max = 80, step = 1, get = get, set = set })
+		get, set = pf("CompactSpacing")
+		page:Slider({ label = "Space between members (compact)", min = 0, max = 30, step = 1, get = get, set = set })
 	end,
 	text = function(page)
 		page:Section("Text")
@@ -204,6 +206,8 @@ local party = {
 		get, set = pf("LowLife")
 		page:Slider({ label = "Low life (compact)", desc = "The rim turns red below this.", min = 0.1, max = 0.6, step = 0.05,
 			format = pctFormat, get = get, set = set })
+		get, set = pf("Emblems")
+		page:Toggle({ label = "Class emblems in the medallions", desc = "Plaque style. The game's class icons for now; our own emblems will replace them.", get = get, set = set })
 		get, set = pf("Leader")
 		page:Toggle({ label = "Crown on the group leader", get = get, set = set })
 		page:Text("Colours follow the target's rules: theme metal, jewel in the class colour, and the target's class colour option for the life bar.", 36)
