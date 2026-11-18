@@ -138,7 +138,8 @@ local function makeRow(kind, label, default, anchor, growthH, growthV, groups)
 		H:Debug("Auras: this client has no aura containers; rows off")
 		return
 	end
-	c:SetPoint(anchor, holder, anchor)
+	-- a row growing up leaves room under it for the time text
+	c:SetPoint(anchor, holder, anchor, 0, anchor:find("BOTTOM") and TEXT_ROOM or 0)
 	c:SetSize(1, 1)
 	flow(c, c.SetFlowLayoutAnchorPoint and "SetFlowLayoutAnchorPoint" or "SetAuraLayoutAnchorPoint", anchor)
 	local FD = AnchorUtil and AnchorUtil.FlowDirection
@@ -195,7 +196,7 @@ function AU:LayoutRows()
 	local buffs = makeRow("buffs", "Buffs", { "TOPRIGHT", -250, -12 }, "TOPRIGHT", "Left", "Down", {
 		{ key = "all", filter = "HELPFUL", max = 40 },
 	})
-	local debuffs = makeRow("debuffs", "Serious debuffs", { "BOTTOM", -330, 260 }, "BOTTOM", "Right", "Up", {
+	local debuffs = makeRow("debuffs", "Serious debuffs", { "BOTTOM", -330, 260 }, "BOTTOMLEFT", "Right", "Up", {
 		{ key = "cc", filter = "HARMFUL|CROWD_CONTROL", max = 8 },
 		{ key = "rest", filter = "HARMFUL|!CROWD_CONTROL", max = 16 },
 	})
@@ -247,3 +248,91 @@ function AU:RowsBlizzard()
 		end
 	end
 end
+
+--[[ Preview: made-up debuffs in the debuff row (the game's containers only
+     show real auras, so these are plain icons styled the same) ]]
+
+local SAMPLE = {
+	{ icon = 135963, time = 6 },    -- a stun
+	{ icon = 136183, time = 8 },    -- a fear
+	{ icon = 135848, time = 5 },    -- a root
+}
+local fakes, previewOn, ticker = {}, false, nil
+
+local function fakeIcon(parent)
+	local b = CreateFrame("Frame", nil, parent)
+	b:SetSize(ICON, ICON)
+	b.rim = b:CreateTexture(nil, "BACKGROUND")
+	b.rim:SetPoint("TOPLEFT", -2, 2)
+	b.rim:SetPoint("BOTTOMRIGHT", 2, -2)
+	b.rim:SetColorTexture(0.75, 0.1, 0.08, 1)
+	b.back = b:CreateTexture(nil, "BACKGROUND", nil, 1)
+	b.back:SetPoint("TOPLEFT", -1, 1)
+	b.back:SetPoint("BOTTOMRIGHT", 1, -1)
+	b.back:SetColorTexture(0.04, 0.03, 0.02, 1)
+	b.icon = b:CreateTexture(nil, "ARTWORK")
+	b.icon:SetAllPoints()
+	b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+	b.cd = CreateFrame("Cooldown", nil, b, "CooldownFrameTemplate")
+	b.cd:SetAllPoints()
+	b.cd:SetDrawEdge(false)
+	b.cd:SetReverse(true)
+	b.cd:SetSwipeColor(0, 0, 0, 0.55)
+	if b.cd.SetHideCountdownNumbers then b.cd:SetHideCountdownNumbers(true) end
+	local t = CreateFrame("Frame", nil, b)
+	t:SetAllPoints()
+	t:SetFrameLevel(b.cd:GetFrameLevel() + 2)
+	b.time = t:CreateFontString(nil, "OVERLAY")
+	b.time:SetShadowColor(0, 0, 0, 1)
+	b.time:SetShadowOffset(1, -1)
+	b.time:SetPoint("TOP", b, "BOTTOM", 0, -1)
+	return b
+end
+
+local function previewTick()
+	local now = GetTime()
+	for _, b in ipairs(fakes) do
+		if b:IsShown() then
+			local left = b.exp - now
+			if left <= 0 then
+				b.exp = now + b.length
+				b.cd:SetCooldown(now, b.length)
+				left = b.length
+			end
+			b.time:SetText(AU.db.debuffsTime and ("%d"):format(math.ceil(left)) or "")
+		end
+	end
+end
+
+function AU:SetDebuffPreview(on)
+	previewOn = on
+	local row = rows.debuffs
+	if on and row then
+		local now = GetTime()
+		for i, s in ipairs(SAMPLE) do
+			local b = fakes[i] or fakeIcon(row.holder)
+			fakes[i] = b
+			b:ClearAllPoints()
+			-- the row grows right from its bottom-left, like the real one
+			b:SetPoint("BOTTOMLEFT", row.holder, "BOTTOMLEFT", (i - 1) * (ICON + GAP), TEXT_ROOM)
+			b.icon:SetTexture(s.icon)
+			H.Fonts:Apply(b.time, "body", AU.db.rowsTimeSize, AU)
+			b.length, b.exp = s.time, now + s.time
+			b.cd:SetCooldown(now, s.time)
+			b:Show()
+		end
+		if not ticker then ticker = C_Timer.NewTicker(0.2, previewTick) end
+		previewTick()
+	else
+		for _, b in ipairs(fakes) do b:Hide() end
+		if ticker then ticker:Cancel() ticker = nil end
+	end
+end
+
+H.previews = H.previews or {}
+H.previews[#H.previews + 1] = {
+	label = "Serious debuffs",
+	desc = "Made-up crowd control (a stun, a fear, a root) in the debuff row over the life orb.",
+	get = function() return previewOn end,
+	set = function(v) AU:SetDebuffPreview(v) end,
+}
