@@ -31,7 +31,8 @@ local AU = H:NewModule("Auras", {
 		debuffPulse = true,       -- pulse when you can remove it
 		socketTime = true,        -- time left under the power orb's gems
 		debuffTime = true,        -- time left under the life orb's gems
-		timeSize = 11,
+		socketTimeSize = 11,      -- size of the time left on the power orb's gems
+		debuffTimeSize = 11,      -- and on the life orb's
 	},
 })
 
@@ -99,9 +100,11 @@ local function newSocket(parent)
 	s.glow = s:CreateTexture(nil, "OVERLAY")
 	s.glow:SetTexture(MASK)
 	s.glow:SetBlendMode("ADD")
-	-- time left, under the gem: written by the game from the aura's duration
-	-- object when it can be (secret in combat), else from plain numbers
-	s.time = s:CreateFontString(nil, "OVERLAY")
+	-- time left, in the middle of the gem (on a frame above the cooldown swipe)
+	s.textFrame = CreateFrame("Frame", nil, s)
+	s.textFrame:SetAllPoints()
+	s.textFrame:SetFrameLevel(s.cd:GetFrameLevel() + 2)
+	s.time = s.textFrame:CreateFontString(nil, "OVERLAY")
 	s.time:SetShadowColor(0, 0, 0, 1)
 	s.time:SetShadowOffset(1, -1)
 	s.pulse = s.glow:CreateAnimationGroup()
@@ -155,9 +158,9 @@ function AU:Layout()
 			s.icon:SetPoint("CENTER")
 			s.glow:SetSize(2 * r * 1.6, 2 * r * 1.6)
 			s.glow:SetPoint("CENTER")
-			H.Fonts:Apply(s.time, "body", self.db.timeSize, self)
+			H.Fonts:Apply(s.time, "body", key == "power" and self.db.socketTimeSize or self.db.debuffTimeSize, self)
 			s.time:ClearAllPoints()
-			s.time:SetPoint("TOP", s, "BOTTOM", 0, -1)
+			s.time:SetPoint("CENTER", s, "CENTER", 1, 0)
 			local ar, ag, ab = Themes:Accent()
 			if not ar then ar, ag, ab = 0.85, 0.66, 0.3 end
 			s.rim:SetVertexColor(ar, ag, ab)

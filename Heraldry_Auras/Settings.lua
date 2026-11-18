@@ -46,7 +46,9 @@ H:RegisterOptionsPage({
 			get, set = field("socketDrain")
 			page:Toggle({ label = "Darken as it runs out", get = get, set = set })
 			get, set = field("socketTime")
-			page:Toggle({ label = "Time left", desc = "Under each gem.", get = get, set = set })
+			page:Toggle({ label = "Time left", desc = "In the middle of each gem.", get = get, set = set })
+			get, set = field("socketTimeSize")
+			page:Slider({ label = "Time left size", min = 6, max = 24, step = 1, get = get, set = set })
 			get, set = field("socketInactive")
 			page:Toggle({ label = "Show inactive auras faded", desc = "Off: an aura that is not on you leaves the plain gem.", get = get, set = set })
 		end },
@@ -58,12 +60,11 @@ H:RegisterOptionsPage({
 			get, set = field("debuffPulse")
 			page:Toggle({ label = "Pulse when you can remove it", get = get, set = set })
 			get, set = field("debuffTime")
-			page:Toggle({ label = "Time left", desc = "Under each lit gem: the debuff of that type.", get = get, set = set })
+			page:Toggle({ label = "Time left", desc = "In the middle of each lit gem: the debuff of that type.", get = get, set = set })
+			get, set = field("debuffTimeSize")
+			page:Slider({ label = "Time left size", min = 6, max = 24, step = 1, get = get, set = set })
 		end },
 		{ key = "font", label = "Font", build = function(page)
-			page:Section("Time left")
-			local get, set = field("timeSize")
-			page:Slider({ label = "Size", min = 7, max = 20, step = 1, get = get, set = set })
 			page:FontSection(AU, function() AU:Layout() end)
 		end },
 	},
