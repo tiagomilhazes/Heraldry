@@ -222,7 +222,10 @@ function DB:Blizzard()
 	local list = {
 		_G.StatusTrackingBarManager, _G.MainStatusTrackingBarContainer, _G.SecondaryStatusTrackingBarContainer,
 		_G.MainMenuExpBar, _G.ReputationWatchBar, _G.MainMenuBarMaxLevelBar, _G.BagsBar,
+		-- the bag buttons themselves (this client keeps them loose, not in BagsBar)
+		_G.MainMenuBarBackpackButton, _G.KeyRingButton, _G.BagBarExpandToggle, _G.CharacterReagentBag0Slot,
 	}
+	for i = 0, 3 do list[#list + 1] = _G["CharacterBag" .. i .. "Slot"] end
 	-- with the micro menu in our bar, the bag buttons go too (our block opens the bags)
 	for _, fr in ipairs(list) do
 		if fr then
