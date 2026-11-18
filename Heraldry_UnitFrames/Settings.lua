@@ -1,7 +1,7 @@
 --[[
 	Heraldry_UnitFrames - Settings.lua
 	One page for the whole module, "Unit frames". One tab per frame (Target,
-	Target of target, Focus; party and raid later), each with its own row of
+	Target of target, Focus, Party, Raid), each with its own row of
 	tabs for the settings, plus a Font tab (the module's font, for every frame).
 ]]
 
@@ -259,13 +259,111 @@ local party = {
 	end,
 }
 
+--[[ Raid (Raid.lua) ]]
+
+local function rf(name)
+	return function() return UF.db["raid" .. name] end, function(v)
+		UF.db["raid" .. name] = v
+		UF:LayoutRaid()
+	end
+end
+
+local raid = {
+	size = function(page)
+		page:Section("Each member")
+		local get, set = rf("Width")
+		page:Slider({ label = "Width", min = 50, max = 220, step = 2, get = get, set = set })
+		get, set = rf("Height")
+		page:Slider({ label = "Height", min = 16, max = 60, step = 1, get = get, set = set })
+		get, set = rf("Spacing")
+		page:Slider({ label = "Space between members", min = 0, max = 20, step = 1, get = get, set = set })
+		get, set = rf("Power")
+		page:Toggle({ label = "Show the power bar", get = get, set = set })
+		get, set = rf("PowerHeight")
+		page:Slider({ label = "Power bar height", min = 2, max = 12, step = 1, get = get, set = set })
+		page:Section("Groups")
+		get, set = rf("GroupsPerRow")
+		page:Slider({ label = "Groups per row", desc = "8: every group side by side. 1: one column of groups.", min = 1, max = 8, step = 1, get = get, set = set })
+		get, set = rf("GroupSpacing")
+		page:Slider({ label = "Space between groups", min = 0, max = 60, step = 1, get = get, set = set })
+		get, set = rf("RodSize")
+		page:Slider({ label = "Rod size (banners)", min = 10, max = 30, step = 1, get = get, set = set })
+	end,
+	text = function(page)
+		page:Section("Text")
+		local get, set = rf("NameSize")
+		page:Slider({ label = "Name size", min = 6, max = 20, step = 1, get = get, set = set })
+		get, set = rf("PctShow")
+		page:Toggle({ label = "Show the life percentage", desc = "Also shows Dead and Offline.", get = get, set = set })
+		get, set = rf("PctSize")
+		page:Slider({ label = "Percentage size", min = 6, max = 20, step = 1, get = get, set = set })
+	end,
+	look = function(page)
+		page:Section("Style")
+		local get, set = rf("Style")
+		page:Dropdown({
+			label = "Style",
+			desc = "Banners: each group a parchment banner under the theme's rod; click the rod to roll the group up. Tiles: every group in one framed panel.",
+			values = function() return { { value = "banner", text = "Banners (roll up)" }, { value = "tiles", text = "Tiles" } } end,
+			get = get, set = set,
+		})
+		get, set = rf("Paper")
+		page:Dropdown({
+			label = "Paper (banners)",
+			values = function()
+				local list = {}
+				for _, k in ipairs(H.Paper.ORDER) do list[#list + 1] = { value = k, text = H.Paper:Get(k).label } end
+				return list
+			end,
+			get = get, set = set,
+		})
+		get, set = rf("Muted")
+		page:Toggle({ label = "Toned-down class colours", get = get, set = set })
+		page:Section("Debuffs")
+		get, set = rf("Debuff")
+		page:Toggle({ label = "Show the debuff's colour", desc = "Banners: a small jewel on the member. Tiles: the tile's rim.", get = get, set = set })
+		get, set = rf("DispelOnly")
+		page:Toggle({ label = "Only debuffs you can remove", get = get, set = set })
+	end,
+	behaviour = function(page)
+		page:Section("Who shows")
+		local get, set = rf("Show")
+		page:Toggle({ label = "Show the raid frames", desc = "Takes effect after /reload.", get = get, set = set })
+		get, set = rf("ShowEmpty")
+		page:Toggle({ label = "Show empty groups", get = get, set = set })
+		page:Section("Rolled-up groups")
+		get, set = rf("Warn")
+		page:Toggle({ label = "Rod glows red when a member dies", desc = "Only for rolled-up groups.", get = get, set = set })
+		page:Button({ label = "Open every group", text = "Open all", onClick = function()
+			if InCombatLockdown() then H:Error("Can't change the raid in combat.") return end
+			H.char.raidRolled = nil
+			UF:LayoutRaid()
+		end })
+		page:Section("Range")
+		get, set = rf("Range")
+		page:Toggle({ label = "Fade members out of range", get = get, set = set })
+		get, set = rf("RangeAlpha")
+		page:Slider({ label = "Faded to", min = 0.1, max = 0.9, step = 0.05, format = pctFormat, get = get, set = set })
+		page:Section("Game frames")
+		get, set = rf("HideBlizzard")
+		page:Toggle({ label = "Hide the game's raid frames", get = get, set = function(v) set(v) UF:RaidBlizzard() end })
+		page:Section("Preview")
+		page:Toggle({
+			label = "Preview with made-up members",
+			desc = "Also in General > Testing.",
+			get = function() return UF.raid.preview end,
+			set = function(v) UF:SetRaidPreview(v) end,
+		})
+	end,
+}
+
 local tot = small("tot", { dock = true })
 local focus = small("focus", { power = true, blizzard = true })
 
 H:RegisterOptionsPage({
 	key = "unitframes",
 	label = "Unit frames",
-	desc = "Target, target of target, focus and party.",
+	desc = "Target, target of target, focus, party and raid.",
 	group = "modules",
 	order = 30,
 	tabs = {
@@ -290,6 +388,12 @@ H:RegisterOptionsPage({
 			{ key = "text", label = "Text", build = party.text },
 			{ key = "look", label = "Look", build = party.look },
 			{ key = "behaviour", label = "Behaviour", build = party.behaviour },
+		} },
+		{ key = "raid", label = "Raid", tabs = {
+			{ key = "size", label = "Size", build = raid.size },
+			{ key = "text", label = "Text", build = raid.text },
+			{ key = "look", label = "Look", build = raid.look },
+			{ key = "behaviour", label = "Behaviour", build = raid.behaviour },
 		} },
 		{ key = "font", label = "Font", build = function(page)
 			page:Text("The font is the module's: it applies to every unit frame.", 20)

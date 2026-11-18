@@ -638,6 +638,7 @@ function UF:Layout()
 	self:UpdateAll()
 	if self.LayoutSmall then self:LayoutSmall() end   -- the target of target follows the plaque
 	if self.LayoutParty then self:LayoutParty() end
+	if self.LayoutRaid then self:LayoutRaid() end
 end
 
 
@@ -693,6 +694,7 @@ function UF:OnEnable()
 	self:Layout()
 	self:EnableSmall()
 	self:EnableParty()
+	self:EnableRaid()
 end
 
 function UF:OnProfileChanged()
