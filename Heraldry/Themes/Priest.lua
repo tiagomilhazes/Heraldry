@@ -3,7 +3,8 @@
 	Two priest themes, both generated in Canva from the same recipe (project doc
 	"arte-classes-prompts"):
 	  PRIEST         Holy Light: white marble and pale gold; sun halo and a
-	                 praying angel on the life orb, a holy tome on the mana orb
+	                 praying angel on the life orb, a holy tome and candle on the mana orb
+	                 (no glow: it bled into the orb)
 	  PRIEST_SHADOW  Shadow: obsidian and dark silver; a hooded figure in void
 	                 tendrils on the life orb, a void crystal on the mana orb
 	"auto" picks Holy Light for a priest; Shadow is chosen on the Theme page.
@@ -26,8 +27,8 @@ Heraldry:RegisterTheme("PRIEST", {
 		["bar.rail"]         = { file = P .. "Rail",            size = { 512, 128 },  band = { 8, 120 } },
 		["orb.health"]       = { file = P .. "OrbHealth",       size = { 512, 512 },  hole = { 289.5, 287.5, 128.7 }, reach = 212,
 		                         sockets = { { 288, 112, 21 }, { 461, 291, 21 }, { 288, 462, 22 }, { 131, 292, 21 } } },
-		["orb.power"]        = { file = P .. "OrbPower",        size = { 512, 512 },  hole = { 207.7, 306.6, 133.5 }, reach = 196,
-		                         sockets = { { 212, 129, 14 }, { 384, 301, 15 }, { 213, 472, 15 }, { 42, 302, 15 } } },
+		["orb.power"]        = { file = P .. "OrbPower",        size = { 512, 512 },  hole = { 242.5, 282.7, 169.0 }, reach = 230,
+		                         sockets = { { 244, 78, 14 }, { 445, 280, 14 }, { 243, 481, 15 }, { 39, 280, 14 } } },
 		["bar.cap"]          = { file = P .. "Cap",             size = { 256, 256 },  join = { 150, 128, 110 } },
 		["frame.gem"]        = { file = P .. "Gem",             size = { 64, 64 } },
 		["scroll.rod"]       = { cap = P .. "RodCap", mid = P .. "RodMid", size = { 256, 128 }, capW = 167, midW = 512, shaft = 0.263 },
