@@ -101,12 +101,22 @@ end
 -- rail texture coordinates: tiles of the theme's rail, `tileW` pixels long
 local function railGeometry()
 	local piece = Themes:Piece("bar.rail")
+	if not piece then return nil, 1, 0, 1 end   -- a theme without rails (Standard): a plain bar
 	local h = AB.db.swingHeight
 	local band = piece.band
 	return piece, h * piece.size[1] / (band[2] - band[1]), band[1] / piece.size[2], band[2] / piece.size[2]
 end
 
 local function paint(t, piece, bright)
+	if not piece then
+		-- plain bar in the theme's metal (or the brand gold)
+		local r, g, b = Themes:Accent()
+		if not r then r, g, b = 0.91, 0.69, 0.29 end
+		t:SetDesaturation(0)
+		t:SetVertexColor(1, 1, 1)
+		t:SetColorTexture(r * bright, g * bright, b * bright, 1)
+		return
+	end
 	t:SetTexture(piece.file, "REPEAT", "CLAMP")
 	Themes:Paint(t)
 	if bright < 1 then
@@ -140,10 +150,10 @@ function AB:LayoutSwing()
 	local h = db.swingHeight
 	f:SetSize(W, h)
 	local piece, tileW, t1, t2 = railGeometry()
-	f.tileW, f.t1, f.t2, f.W = tileW, t1, t2, W
+	f.tileW, f.t1, f.t2, f.W, f.flat = tileW, t1, t2, W, not piece
 
 	paint(f.dim, piece, db.swingDim)
-	f.dim:SetTexCoord(0, W / tileW, t1, t2)
+	f.dim:SetTexCoord(0, piece and W / tileW or 1, t1, t2)
 	f.dim:SetAllPoints(f)
 	paint(f.mh, piece, 1)
 	paint(f.oh, piece, 1)
@@ -171,7 +181,9 @@ end
 local function light(t, w, fromRight)
 	if w < 0.5 then t:Hide() return end
 	t:SetWidth(w)
-	if fromRight then
+	if f.flat then
+		t:SetTexCoord(0, 1, 0, 1)
+	elseif fromRight then
 		t:SetTexCoord((f.W - w) / f.tileW, f.W / f.tileW, f.t1, f.t2)
 	else
 		t:SetTexCoord(0, w / f.tileW, f.t1, f.t2)
