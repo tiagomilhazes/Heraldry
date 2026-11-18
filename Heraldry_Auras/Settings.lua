@@ -1,6 +1,6 @@
 --[[
 	Heraldry_Auras - Settings.lua
-	Options page. Tabs: Power orb | Life orb.
+	Options page. Tabs: Power orb | Life orb | Font.
 ]]
 
 local H = Heraldry
@@ -45,6 +45,8 @@ H:RegisterOptionsPage({
 			page:Slider({ label = "Icon size", desc = "Against the size of the gem.", min = 1, max = 3, step = 0.05, get = get, set = set })
 			get, set = field("socketDrain")
 			page:Toggle({ label = "Darken as it runs out", get = get, set = set })
+			get, set = field("socketTime")
+			page:Toggle({ label = "Time left", desc = "Under each gem.", get = get, set = set })
 			get, set = field("socketInactive")
 			page:Toggle({ label = "Show inactive auras faded", desc = "Off: an aura that is not on you leaves the plain gem.", get = get, set = set })
 		end },
@@ -55,6 +57,14 @@ H:RegisterOptionsPage({
 			page:Toggle({ label = "Light the life orb's gems", get = get, set = set })
 			get, set = field("debuffPulse")
 			page:Toggle({ label = "Pulse when you can remove it", get = get, set = set })
+			get, set = field("debuffTime")
+			page:Toggle({ label = "Time left", desc = "Under each lit gem: the debuff of that type.", get = get, set = set })
+		end },
+		{ key = "font", label = "Font", build = function(page)
+			page:Section("Time left")
+			local get, set = field("timeSize")
+			page:Slider({ label = "Size", min = 7, max = 20, step = 1, get = get, set = set })
+			page:FontSection(AU, function() AU:Layout() end)
 		end },
 	},
 })

@@ -268,7 +268,7 @@ Settings tabs per page:
 | Quests | Look / Text / Behaviour / Font |
 | Chat | Look / Size / Text / Channels / Input / Behaviour / Font |
 | Tooltips | Look / Position / Text / Behaviour / Font |
-| Auras | Power orb / Life orb |
+| Auras | Power orb / Life orb / Font |
 
 ## Untested (needs the situation in game)
 

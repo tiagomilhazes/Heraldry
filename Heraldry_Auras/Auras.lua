@@ -21,6 +21,7 @@ local Themes = H.Themes
 
 local AU = H:NewModule("Auras", {
 	label = "Auras",
+	fonts = true,
 	defaults = {
 		socketsShow = true,       -- power orb: chosen auras
 		socketScale = 1.7,        -- icon size against the gem
@@ -28,6 +29,9 @@ local AU = H:NewModule("Auras", {
 		socketInactive = false,   -- inactive chosen auras stay, faded
 		debuffSockets = true,     -- life orb: debuff types
 		debuffPulse = true,       -- pulse when you can remove it
+		socketTime = true,        -- time left under the power orb's gems
+		debuffTime = true,        -- time left under the life orb's gems
+		timeSize = 11,
 	},
 })
 
@@ -95,6 +99,11 @@ local function newSocket(parent)
 	s.glow = s:CreateTexture(nil, "OVERLAY")
 	s.glow:SetTexture(MASK)
 	s.glow:SetBlendMode("ADD")
+	-- time left, under the gem: written by the game from the aura's duration
+	-- object when it can be (secret in combat), else from plain numbers
+	s.time = s:CreateFontString(nil, "OVERLAY")
+	s.time:SetShadowColor(0, 0, 0, 1)
+	s.time:SetShadowOffset(1, -1)
 	s.pulse = s.glow:CreateAnimationGroup()
 	s.pulse:SetLooping("BOUNCE")
 	local a = s.pulse:CreateAnimation("Alpha")
@@ -146,6 +155,9 @@ function AU:Layout()
 			s.icon:SetPoint("CENTER")
 			s.glow:SetSize(2 * r * 1.6, 2 * r * 1.6)
 			s.glow:SetPoint("CENTER")
+			H.Fonts:Apply(s.time, "body", self.db.timeSize, self)
+			s.time:ClearAllPoints()
+			s.time:SetPoint("TOP", s, "BOTTOM", 0, -1)
 			local ar, ag, ab = Themes:Accent()
 			if not ar then ar, ag, ab = 0.85, 0.66, 0.3 end
 			s.rim:SetVertexColor(ar, ag, ab)
@@ -180,25 +192,83 @@ local function spellIcon(name)
 	return icon
 end
 
--- the time left as a cooldown: the game's duration object when there is one,
--- else plain numbers; nothing when neither can be read
-local function setTime(s, aura)
-	s.cd:Clear()
-	if not AU.db.socketDrain or not aura then return end
-	local ok = pcall(function()
-		if C_UnitAuras.GetAuraDuration and s.cd.SetCooldownFromDurationObject then
-			local d = C_UnitAuras.GetAuraDuration("player", aura.auraInstanceID)
-			if d then
-				s.cd:SetCooldownFromDurationObject(d)
-				return
-			end
+--[[ Time left ]]
+
+-- plain seconds as "12s" / "3m" / "1h"
+local function short(t)
+	if t >= 3600 then return ("%dh"):format(math.ceil(t / 3600)) end
+	if t >= 60 then return ("%dm"):format(math.ceil(t / 60)) end
+	return ("%ds"):format(math.ceil(t))
+end
+
+-- sockets whose time is counted here (plain numbers); a ticker runs while any
+local counted = {}
+local ticker
+local function tick()
+	local now, any = GetTime(), false
+	for s, exp in pairs(counted) do
+		local left = exp - now
+		if left > 0 and s:IsShown() then
+			s.time:SetText(short(left))
+			any = true
+		else
+			s.time:SetText("")
+			counted[s] = nil
 		end
-		error("no duration object")
+	end
+	if not any and ticker then
+		ticker:Cancel()
+		ticker = nil
+	end
+end
+local function count(s, exp)
+	counted[s] = exp
+	if not ticker then ticker = C_Timer.NewTicker(0.25, tick) end
+	tick()
+end
+
+local function stopTime(s)
+	counted[s] = nil
+	if s.binding then pcall(s.binding.SetEnabled, s.binding, false) end
+	s.time:SetText("")
+end
+
+-- the aura's duration object (the game's own; works with secret values)
+local function durationObject(aura)
+	local d
+	pcall(function()
+		if C_UnitAuras.GetAuraDuration then d = C_UnitAuras.GetAuraDuration("player", aura.auraInstanceID) end
 	end)
-	if ok then return end
+	return d
+end
+
+-- the time left of `aura` as the darkening swipe (drain) and as text (text)
+local function setTime(s, aura, drain, text)
+	s.cd:Clear()
+	stopTime(s)
+	if not aura then return end
+	local d = durationObject(aura)
+	if d then
+		if drain and s.cd.SetCooldownFromDurationObject then pcall(s.cd.SetCooldownFromDurationObject, s.cd, d) end
+		if text and C_DurationUtil and C_DurationUtil.CreateDurationTextBinding then
+			local ok = pcall(function()
+				s.binding = s.binding or C_DurationUtil.CreateDurationTextBinding()
+				s.binding:SetFontString(s.time)
+				s.binding:SetDuration(d)
+				if s.binding.SetExpiredText then s.binding:SetExpiredText("") end
+				if s.binding.SetZeroDurationText then s.binding:SetZeroDurationText("") end
+				s.binding:SetEnabled(true)
+			end)
+			if ok then return end
+		end
+	end
+	-- plain numbers (out of combat, or no duration object on this client)
 	pcall(function()
 		local exp, dur = aura.expirationTime, aura.duration
-		if plain(exp) and plain(dur) and dur > 0 then s.cd:SetCooldown(exp - dur, dur) end
+		if plain(exp) and plain(dur) and dur > 0 then
+			if drain and not d then s.cd:SetCooldown(exp - dur, dur) end
+			if text then count(s, exp) end
+		end
 	end)
 end
 
@@ -213,12 +283,12 @@ function AU:UpdatePower()
 		if aura then
 			if aura.preview then
 				s.icon:SetTexture(spellIcon(name) or 134400)
-				s.cd:Clear()
-				if self.db.socketDrain then s.cd:SetCooldown(GetTime() - i * 4, 24) end
+				local now = GetTime()
+				setTime(s, { expirationTime = now + 30 - i * 6, duration = 30 }, self.db.socketDrain, self.db.socketTime)
 			else
 				local okIcon = pcall(s.icon.SetTexture, s.icon, aura.icon)
 				if not okIcon then s.icon:SetTexture(spellIcon(name)) end
-				setTime(s, aura)
+				setTime(s, aura, self.db.socketDrain, self.db.socketTime)
 			end
 			s.icon:SetDesaturation(0)
 			s.icon:SetAlpha(1)
@@ -228,17 +298,18 @@ function AU:UpdatePower()
 			s.icon:SetTexture(spellIcon(name))
 			s.icon:SetDesaturation(1)
 			s.icon:SetAlpha(0.45)
-			s.cd:Clear()
+			setTime(s, nil)
 			s.rim:Hide()
 			s:Show()
 		else
+			setTime(s, nil)
 			s:Hide()
 		end
 		s.glow:Hide()
 	end
 end
 
--- which debuff types the player has; and which of them he can remove
+-- the player's debuffs by type (the first one of each), and which types he can remove
 local function debuffTypes()
 	local have, mine = {}, {}
 	pcall(function()
@@ -248,7 +319,7 @@ local function debuffTypes()
 				if not aura then break end
 				local t = aura.dispelName
 				if plain(t) and AU.DEBUFF_COLORS[t] then
-					if filter == "HARMFUL" then have[t] = true else mine[t] = true end
+					if filter == "HARMFUL" then have[t] = have[t] or aura else mine[t] = true end
 				end
 			end
 		end
@@ -261,7 +332,9 @@ function AU:UpdateLife()
 	if not list then return end
 	local have, mine
 	if preview then
-		have, mine = { Magic = true, Poison = true }, { Magic = true }
+		local now = GetTime()
+		have = { Magic = { expirationTime = now + 12, duration = 15 }, Poison = { expirationTime = now + 21, duration = 30 } }
+		mine = { Magic = true }
 	elseif self.db.debuffSockets then
 		have, mine = debuffTypes()
 	else
@@ -271,8 +344,8 @@ function AU:UpdateLife()
 		local t = self.DEBUFF_TYPES[i]
 		s.icon:Hide()
 		s.rim:Hide()
-		s.cd:Clear()
 		if have[t] then
+			setTime(s, have[t], false, self.db.debuffTime)
 			local c = self.DEBUFF_COLORS[t]
 			s.glow:SetVertexColor(c[1], c[2], c[3])
 			s.glow:Show()
@@ -284,6 +357,7 @@ function AU:UpdateLife()
 			end
 			s:Show()
 		else
+			setTime(s, nil)
 			s.pulse:Stop()
 			s:Hide()
 		end
@@ -313,6 +387,7 @@ function AU:OnEnable()
 	end)
 	H:RegisterEvent("PLAYER_ENTERING_WORLD", function() AU:Update() end)
 	H:On("THEME_CHANGED", function() AU:Layout() end)
+	H:On("FONTS_CHANGED", function() AU:Layout() end)
 	self:Layout()
 end
 
