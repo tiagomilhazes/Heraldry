@@ -47,6 +47,12 @@
 	      pixels of its height are the end piece; mid tiled up and down when midH
 	      is given; shaft: the share of the rod's width that is the plain shaft.
 
+	  minimap.frame                     frame around the minimap (square file)
+	      file, size (one side), window = { l, t, r, b } (the map's opening),
+	      sockets = { {x, y}, x3 } (day/night, addons, mail; top to bottom),
+	      socketSize, plate = { l, t, r, b } (zone and clock), mask (the window's
+	      shape on a square as wide as it), art = { l, t, r, b } (where the art is)
+
 	A theme can also give:
 	  accent = { r, g, b }               metal colour for thin lines (button borders)
 	  finish = "bronze"                  default finish (see FINISHES): tones the art down
@@ -112,6 +118,12 @@ end
 TYPES["scroll.rod"] = function(p)
 	return p.cap and p.mid and nums(p.size, 2) and isNum(p.capW) and isNum(p.shaft) and p.shaft > 0 and p.shaft <= 1
 		or "needs cap, mid, size {w,h}, capW and shaft"
+end
+
+TYPES["minimap.frame"] = function(p)
+	return p.file and isNum(p.size) and nums(p.window, 4) and type(p.sockets) == "table" and #p.sockets >= 3
+		and isNum(p.socketSize) and nums(p.plate, 4) and p.mask and nums(p.art, 4)
+		or "needs file, size, window, 3 sockets, socketSize, plate, mask and art"
 end
 
 TYPES["scroll.rodV"] = function(p)

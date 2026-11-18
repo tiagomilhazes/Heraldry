@@ -2,7 +2,7 @@
 ## Title: |cffE8B04BHeraldry|r Auras
 ## Notes: Your auras: chosen buffs in the power orb's gems, debuff types in the life orb's, buffs by the minimap, serious debuffs over the life orb.
 ## Author: Tiago
-## Version: 0.2.3
+## Version: 0.2.4
 ## Dependencies: Heraldry
 ## OptionalDeps: Heraldry_Orbs
 ## X-Heraldry-Module: 1

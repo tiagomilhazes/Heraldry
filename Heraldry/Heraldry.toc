@@ -2,7 +2,7 @@
 ## Title: |cffE8B04BHeraldry|r
 ## Notes: All-in-one immersive UI for WoW Forever (core).
 ## Author: Tiago
-## Version: 0.10.1
+## Version: 0.11.0
 ## SavedVariables: HeraldryDB
 ## IconTexture: Interface\Icons\INV_Shield_06
 ## AddonCompartmentFunc: Heraldry_OnCompartmentClick
@@ -21,5 +21,6 @@ Core\Fonts.lua
 Core\Paper.lua
 Themes\Standard.lua
 Themes\Paladin.lua
+Themes\Priest.lua
 Core\GameMenu.lua
 Core\Commands.lua

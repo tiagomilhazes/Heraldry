@@ -47,6 +47,11 @@ MM.FRAME = {
 	art = { 17, 89, 999, 905 },               -- where the art is: the frame is cut to it
 }
 
+-- the theme's frame (piece "minimap.frame"), or this one
+function MM:Frame()
+	return H.Themes:Piece("minimap.frame") or self.FRAME
+end
+
 MM.TEXTS = {
 	{ key = "zone",  label = "Zone" },
 	{ key = "clock", label = "Clock" },
@@ -102,7 +107,7 @@ function MM:Create()
 	art:SetFrameLevel(f:GetFrameLevel() + 10)
 	f.art = art
 	f.tex = art:CreateTexture(nil, "ARTWORK")
-	f.tex:SetTexture(self.FRAME.file)
+	f.tex:SetTexture(self:Frame().file)
 	f.tex:SetAllPoints()
 
 	-- sockets: holders for the game's buttons and ours
@@ -141,7 +146,7 @@ function MM:TakeMinimapSteps()
 	mm:SetParent(f.holder)
 	mm:ClearAllPoints()
 	mm:SetPoint("CENTER", f.holder, "CENTER")
-	mm:SetMaskTexture(self.FRAME.mask)
+	mm:SetMaskTexture(self:Frame().mask)
 	mm:SetFrameLevel(f.holder:GetFrameLevel())
 	-- the game sometimes puts it back: keep it in our holder
 	if not self.hookedMinimap then
@@ -351,7 +356,9 @@ end
 
 
 function MM:Layout()
-	local f, db, F = self.frame, self.db, self.FRAME
+	local f, db, F = self.frame, self.db, self:Frame()
+	f.tex:SetTexture(F.file)
+	if Minimap and Minimap:GetParent() == f.holder then pcall(Minimap.SetMaskTexture, Minimap, F.mask) end
 	local size = db.size
 	local k = size / F.size
 	-- the frame is only as big as the art (the file has empty margins), so it can

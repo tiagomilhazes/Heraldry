@@ -51,6 +51,11 @@ AU.DEBUFF_COLORS = {
 -- what a new character puts in the power orb's gems
 AU.CLASS_DEFAULTS = {
 	PALADIN = { "Seal of Righteousness", "Seal of Command", "Seal of Wisdom", "Seal of Light" },
+	PRIEST = { "Inner Fire", "Power Word: Fortitude", "Divine Spirit", "Shadow Protection" },
+}
+-- themes that change the defaults (a shadow priest keeps other auras up)
+AU.THEME_DEFAULTS = {
+	PRIEST_SHADOW = { "Shadowform", "Vampiric Embrace", "Inner Fire", "Power Word: Fortitude" },
 }
 
 local preview = false
@@ -65,7 +70,7 @@ function AU:Chosen()
 	local c = H.char
 	if not c.auraSockets then
 		local _, class = UnitClass("player")
-		local d = self.CLASS_DEFAULTS[class] or {}
+		local d = self.THEME_DEFAULTS[H.Themes:ActiveKey()] or self.CLASS_DEFAULTS[class] or {}
 		c.auraSockets = { d[1] or "", d[2] or "", d[3] or "", d[4] or "" }
 	end
 	return c.auraSockets
