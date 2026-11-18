@@ -163,9 +163,9 @@ local party = {
 	size = function(page)
 		page:Section("Each member")
 		local get, set = pf("Width")
-		page:Slider({ label = "Width", desc = "Cartouche: only the middle of the frame stretches.", min = 80, max = 400, step = 2, get = get, set = set })
+		page:Slider({ label = "Width", desc = "Cartouche and banner: only the bar block stretches.", min = 80, max = 400, step = 2, get = get, set = set })
 		get, set = pf("Height")
-		page:Slider({ label = "Height (cartouche)", desc = "The whole frame; the bars and the symbol follow the art.", min = 30, max = 120, step = 1, get = get, set = set })
+		page:Slider({ label = "Height (cartouche, banner)", desc = "Height of the bar block; the symbol and the rest of the art follow.", min = 30, max = 120, step = 1, get = get, set = set })
 		get, set = pf("LifeFill")
 		page:Slider({ label = "Life bar thickness (cartouche)", desc = "Share of its slot the bar fills.", min = 0.3, max = 1, step = 0.05, format = pctFormat, get = get, set = set })
 		get, set = pf("PowerFill")
@@ -205,8 +205,8 @@ local party = {
 		local get, set = pf("Style")
 		page:Dropdown({
 			label = "Style",
-			desc = "Cartouche: one framed piece with the class symbol, life, mana and a debuff gem. Compact: slim rows with a class jewel.",
-			values = function() return { { value = "cartouche", text = "Cartouche" }, { value = "compact", text = "Compact" } } end,
+			desc = "Cartouche: one framed piece with the class symbol, life, mana and a debuff gem. Banner: the same piece with the symbol on top, narrower for a party in a row. Compact: slim rows with a class jewel.",
+			values = function() return { { value = "cartouche", text = "Cartouche" }, { value = "banner", text = "Banner (for a row)" }, { value = "compact", text = "Compact" } } end,
 			get = get, set = set,
 		})
 		get, set = pf("Muted")

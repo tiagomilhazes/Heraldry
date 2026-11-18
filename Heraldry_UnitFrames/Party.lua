@@ -44,7 +44,21 @@ UF.CARTOUCHE = {
 	life = { 292, 93, 782, 176 },       -- slot of the life bar
 	power = { 291, 190, 782, 212 },     -- slot of the power bar
 	gem = { 882, 146, 46 },             -- centre and radius of the gem
-	split = { 406, 666 },               -- only these columns stretch
+	cols = { 0, 406, 666, 990 },        -- art columns cut into pieces...
+	stretch = { false, true, false },   -- ...and which pieces stretch with the width
+}
+
+-- The banner: the same art, the symbol standing on the bars (for a party in a row).
+-- Two thin strips of the bar rims, either side of the symbol, stretch with the width.
+UF.BANNER = {
+	file = "Interface\\AddOns\\Heraldry_UnitFrames\\Media\\Party\\Banner",
+	size = { 1024, 512 }, art = { 512, 491 },
+	window = { 90, 55, 276, 242 },
+	life = { 64, 283, 304, 366 },
+	power = { 63, 380, 304, 402 },
+	gem = { 402, 332, 46 },
+	cols = { 0, 62, 76, 292, 304, 512 },
+	stretch = { false, true, false, true, false },
 }
 
 local hidden = CreateFrame("Frame")
@@ -52,7 +66,7 @@ hidden:Hide()
 
 local DEFAULTS = {
 	partyShow = true,
-	partyStyle = "cartouche",     -- "cartouche" | "compact"
+	partyStyle = "cartouche",     -- "cartouche" | "banner" | "compact"
 	partyHeight = 56,             -- cartouche: height of the whole frame (the art scales with it)
 	partyLifeFill = 1,            -- cartouche: share of the life slot the bar fills
 	partyPowerFill = 1,           -- cartouche: share of the mana slot the bar fills
@@ -149,6 +163,9 @@ function Member:Create()
 	local art = f.texts
 	f.leader = art:CreateTexture(nil, "OVERLAY", nil, 2)
 	f.leader:SetTexture(LEADER)
+	-- the cartouche styles cut the art into up to five pieces
+	f.slices[4] = f.plaque:CreateTexture(nil, "ARTWORK")
+	f.slices[5] = f.plaque:CreateTexture(nil, "ARTWORK")
 	-- compact: a thin metal rim around the bars and a class jewel
 	f.rim = {}
 	for i = 1, 4 do f.rim[i] = art:CreateTexture(nil, "BORDER") end
@@ -236,45 +253,65 @@ function Member:Layout()
 	self:Update()
 end
 
--- The cartouche: three slices of the art over the bars; the button is the whole frame.
+-- The cartouche styles: the art in pieces over the bars; the button is the whole frame.
 function Member:LayoutCartouche()
-	local f, C = self.frame, UF.CARTOUCHE
+	local f = self.frame
+	local C = UF.db.partyStyle == "banner" and UF.BANNER or UF.CARTOUCHE
 	local FW, FH = C.size[1], C.size[2]
 	local AW, AH = C.art[1], C.art[2]
-	local k = self:Get("Height") / AH
-	local a, b = C.split[1], C.split[2]
-	local minW = (a + (AW - b)) * k
-	local W = math.max(self:Get("Width"), minW)
-	f:SetSize(W, AH * k)
+	-- the height setting is the height of the bar block (301 art rows) in both styles
+	local k = self:Get("Height") / UF.CARTOUCHE.art[2]
 
-	local L, M, R = f.slices[1], f.slices[2], f.slices[3]
-	for _, t in ipairs(f.slices) do
-		t:SetTexture(C.file)
-		t:ClearAllPoints()
+	-- cut the art into its pieces; the stretching ones share the extra width
+	local cols, stretch = C.cols, C.stretch
+	local nStretch = 0
+	for i = 1, #stretch do
+		if stretch[i] then nStretch = nStretch + 1 end
 	end
+	local minW = AW * k
+	local W = math.max(self:Get("Width"), minW)
+	local extra = (W - minW) / nStretch
+	f:SetSize(W, AH * k)
 	local v = AH / FH
-	L:SetTexCoord(0, a / FW, 0, v)
-	M:SetTexCoord(a / FW, b / FW, 0, v)
-	R:SetTexCoord(b / FW, AW / FW, 0, v)
-	L:SetSize(a * k, AH * k)
-	R:SetSize((AW - b) * k, AH * k)
-	L:SetPoint("TOPLEFT")
-	R:SetPoint("TOPRIGHT")
-	M:SetPoint("TOPLEFT", L, "TOPRIGHT")
-	M:SetPoint("BOTTOMRIGHT", R, "BOTTOMLEFT")
+	local x = 0
+	for i, t in ipairs(f.slices) do
+		t:ClearAllPoints()
+		if stretch[i] == nil then
+			t:Hide()
+		else
+			local w = (cols[i + 1] - cols[i]) * k + (stretch[i] and extra or 0)
+			t:SetTexture(C.file)
+			t:SetTexCoord(cols[i] / FW, cols[i + 1] / FW, 0, v)
+			t:SetPoint("TOPLEFT", f, "TOPLEFT", x, 0)
+			t:SetSize(w, AH * k)
+			t:Show()
+			x = x + w
+		end
+	end
+	-- where an art column lands in the frame
+	local function at(ax)
+		local pos = 0
+		for i = 1, #stretch do
+			local a, b = cols[i], cols[i + 1]
+			local w = (b - a) * k + (stretch[i] and extra or 0)
+			if ax <= b then return pos + w * (ax - a) / (b - a) end
+			pos = pos + w
+		end
+		return pos
+	end
 
 	-- each slot gets a dark ground (a pixel larger, so no gap shows at the rims);
 	-- the bar fills the share of its height set in the options, centred
 	local function slot(bar, bg, s, fill)
 		local top, bottom = s[2] * k - 1, s[4] * k + 1
 		bg:ClearAllPoints()
-		bg:SetPoint("TOPLEFT", f, "TOPLEFT", s[1] * k - 1, -top)
-		bg:SetPoint("BOTTOMRIGHT", f, "TOPRIGHT", -(AW - s[3]) * k + 1, -bottom)
+		bg:SetPoint("TOPLEFT", f, "TOPLEFT", at(s[1]) - 1, -top)
+		bg:SetPoint("BOTTOMRIGHT", f, "TOPLEFT", at(s[3]) + 1, -bottom)
 		local h = (bottom - top) * fill
 		local mid = (top + bottom) / 2
 		bar:ClearAllPoints()
-		bar:SetPoint("TOPLEFT", f, "TOPLEFT", s[1] * k - 1, -(mid - h / 2))
-		bar:SetPoint("BOTTOMRIGHT", f, "TOPRIGHT", -(AW - s[3]) * k + 1, -(mid + h / 2))
+		bar:SetPoint("TOPLEFT", f, "TOPLEFT", at(s[1]) - 1, -(mid - h / 2))
+		bar:SetPoint("BOTTOMRIGHT", f, "TOPLEFT", at(s[3]) + 1, -(mid + h / 2))
 	end
 	slot(f.health, f.slotBg[1], C.life, self:Get("LifeFill"))
 	f.power:Show()
@@ -285,7 +322,7 @@ function Member:LayoutCartouche()
 	-- the class symbol fills the window
 	local w = C.window
 	f.symbol:ClearAllPoints()
-	f.symbol:SetPoint("TOPLEFT", f, "TOPLEFT", w[1] * k, -w[2] * k)
+	f.symbol:SetPoint("TOPLEFT", f, "TOPLEFT", at(w[1]), -w[2] * k)
 	f.symbol:SetSize((w[3] - w[1]) * k, (w[4] - w[2]) * k)
 	f.symbolBg:ClearAllPoints()
 	f.symbolBg:SetAllPoints(f.symbol)
@@ -297,7 +334,7 @@ function Member:LayoutCartouche()
 	gem:SetTexCoord((g[1] - g[3]) / FW, (g[1] + g[3]) / FW, (g[2] - g[3]) / FH, (g[2] + g[3]) / FH)
 	gem:SetSize(2 * g[3] * k, 2 * g[3] * k)
 	gem:ClearAllPoints()
-	gem:SetPoint("CENTER", f, "TOPRIGHT", -(AW - g[1]) * k, -g[2] * k)
+	gem:SetPoint("CENTER", f, "TOPLEFT", at(g[1]), -g[2] * k)
 	f.jewels[2]:Hide()
 	gem:SetShown(self:Get("Debuff"))
 
