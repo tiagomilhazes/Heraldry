@@ -249,13 +249,7 @@ local party = {
 		page:Section("Game frames")
 		get, set = pf("HideBlizzard")
 		page:Toggle({ label = "Hide the game's party frames", get = get, set = set })
-		page:Section("Preview")
-		page:Toggle({
-			label = "Preview with made-up members",
-			desc = "Also in General > Testing.",
-			get = function() return UF.party.preview end,
-			set = function(v) UF:SetPartyPreview(v) end,
-		})
+		page:Preview("party")
 	end,
 }
 
@@ -347,13 +341,7 @@ local raid = {
 		page:Section("Game frames")
 		get, set = rf("HideBlizzard")
 		page:Toggle({ label = "Hide the game's raid frames", get = get, set = function(v) set(v) UF:RaidBlizzard() end })
-		page:Section("Preview")
-		page:Toggle({
-			label = "Preview with made-up members",
-			desc = "Also in General > Testing.",
-			get = function() return UF.raid.preview end,
-			set = function(v) UF:SetRaidPreview(v) end,
-		})
+		page:Preview("raid")
 	end,
 }
 

@@ -675,6 +675,7 @@ end
 
 H.previews = H.previews or {}
 table.insert(H.previews, {
+	key = "raid",
 	label = "Raid preview",
 	desc = "Made-up members in five groups, to set up the raid frames without a raid.",
 	get = function() return R.preview end,

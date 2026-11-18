@@ -130,7 +130,7 @@ Heraldry_ClickCast/            ClickCast.lua Settings.lua (click casting on unit
 - `H:RegisterEvent(event, fn)` for game events.
 - `H:On(msg, fn)` and `H:Fire(msg, ...)` for internal messages. Listener lists are copy-on-write and each listener runs in `xpcall`.
 - Internal messages: `DB_LOADED`, `READY`, `THEME_CHANGED`, `FONTS_CHANGED`.
-- `H.previews`: list of `{ label, desc, get, set }` toggles that modules add; General > Testing shows them.
+- `H.previews`: list of `{ key, label, desc, get, set }` toggles that modules add (made-up content). Each shows only in its own module's settings, via `page:Preview(key)` at the end of the matching tab.
 
 ### Movers and edit mode
 

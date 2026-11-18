@@ -38,13 +38,7 @@ H:RegisterOptionsPage({
 				get = function() return H.global.debug end,
 				set = function(v) H.global.debug = v end,
 			})
-			if H.previews and #H.previews > 0 then
-				page:Section("Previews", "Made-up content, to set frames up without the real thing.")
-				for _, p in ipairs(H.previews) do
-					page:Toggle({ label = p.label, desc = p.desc, get = p.get, set = p.set })
-				end
-				page:Section("Interface")
-			end
+			page:Section("Interface")
 			page:Button({
 				label = "Reload interface",
 				desc = "Needed after turning modules on or off.",

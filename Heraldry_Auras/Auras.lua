@@ -424,6 +424,7 @@ end
 
 H.previews = H.previews or {}
 H.previews[#H.previews + 1] = {
+	key = "sockets",
 	label = "Orb sockets",
 	desc = "Your chosen auras in the power orb's gems, and a magic (removable) and a poison debuff on the life orb.",
 	get = function() return preview end,

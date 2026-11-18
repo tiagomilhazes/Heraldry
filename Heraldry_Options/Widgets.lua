@@ -11,6 +11,8 @@
 	              with get: the box shows the current value and keeps it after OK
 	page:Button   { label, desc, text, kind, onClick }
 	page:Color    { label, desc, get -> r, g, b, set = fn(r, g, b), disabled = fn -> reason }
+	page:Preview(key)  a "Preview" section with the switch a module registered in
+	              H.previews under that key (made-up content to set a frame up)
 
 	Every control re-reads its value on page:Refresh(), which runs whenever the
 	page is shown and after any change, so values never go stale.
@@ -109,6 +111,17 @@ local function newRow(page, label, desc)
 		page:Place(f, 38)
 	end
 	return f
+end
+
+-- the preview switch a module registered (H.previews, by key), in its own section
+function Page:Preview(key)
+	for _, p in ipairs(H.previews or {}) do
+		if p.key == key then
+			self:Section("Preview")
+			self:Toggle({ label = p.label, desc = p.desc, get = p.get, set = p.set })
+			return
+		end
+	end
 end
 
 function Page:Toggle(o)

@@ -590,6 +590,7 @@ end
 -- shown in General > Testing
 H.previews = H.previews or {}
 table.insert(H.previews, {
+	key = "party",
 	label = "Party preview",
 	desc = "Made-up members, to set up the party frames without a group.",
 	get = function() return P.preview end,

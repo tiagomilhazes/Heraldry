@@ -246,6 +246,7 @@ end)
 
 H.previews = H.previews or {}
 H.previews[#H.previews + 1] = {
+	key = "swing",
 	label = "Swing bar",
 	desc = "Made-up swings, main hand and off hand, so you can see the swing bar out of combat.",
 	get = function() return S.preview end,

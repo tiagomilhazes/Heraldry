@@ -271,6 +271,7 @@ end
 
 H.previews = H.previews or {}
 H.previews[#H.previews + 1] = {
+	key = "cast",
 	label = "Cast bar",
 	desc = "Made-up casts (a cast, a channel, an interrupted cast) on your cast bar.",
 	get = function() return preview end,

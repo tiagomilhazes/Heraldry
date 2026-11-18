@@ -367,6 +367,7 @@ end
 
 H.previews = H.previews or {}
 H.previews[#H.previews + 1] = {
+	key = "debuffs",
 	label = "Serious debuffs",
 	desc = "Made-up crowd control (a stun, a fear, a root) in the debuff row over the life orb.",
 	get = function() return previewOn end,

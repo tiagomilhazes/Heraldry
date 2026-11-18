@@ -230,6 +230,7 @@ H:RegisterOptionsPage({
 			page:Toggle({ label = "Ranged swings", desc = "Auto shot and wands light the rail too.", get = get, set = set })
 			get, set = sw("swingShotWindow")
 			page:Toggle({ label = "Red end on ranged", desc = "The last half second of a shot, where moving holds it.", get = get, set = set })
+			page:Preview("swing")
 		end },
 
 		{ key = "cast", label = "Cast", build = function(page)
@@ -280,6 +281,7 @@ H:RegisterOptionsPage({
 			page:Slider({ label = "Length", min = 100, max = 1200, step = 10, get = get, set = set })
 			get, set = cs("castHeight")
 			page:Slider({ label = "Thickness", min = 6, max = 40, step = 1, get = get, set = set })
+			page:Preview("cast")
 		end },
 
 		{ key = "font", label = "Font", build = function(page)

@@ -60,6 +60,7 @@ H:RegisterOptionsPage({
 			page:Slider({ label = "Time left size", min = 6, max = 24, step = 1, get = get, set = set })
 			get, set = field("socketInactive")
 			page:Toggle({ label = "Show inactive auras faded", desc = "Off: an aura that is not on you leaves the plain gem.", get = get, set = set })
+			page:Preview("sockets")
 		end },
 		{ key = "life", label = "Life orb", build = function(page)
 			page:Text("The life orb's gems light in a debuff's colour while you have one: top magic, right curse, bottom poison, left disease.")
@@ -72,6 +73,7 @@ H:RegisterOptionsPage({
 			page:Toggle({ label = "Time left", desc = "In the middle of each lit gem: the debuff of that type.", get = get, set = set })
 			get, set = field("debuffTimeSize")
 			page:Slider({ label = "Time left size", min = 6, max = 24, step = 1, get = get, set = set })
+			page:Text("Preview: the \"Orb sockets\" switch in the Power orb tab shows both orbs.", 20)
 		end },
 		{ key = "buffs", label = "Buffs", build = function(page)
 			page:Text("All your buffs in a small row at the top of the screen, by the minimap. Right click one to cancel it, in combat too. Move it in edit mode (\"Buffs\").")
@@ -111,6 +113,7 @@ H:RegisterOptionsPage({
 			page:Slider({ label = "Icons per row or column", min = 2, max = 16, step = 1, get = get, set = set })
 			get, set = rowField("debuffsTime")
 			page:Toggle({ label = "Time left", desc = "Inside each icon. Applies after a /reload.", get = get, set = set })
+			page:Preview("debuffs")
 		end },
 		{ key = "font", label = "Font", build = function(page)
 			page:Section("Rows")
