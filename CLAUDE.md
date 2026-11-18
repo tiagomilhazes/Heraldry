@@ -55,7 +55,7 @@ Heraldry_Options/              settings panel, LoadOnDemand
   Pages/General|Profiles|Theme|Fonts|Layout|Modules.lua
 Heraldry_ActionBars/           ActionBars.lua Art.lua Text.lua RailLight.lua Swing.lua Cast.lua Settings.lua
 Heraldry_Orbs/                 Orbs.lua Settings.lua Media/{Liquid1,Liquid2,Glass,Surface}.tga
-Heraldry_UnitFrames/           Target.lua Cast.lua Small.lua Party.lua TargetPlaque.lua Settings.lua Media/Target/{Plaque,LevelRing}.tga
+Heraldry_UnitFrames/           Target.lua Cast.lua Small.lua Indicators.lua Party.lua Raid.lua TargetPlaque.lua Settings.lua Media/Target/{Plaque,LevelRing}.tga
                                Media/Party/{Frame,Banner}.tga, Media/Party/Class/<CLASS>.tga (class-coloured symbols)
                                Media/Class/<CLASS>.tga (plain gold symbols, kept for the target emblems)
 Heraldry_Minimap/              Minimap.lua Settings.lua Media/{Frame,Mask}.tga
@@ -266,7 +266,7 @@ Settings tabs per page:
 | Modules | (single page) |
 | Action bars | Block / Bars / Look / Visibility / Text / Swing / Cast / Font |
 | Orbs | Place / Text / Font / Behaviour |
-| Unit frames | Target (Size / Text / Look / Behaviour) / Target of target (Size / Text / Behaviour) / Focus (Size / Text / Behaviour) / Party (Size / Text / Look / Behaviour) / Font. Raid will be a new top-level tab |
+| Unit frames | Target (Size / Text / Look / Behaviour) / Target of target (Size / Text / Behaviour) / Focus (Size / Text / Behaviour) / Party (Size / Text / Look / Behaviour) / Raid (Size / Text / Look / Behaviour) / Indicators / Font |
 | Minimap | Size / Text / Addons / Behaviour / Font |
 | Quests | Look / Text / Behaviour / Font |
 | Chat | Look / Size / Text / Channels / Input / Behaviour / Font |

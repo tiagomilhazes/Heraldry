@@ -119,6 +119,7 @@ local function dress(b)
 	b.gem = top:CreateTexture(nil, "OVERLAY")
 	b.gem:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask")
 	b.gem:Hide()
+	UF.Ind:Attach(b, b, "raid")
 end
 
 local function rimAround(b, pad)
@@ -167,6 +168,7 @@ local function layoutMember(b)
 	rimAround(b, 0)
 	local r, g, bl = accent()
 	for _, t in ipairs(b.rim) do t:SetVertexColor(r * 0.55, g * 0.55, bl * 0.55) end
+	UF.Ind:Layout(b)
 end
 
 -- the debuff colour of a unit (nil when none, or when the game hides it)
@@ -251,6 +253,7 @@ local function paint(b, unit, p)
 	else
 		showDebuff(b, nil)
 	end
+	if p then UF.Ind:Fake(b, p.n or 1) else UF.Ind:Update(b, unit) end
 end
 
 --[[ Groups and rows ]]
@@ -677,7 +680,7 @@ function UF:LayoutRaidPreview()
 			b:ClearAllPoints()
 			b:SetPoint("TOP", G.header, "TOP", 0, -(i - 1) * (d.raidHeight + d.raidSpacing))
 			layoutMember(b)
-			paint(b, nil, { name = NAMES[n], class = CLASSES[(n * 7) % #CLASSES + 1], life = LIFE[n], debuff = DEB[n] })
+			paint(b, nil, { n = n, name = NAMES[n], class = CLASSES[(n * 7) % #CLASSES + 1], life = LIFE[n], debuff = DEB[n] })
 			b.hFakeDead = LIFE[n] == 0
 			b:Show()
 		end

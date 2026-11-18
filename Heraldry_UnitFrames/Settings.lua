@@ -345,6 +345,276 @@ local raid = {
 	end,
 }
 
+--[[ Indicators (Indicators.lua): one editor for raid and party ]]
+
+local IND = UF.Ind
+local selected = 1
+local POINT_LABEL = {
+	TOPLEFT = "Top left", TOP = "Top", TOPRIGHT = "Top right", LEFT = "Left", CENTER = "Centre",
+	RIGHT = "Right", BOTTOMLEFT = "Bottom left", BOTTOM = "Bottom", BOTTOMRIGHT = "Bottom right",
+}
+
+local function sel()
+	local n = #IND:List()
+	if selected > n then selected = n end
+	if selected < 1 then selected = 1 end
+	return selected
+end
+
+local function indField(key)
+	return function() return IND:Get(sel(), key) end, function(v) IND:Set(sel(), key, v) end
+end
+
+local function rebuild() H.Panel:Rebuild("unitframes") end
+
+-- the editor block: a member drawn large with the indicators on it and the
+-- 9 points to click, and the list of indicators beside it
+local function editor(page)
+	local UI, C = H.UI, H.UI.colors
+	local list = IND:List()
+	local ROW = 28
+	local rows = math.max(#list, 5)
+	local blockH = math.max(230, 34 + rows * ROW + 40)
+	local f = CreateFrame("Frame", nil, page.frame)
+	page:Place(f, blockH, 12)
+
+	-- left: the stage
+	local stage = CreateFrame("Frame", nil, f)
+	stage:SetPoint("TOPLEFT")
+	stage:SetPoint("BOTTOMLEFT")
+	stage:SetWidth(math.floor(page.width * 0.5))
+	UI.Fill(stage, { 0, 0, 0, 0.35 })
+	UI.Border(stage, C.border)
+	local hint = UI.Text(stage, 11, C.faint, nil, "CENTER")
+	hint:SetPoint("BOTTOM", 0, 10)
+	hint:SetText("Click a point to move the selected indicator there")
+
+	local W, Hh = UF.db.raidWidth, UF.db.raidHeight
+	local scale = math.min(2.2, (stage:GetWidth() - 60) / W, (blockH - 70) / Hh)
+	local m = CreateFrame("Frame", nil, stage)
+	m:SetSize(W, Hh)
+	m:SetScale(scale)
+	m:SetPoint("CENTER", stage, "CENTER", 0, 10 / scale)
+	local bg = m:CreateTexture(nil, "BACKGROUND")
+	bg:SetAllPoints()
+	bg:SetColorTexture(0.04, 0.03, 0.025, 0.95)
+	local life = m:CreateTexture(nil, "BORDER")
+	life:SetPoint("TOPLEFT", 1, -1)
+	life:SetPoint("BOTTOMLEFT", 1, UF.db.raidPowerHeight + 1)
+	life:SetWidth((W - 2) * 0.72)
+	life:SetColorTexture(0.62, 0.45, 0.24)
+	local power = m:CreateTexture(nil, "BORDER")
+	power:SetPoint("BOTTOMLEFT", 1, 1)
+	power:SetPoint("BOTTOMRIGHT", -1, 1)
+	power:SetHeight(UF.db.raidPowerHeight)
+	power:SetColorTexture(0.2, 0.32, 0.8)
+	local name = m:CreateFontString(nil, "OVERLAY")
+	H.Fonts:Apply(name, "body", UF.db.raidNameSize, UF)
+	name:SetPoint("LEFT", 5, 2)
+	name:SetText("Julian")
+	name:SetTextColor(0.96, 0.92, 0.84)
+	IND:Attach(m, m, "editor")
+
+	-- the 9 points
+	local dots = {}
+	local holder = CreateFrame("Frame", nil, m)
+	holder:SetAllPoints()
+	holder:SetFrameLevel(m.hInd:GetFrameLevel() + 20)
+	for _, p in ipairs(IND.POINTS) do
+		local d = CreateFrame("Button", nil, holder)
+		local s = 7
+		d:SetSize(s, s)
+		d:SetPoint(p, holder, p, (p:find("LEFT") and -s / 2) or (p:find("RIGHT") and s / 2) or 0,
+			(p:find("TOP") and s / 2) or (p:find("BOTTOM") and -s / 2) or 0)
+		d.fill = d:CreateTexture(nil, "OVERLAY")
+		d.fill:SetAllPoints()
+		d.fill:SetColorTexture(1, 1, 1, 1)
+		d:SetScript("OnClick", function()
+			if #IND:List() == 0 then return end
+			IND:Set(sel(), "point", p)
+			page:Refresh()
+		end)
+		d:SetScript("OnEnter", function(self) self.hover = true page:Refresh() end)
+		d:SetScript("OnLeave", function(self) self.hover = false page:Refresh() end)
+		dots[p] = d
+	end
+
+	-- right: the list
+	local side = CreateFrame("Frame", nil, f)
+	side:SetPoint("TOPLEFT", stage, "TOPRIGHT", 14, 0)
+	side:SetPoint("BOTTOMRIGHT")
+	local head = UI.Text(side, 12, C.dim)
+	head:SetPoint("TOPLEFT", 2, -4)
+	head:SetText("Indicators")
+	local rowsF = {}
+	for i = 1, #list do
+		local r = CreateFrame("Button", nil, side)
+		r:SetHeight(ROW - 2)
+		r:SetPoint("TOPLEFT", 0, -22 - (i - 1) * ROW)
+		r:SetPoint("TOPRIGHT", 0, -22 - (i - 1) * ROW)
+		r.bg = UI.Fill(r, C.row)
+		r.mark = UI.Tex(r, C.accent, "ARTWORK")
+		r.mark:SetPoint("TOPLEFT")
+		r.mark:SetPoint("BOTTOMLEFT")
+		r.mark:SetWidth(3)
+		r.swatch = r:CreateTexture(nil, "ARTWORK")
+		r.swatch:SetSize(14, 14)
+		r.swatch:SetPoint("LEFT", 10, 0)
+		r.text = UI.Text(r, 12, C.text)
+		r.text:SetPoint("LEFT", r.swatch, "RIGHT", 8, 0)
+		r.text:SetPoint("RIGHT", -96, 0)
+		r.text:SetWordWrap(false)
+		r.where = UI.Text(r, 11, C.dim, nil, "RIGHT")
+		r.where:SetPoint("RIGHT", -10, 0)
+		r:SetScript("OnClick", function() selected = i page:Refresh() end)
+		r:SetScript("OnEnter", function(self) self.bg:SetColorTexture(unpack(C.rowHover)) end)
+		r:SetScript("OnLeave", function(self) self.bg:SetColorTexture(unpack(C.row)) end)
+		rowsF[i] = r
+	end
+	if #list == 0 then
+		local none = UI.Text(side, 12, C.faint)
+		none:SetPoint("TOPLEFT", 2, -30)
+		none:SetText("No indicators yet. Add one, or take your class's.")
+	end
+
+	-- the buttons under the list
+	local function btn(text, w, x, onClick, kind)
+		local b = UI.Button(side, text, w, kind)
+		b:SetPoint("BOTTOMLEFT", x, 0)
+		b:SetScript("OnClick", onClick)
+		return b
+	end
+	btn("Add", 60, 0, function() selected = IND:Add() rebuild() end)
+	btn("Remove", 70, 66, function()
+		if #IND:List() == 0 then return end
+		IND:Remove(sel())
+		rebuild()
+	end, "danger")
+	btn("Up", 40, 142, function() selected = IND:Move(sel(), -1) page:Refresh() end)
+	btn("Down", 50, 188, function() selected = IND:Move(sel(), 1) page:Refresh() end)
+	local reset = UI.Button(side, "Class defaults", 110)
+	reset:SetPoint("BOTTOMRIGHT", 0, 0)
+	reset:SetScript("OnClick", function()
+		UI.Confirm("Replace your indicators with your class's?", "Replace", function()
+			IND:ResetToClass()
+			selected = 1
+			rebuild()
+		end)
+	end)
+
+	page:OnRefresh(function()
+		local L = IND:List()
+		local s = sel()
+		for i, r in ipairs(rowsF) do
+			local d = L[i]
+			if d then
+				local look = IND:Get(i, "look")
+				local icon = look == "icon" and IND:SpellIcon(i)
+				if icon then
+					r.swatch:SetTexture(icon)
+					r.swatch:SetVertexColor(1, 1, 1)
+				else
+					local c = IND:Get(i, "color")
+					r.swatch:SetColorTexture(c[1], c[2], c[3])
+				end
+				local first = IND:Spells(i).list[1]
+				local more = #IND:Spells(i).list - 1
+				local label = first and tostring(first) .. (more > 0 and (" +" .. more) or "") or "(no spell yet)"
+				if IND:Get(i, "missing") then label = label .. "  (missing)" end
+				r.text:SetText(label)
+				r.text:SetTextColor(unpack(IND:Get(i, "enabled") and C.text or C.faint))
+				r.where:SetText(POINT_LABEL[IND:Get(i, "point")] or "")
+				r.mark:SetShown(i == s)
+				r.where:SetTextColor(unpack(i == s and C.accent or C.dim))
+			end
+		end
+		local p = IND:Get(s, "point")
+		for key, d in pairs(dots) do
+			local on = #L > 0 and key == p
+			if on then d.fill:SetColorTexture(C.accent[1], C.accent[2], C.accent[3], 1)
+			elseif d.hover then d.fill:SetColorTexture(1, 1, 1, 0.9)
+			else d.fill:SetColorTexture(1, 1, 1, 0.3) end
+		end
+		IND:Fake(m, 2)
+	end)
+end
+
+local indicators = function(page)
+	page:Text("Auras you keep up on others, shown where you want them on each member: heals over time, shields, buffs that are missing. The list is per character.", 30)
+	editor(page)
+	if #IND:List() == 0 then return end
+
+	page:Section("Spells")
+	page:Input({
+		label = "Spells",
+		desc = "Names or spell IDs, comma separated. Any of them lights the indicator.",
+		placeholder = "Rejuvenation, 774",
+		button = "Save",
+		maxLetters = 600,
+		get = function() return IND:Get(sel(), "spells") end,
+		onSubmit = function(text) IND:Set(sel(), "spells", text) return true end,
+	})
+	local get, set = indField("enabled")
+	page:Toggle({ label = "Show this indicator", get = get, set = set })
+	get, set = indField("mine")
+	page:Toggle({ label = "Only mine", desc = "Only auras you cast: not another druid's Rejuvenation.", get = get, set = set })
+	get, set = indField("missing")
+	page:Toggle({ label = "Show when missing", desc = "Lights when none of the spells is on the member: buffs to keep up.", get = get, set = set })
+
+	page:Section("Look")
+	get, set = indField("look")
+	page:Dropdown({
+		label = "Look",
+		values = function() return {
+			{ value = "icon", text = IND.LOOKS.icon }, { value = "square", text = IND.LOOKS.square },
+			{ value = "bar", text = IND.LOOKS.bar }, { value = "text", text = IND.LOOKS.text },
+		} end,
+		get = get, set = set,
+	})
+	page:Color({
+		label = "Colour", desc = "Of the square and the bar.",
+		get = function() local c = IND:Get(sel(), "color") return c[1], c[2], c[3] end,
+		set = function(r, g, b) IND:Set(sel(), "color", { r, g, b }) end,
+	})
+	get, set = indField("size")
+	page:Slider({ label = "Size", desc = "The bar's thickness is a third of it.", min = 4, max = 40, step = 1, get = get, set = set })
+	get, set = indField("length")
+	page:Slider({ label = "Bar length", min = 8, max = 200, step = 1, get = get, set = set })
+	get, set = indField("drain")
+	page:Toggle({ label = "Icon darkens as it runs out", get = get, set = set })
+
+	page:Section("Place")
+	page:Text("The point is chosen on the member above; these move it from there.", 20)
+	get, set = indField("x")
+	page:Slider({ label = "Offset X", desc = "Right is positive.", min = -60, max = 60, step = 1, get = get, set = set })
+	get, set = indField("y")
+	page:Slider({ label = "Offset Y", desc = "Up is positive.", min = -40, max = 40, step = 1, get = get, set = set })
+
+	page:Section("Time and stacks")
+	get, set = indField("time")
+	page:Dropdown({
+		label = "Time left",
+		values = function() return {
+			{ value = "inside", text = "Inside" }, { value = "below", text = "Below" },
+			{ value = "above", text = "Above" }, { value = "none", text = "Hidden" },
+		} end,
+		get = get, set = set,
+	})
+	get, set = indField("timeSize")
+	page:Slider({ label = "Text size", min = 6, max = 22, step = 1, get = get, set = set })
+	get, set = indField("warn")
+	page:Slider({ label = "Warn at", desc = "Turns red and pulses from this many seconds left: time to renew.", min = 0, max = 10, step = 1,
+		format = function(v) return v == 0 and "Off" or (v .. " s") end, get = get, set = set })
+	get, set = indField("stacks")
+	page:Toggle({ label = "Stacks", desc = "In the corner, when the aura has more than one.", get = get, set = set })
+
+	page:Section("Where")
+	get, set = field("indRaid")
+	page:Toggle({ label = "On the raid frames", get = get, set = function(v) set(v) IND:LayoutAll() end })
+	get, set = field("indParty")
+	page:Toggle({ label = "On the party frames", desc = "On the life bar of each member.", get = get, set = function(v) set(v) IND:LayoutAll() end })
+end
+
 local tot = small("tot", { dock = true })
 local focus = small("focus", { power = true, blizzard = true })
 
@@ -383,6 +653,7 @@ H:RegisterOptionsPage({
 			{ key = "look", label = "Look", build = raid.look },
 			{ key = "behaviour", label = "Behaviour", build = raid.behaviour },
 		} },
+		{ key = "indicators", label = "Indicators", build = indicators },
 		{ key = "font", label = "Font", build = function(page)
 			page:Text("The font is the module's: it applies to every unit frame.", 20)
 			page:FontSection(UF, function() UF:Layout() end)

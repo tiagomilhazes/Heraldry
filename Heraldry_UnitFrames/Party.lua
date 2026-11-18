@@ -193,6 +193,7 @@ function Member:Create()
 		UnregisterUnitWatch(f)
 		RegisterStateDriver(f, "visibility", "[group] show; hide")
 	end
+	UF.Ind:Attach(f, f.health, "party")
 end
 
 -- how far the art reaches past the button: left, top, right, bottom
@@ -418,6 +419,7 @@ function Member:Update()
 end
 
 function Member:UpdateDebuff()
+	UF.Ind:Update(self.frame, self.unit)
 	if self:Compact() then return end
 	if not self:Get("Debuff") then return self:SetDebuff(nil) end
 	self:SetDebuff(debuffColor(self.unit, self:Get("DispelOnly")))
@@ -451,6 +453,7 @@ function Member:UpdatePreview(p)
 	self:SetClass(p.class, p.dead)
 	self:ToneBars()
 	self:SetDebuff(p.debuff and DEBUFF[p.debuff])
+	UF.Ind:Fake(f, self.slot)
 	f:SetAlpha(1)
 	self:SetRimColor(self:Compact() and not p.dead and p.life < self:Get("LowLife"))
 end
