@@ -242,34 +242,52 @@ local function durationObject(aura)
 	return d
 end
 
--- the time left of `aura` as the darkening swipe (drain) and as text (text)
+-- seconds, rounded, written by the game (for secret values): needs a formatter
+local secondsFormatter
+local function formatter()
+	if secondsFormatter ~= nil then return secondsFormatter or nil end
+	secondsFormatter = false
+	pcall(function()
+		local Nearest = Enum.NumericRuleFormatRounding.Nearest
+		local f = C_StringUtil.CreateNumericRuleFormatter()
+		f:SetBreakpoints({ { threshold = 0, format = "%.0f", rounding = Nearest } })
+		secondsFormatter = f
+	end)
+	return secondsFormatter or nil
+end
+
+-- the time left of `aura` as the darkening swipe (drain) and as text (text):
+-- plain numbers when they can be read ("12s", "3m"); else the game writes the
+-- seconds from the aura's duration object
 local function setTime(s, aura, drain, text)
 	s.cd:Clear()
 	stopTime(s)
 	if not aura then return end
 	local d = durationObject(aura)
-	if d then
-		if drain and s.cd.SetCooldownFromDurationObject then pcall(s.cd.SetCooldownFromDurationObject, s.cd, d) end
-		if text and C_DurationUtil and C_DurationUtil.CreateDurationTextBinding then
-			local ok = pcall(function()
-				s.binding = s.binding or C_DurationUtil.CreateDurationTextBinding()
-				s.binding:SetFontString(s.time)
-				s.binding:SetDuration(d)
-				if s.binding.SetExpiredText then s.binding:SetExpiredText("") end
-				if s.binding.SetZeroDurationText then s.binding:SetZeroDurationText("") end
-				s.binding:SetEnabled(true)
-			end)
-			if ok then return end
-		end
-	end
-	-- plain numbers (out of combat, or no duration object on this client)
+	if drain and d and s.cd.SetCooldownFromDurationObject then pcall(s.cd.SetCooldownFromDurationObject, s.cd, d) end
+	local done = false
 	pcall(function()
 		local exp, dur = aura.expirationTime, aura.duration
 		if plain(exp) and plain(dur) and dur > 0 then
 			if drain and not d then s.cd:SetCooldown(exp - dur, dur) end
 			if text then count(s, exp) end
+			done = true
 		end
 	end)
+	if done or not text or not d then return end
+	local fmt = formatter()
+	if fmt and C_DurationUtil and C_DurationUtil.CreateDurationTextBinding then
+		pcall(function()
+			s.binding = s.binding or C_DurationUtil.CreateDurationTextBinding()
+			s.binding:SetFontString(s.time)
+			s.binding:SetDuration(d)
+			s.binding:SetFormatter(fmt)
+			if s.binding.SetUpdateInterval then s.binding:SetUpdateInterval(0.25) end
+			if s.binding.SetExpiredText then s.binding:SetExpiredText("") end
+			if s.binding.SetZeroDurationText then s.binding:SetZeroDurationText("") end
+			s.binding:SetEnabled(true)
+		end)
+	end
 end
 
 function AU:UpdatePower()
