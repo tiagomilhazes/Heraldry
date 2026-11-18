@@ -56,6 +56,8 @@ Heraldry_Options/              settings panel, LoadOnDemand
 Heraldry_ActionBars/           ActionBars.lua Art.lua Text.lua Settings.lua
 Heraldry_Orbs/                 Orbs.lua Settings.lua Media/{Liquid1,Liquid2,Glass,Surface}.tga
 Heraldry_UnitFrames/           Target.lua Cast.lua Small.lua Party.lua TargetPlaque.lua Settings.lua Media/Target/{Plaque,LevelRing}.tga
+                               Media/Party/{Frame,Banner}.tga, Media/Party/Class/<CLASS>.tga (class-coloured symbols)
+                               Media/Class/<CLASS>.tga (plain gold symbols, kept for the target emblems)
 Heraldry_Minimap/              Minimap.lua Settings.lua Media/{Frame,Mask}.tga
 Heraldry_Quests/               Quests.lua Settings.lua
 Heraldry_Chat/                 Chat.lua Text.lua Settings.lua
@@ -245,6 +247,7 @@ Art is designed **as a whole**, not as loose pieces. The first Paladin art (a pi
 | M6 | Tooltips on paper (T2): dark/light/glass, metal or quality rim, class names, thin health strip, movable anchor | approved |
 | M5 | Chat as a sideways scroll: standing rods, dark/light/glass paper or panel, roll up with glow, tabs and input inside the paper, abbreviations, colours/ink, input history | approved |
 | M3 | Unit frames: **target**. Styles Plaque (fixed plaque with the slot cut out and the bars behind it, finish and jewels by target, level in a ring set into the left medallion; per-text size/offset settings) and Minimal (glass panel, theme gem, halo). Secure button, Blizzard target hidden | approved, cast bar in the power row (C4) approved; class emblems pending |
+| — | Unit frames: **party** (cartouche / banner / compact) | approved |
 
 Settings tabs per page:
 
@@ -277,12 +280,12 @@ Settings tabs per page:
 ## Next steps
 
 1. ~~Target cast bar~~: approved as C4 — the target's casts take the power row (Cast.lua; gold interruptible, grey not, red interrupted/failed; game timer via SetTimerDuration when available, else GetTime maths in pcall). Pending for the target: class emblems in the medallions (Canva, needs Tiago's prompt wording).
-2. Target of target and focus delivered (Small.lua: smaller plaques, same finish/jewel rules, per-frame prefixed settings tot*/focus*, ToT docked right of the target). Party later (vertical cards, prototype P4).
+2. Target of target and focus delivered (Small.lua: smaller plaques, same finish/jewel rules, per-frame prefixed settings tot*/focus*, ToT docked right of the target). Party: see 7.
 3. **Minimap**: delivered as prototype M1 (TimelessUI Paladin_PlateM frame, level 1.5 like the target): map cut to the window by a mask, sockets = day/night (GameTimeFrame), addon buttons panel toggle, mail; zone + clock on the plate with per-text settings. Approved.
 4. **Quest tracker**: delivered as Q4, a parchment scroll (`Heraldry_Quests`): theme rods top and bottom (`scroll.rod`), light (ink) or dark paper, click the top rod to roll up, own tracker reading C_QuestLog with classic fallbacks. The game's tracker is hidden with Hide() + an OnShow hook (Questie's approach on this client; the frame is protected, so it is not reparented). Steps aside when Questie's tracker is on. Only the level carries the difficulty colour; ready/failed shown on the title; rolled up shows a strip with the quest count. Approved. The quest log window itself comes later.
 5. **Chat**: delivered as a sideways scroll (`Heraldry_Chat`): standing theme rods (`scroll.rodV`), dark/light/glass paper or a flat panel, rolls up to the fixed side (the mover's anchor), glow on new messages, Enter opens to type. ChatFrame1 kept at its open size and placed in our frame (SetPoint/SetSize hooks); Blizzard art killed by alpha hooks; ink by wrapping AddMessage. Fonts via `H.Fonts:Resolve` (chat frames' SetFont answers nothing). Approved. Text.lua: channel names full/short/number/hidden with per-channel short names, "says" dropped, faded timestamps (the game's CVar), fading, input history with plain Up/Down (SetAltArrowKeyMode(false)) saved per character; light paper uses an ink palette per chat type (ink_<key> overrides; on other papers the colour pickers write the game's chat colours); player names without brackets; message body in plain ink.
 6. **Tooltips** (T2): the game's tooltips on paper (dark default, light ink, glass) with a metal rim, quality rim for items, class-coloured names, thin health strip, anchor game/fixed/cursor, hide units in combat. Background/border only (NineSlice hidden by alpha hook); skinned via TooltipDataProcessor post-calls. Anchor defaults to our mover (`Tooltips.anchor`), growing from the corner nearest the screen edge. Approved.
-7. ~~Delete `Heraldry_Test`~~ (done). **Party**: Party.lua, members built on Small.lua (`UF.Small`), styles plaque (PF2) / compact (PF3), container mover `UnitFrames.party` (SecureHandlerStateTemplate, hidden in raid unless set), dead/ghost/offline, range fade (pcall), leader crown, Blizzard party frames reparented away, preview with made-up members (registered in `H.previews`, shown in General > Testing). Awaiting test.
+7. **Party**: approved (Party.lua). Members built on Small.lua (`UF.Small`); container mover `UnitFrames.party` (SecureHandlerStateTemplate, hidden in raid unless set), grows down/up/right/left. Styles: **cartouche** (default; one Canva piece: class symbol window, thick life slot, thin mana slot, debuff gem, rope at both ends), **banner** (same art rebuilt with the symbol standing on the bars, for a row) and compact. Geometry tables `UF.CARTOUCHE` / `UF.BANNER` in art pixels: `window`, `life`, `power`, `gem`, and `cols` + `stretch` (the art is cut into up to five column pieces; the stretching ones share the extra width; `at(x)` maps art columns into the frame). Height = the bar block's height (301 art rows) in both styles. Class symbols are recessed, class-coloured art (no finish on them; desaturated when dead/offline). Dead/ghost/offline, range fade (pcall), leader crown, debuff gem (dispellable only option), Blizzard party frames reparented away, preview with made-up members (`H.previews`).
 8. Swing bar styling.
 9. **C3 class overrides**, when the first module needs them.
 8. **C7:** installer, presets ("Altar" plus a Healer variant), import/export.
