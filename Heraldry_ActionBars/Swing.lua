@@ -214,7 +214,11 @@ local function blizzardFrames()
 			for _, r in ipairs(regions) do
 				if r:IsObjectType("FontString") then
 					local ok, t = pcall(r.GetText, r)
-					if ok and t and labels[t] then found = true break end
+					-- text can be secret (unit names on nameplates...): never index with it
+					if ok and type(t) == "string" and not (issecretvalue and issecretvalue(t)) and labels[t] then
+						found = true
+						break
+					end
 				end
 			end
 			if found then
