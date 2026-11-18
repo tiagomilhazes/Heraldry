@@ -96,10 +96,21 @@ H:RegisterOptionsPage({
 			page:Toggle({ label = "Every debuff", desc = "Off: crowd control only.", get = get, set = set })
 			get, set = rowField("debuffsScale")
 			page:Slider({ label = "Size", min = 0.5, max = 2.5, step = 0.05, format = pct, get = get, set = set })
+			get, set = rowField("debuffsGrow")
+			page:Dropdown({
+				label = "Grow",
+				values = function()
+					return {
+						{ value = "right", text = "Right (a row)" }, { value = "left", text = "Left (a row)" },
+						{ value = "up", text = "Up (a column)" }, { value = "down", text = "Down (a column)" },
+					}
+				end,
+				get = get, set = set,
+			})
 			get, set = rowField("debuffsPerRow")
-			page:Slider({ label = "Icons per row", min = 2, max = 16, step = 1, get = get, set = set })
+			page:Slider({ label = "Icons per row or column", min = 2, max = 16, step = 1, get = get, set = set })
 			get, set = rowField("debuffsTime")
-			page:Toggle({ label = "Time left", desc = "Under each icon. Applies after a /reload.", get = get, set = set })
+			page:Toggle({ label = "Time left", desc = "Inside each icon. Applies after a /reload.", get = get, set = set })
 		end },
 		{ key = "font", label = "Font", build = function(page)
 			page:Section("Rows")

@@ -28,6 +28,7 @@ local DEFAULTS = {
 	debuffsPerRow = 6,
 	debuffsScale = 1.4,
 	debuffsTime = true,
+	debuffsGrow = "right",     -- "right" / "left" (a row), "up" / "down" (a column)
 	rowsTimeSize = 10,
 	hideBlizzardAuras = true,
 }
@@ -102,7 +103,11 @@ local function initializer(kind)
 			fs:SetShadowOffset(1, -1)
 		end
 		stack:SetPoint("BOTTOMRIGHT", -1, 2)
-		time:SetPoint("TOP", button, "BOTTOM", 0, -1)
+		if kind == "debuffs" then
+			time:SetPoint("BOTTOM", button, "BOTTOM", 1, 2)   -- inside: rows and columns pack alike
+		else
+			time:SetPoint("TOP", button, "BOTTOM", 0, -1)
+		end
 
 		button:SetIcon(icon)
 		button:SetDurationCooldown(cd)
@@ -139,7 +144,8 @@ local function makeRow(kind, label, default, anchor, growthH, growthV, groups)
 		return
 	end
 	-- a row growing up leaves room under it for the time text
-	c:SetPoint(anchor, holder, anchor, 0, anchor:find("BOTTOM") and TEXT_ROOM or 0)
+	local room = kind == "debuffs" and 0 or TEXT_ROOM
+	c:SetPoint(anchor, holder, anchor, 0, anchor:find("BOTTOM") and room or 0)
 	c:SetSize(1, 1)
 	flow(c, c.SetFlowLayoutAnchorPoint and "SetFlowLayoutAnchorPoint" or "SetAuraLayoutAnchorPoint", anchor)
 	local FD = AnchorUtil and AnchorUtil.FlowDirection
@@ -153,15 +159,15 @@ local function makeRow(kind, label, default, anchor, growthH, growthV, groups)
 			initializeFrame = init,
 			layout = {
 				elementWidth = ICON, elementHeight = ICON,
-				elementSpacing = GAP, lineSpacing = GAP + TEXT_ROOM,
-				groupSpacing = 0, groupLineSpacing = GAP + TEXT_ROOM,
+				elementSpacing = GAP, lineSpacing = GAP + room,
+				groupSpacing = 0, groupLineSpacing = GAP + room,
 			},
 		})
 		if not okG then H:Debug("Auras: group " .. g.key .. " refused: " .. tostring(err)) end
 	end
 	c:SetUnit("player")
 	c:UpdateAllAuras()
-	local row = { holder = holder, container = c, kind = kind }
+	local row = { holder = holder, container = c, kind = kind, room = room }
 	row.mover = H:RegisterMover(holder, "Auras." .. kind, {
 		label = label,
 		default = default,
@@ -185,6 +191,32 @@ end
 local function lineSize(c, perRow)
 	local f = c.SetFlowLayoutMaximumLineSize or c.SetAuraLayoutRowWidth
 	if f then pcall(f, c, perRow * (ICON + GAP)) end
+end
+
+-- the debuff row's direction: a row to the right or left, a column up or down
+local GROW = {
+	right = { anchor = "BOTTOMLEFT", h = "Right", v = "Up" },
+	left = { anchor = "BOTTOMRIGHT", h = "Left", v = "Up" },
+	up = { anchor = "BOTTOMLEFT", h = "Right", v = "Up", column = true },
+	down = { anchor = "TOPLEFT", h = "Right", v = "Down", column = true },
+}
+AU.GROW = GROW
+
+function AU:GrowDebuffs(row)
+	local db = self.db
+	local g = GROW[db.debuffsGrow] or GROW.right
+	local c, n, step = row.container, db.debuffsPerRow, ICON + GAP
+	row.holder:SetSize(g.column and step or n * step, g.column and n * step or step)
+	c:ClearAllPoints()
+	c:SetPoint(g.anchor, row.holder, g.anchor)
+	flow(c, c.SetFlowLayoutAnchorPoint and "SetFlowLayoutAnchorPoint" or "SetAuraLayoutAnchorPoint", g.anchor)
+	local FD, AX = AnchorUtil and AnchorUtil.FlowDirection, AnchorUtil and AnchorUtil.FlowLayoutAxis
+	if FD then
+		flow(c, c.SetFlowLayoutGrowthDirection and "SetFlowLayoutGrowthDirection" or "SetAuraLayoutGrowthDirection", FD[g.h], FD[g.v])
+	end
+	if AX and c.SetFlowLayoutAxis then pcall(c.SetFlowLayoutAxis, c, g.column and AX.Vertical or AX.Horizontal) end
+	lineSize(c, n)
+	if row.preview then row.preview() end
 end
 
 function AU:LayoutRows()
@@ -215,8 +247,7 @@ function AU:LayoutRows()
 	if debuffs then
 		debuffs.holder:SetShown(db.debuffsShow)
 		debuffs.holder:SetScale(db.debuffsScale)
-		debuffs.holder:SetSize(db.debuffsPerRow * (ICON + GAP), ICON + TEXT_ROOM)
-		lineSize(debuffs.container, db.debuffsPerRow)
+		self:GrowDebuffs(debuffs)
 		groupCap(debuffs.container, "cc", db.debuffsShow and 8 or 0)
 		groupCap(debuffs.container, "rest", (db.debuffsShow and db.debuffsAll) and 16 or 0)
 		-- over the life orb (still movable from there)
@@ -285,7 +316,7 @@ local function fakeIcon(parent)
 	b.time = t:CreateFontString(nil, "OVERLAY")
 	b.time:SetShadowColor(0, 0, 0, 1)
 	b.time:SetShadowOffset(1, -1)
-	b.time:SetPoint("TOP", b, "BOTTOM", 0, -1)
+	b.time:SetPoint("BOTTOM", b, "BOTTOM", 1, 2)
 	return b
 end
 
@@ -307,6 +338,7 @@ end
 function AU:SetDebuffPreview(on)
 	previewOn = on
 	local row = rows.debuffs
+	if row then row.preview = previewOn and function() AU:SetDebuffPreview(true) end or nil end
 	if on and row then
 		local now = GetTime()
 		for i, s in ipairs(SAMPLE) do
@@ -314,7 +346,11 @@ function AU:SetDebuffPreview(on)
 			fakes[i] = b
 			b:ClearAllPoints()
 			-- the row grows right from its bottom-left, like the real one
-			b:SetPoint("BOTTOMLEFT", row.holder, "BOTTOMLEFT", (i - 1) * (ICON + GAP), TEXT_ROOM)
+			local g = AU.GROW[AU.db.debuffsGrow] or AU.GROW.right
+			local d = (i - 1) * (ICON + GAP)
+			local x = g.column and 0 or (g.h == "Left" and -d or d)
+			local y = g.column and (g.v == "Down" and -d or d) or 0
+			b:SetPoint(g.anchor, row.holder, g.anchor, x, y)
 			b.icon:SetTexture(s.icon)
 			H.Fonts:Apply(b.time, "body", AU.db.rowsTimeSize, AU)
 			b.length, b.exp = s.time, now + s.time
