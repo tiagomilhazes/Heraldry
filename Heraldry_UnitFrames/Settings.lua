@@ -277,7 +277,7 @@ local raid = {
 		page:Slider({ label = "Power bar height", min = 2, max = 12, step = 1, get = get, set = set })
 		page:Section("Groups")
 		get, set = rf("GroupsPerRow")
-		page:Slider({ label = "Groups per row", desc = "8: every group side by side. 1: one column of groups.", min = 1, max = 8, step = 1, get = get, set = set })
+		page:Slider({ label = "Groups per row", desc = "Banners: each row hangs from one rod and rolls up as one. 4 fits 20 and 40 raids; 3 suits 25.", min = 1, max = 8, step = 1, get = get, set = set })
 		get, set = rf("GroupSpacing")
 		page:Slider({ label = "Space between groups", min = 0, max = 60, step = 1, get = get, set = set })
 		get, set = rf("RodSize")

@@ -1,13 +1,14 @@
 --[[
 	Heraldry_UnitFrames - Raid.lua
-	The raid, one block per group (up to 8), in two styles:
+	The raid, groups side by side in rows ("Groups per row", default 4), in two
+	styles:
 
 	  style "banner" (default, prototype R3)
-	      each group is a parchment banner hanging from the theme's rod. Click the
-	      rod to roll the group up (the members hide, the rod and a strip with the
-	      group number stay) and again to open it. The toggle is a secure snippet,
-	      so it works in combat too (instantly; there is no animation). A rolled
-	      group's rod pulses red when one of its members dies.
+	      each row of groups is one parchment sheet hanging from the theme's rod.
+	      Click the rod to roll the row up (the members hide, the rod and a strip
+	      "Groups 1-4 · 18" stay) and again to open it. The toggle is a secure
+	      snippet, so it works in combat too (instantly; there is no animation).
+	      A rolled row's rod pulses red when one of its members dies.
 	  style "tiles" (prototype R2)
 	      every group in one framed panel, members as tiles: life in the class
 	      colour, the name and the percentage on it, the rim lit by a debuff.
@@ -63,7 +64,7 @@ local DEBUFF = {
 	Poison  = { 0.00, 0.60, 0.00 },
 }
 
-local R = { groups = {}, buttons = {}, byUnit = {}, fakes = {} }
+local R = { groups = {}, rows = {}, buttons = {}, byUnit = {}, fakes = {} }
 UF.raid = R
 
 local function db() return UF.db end
@@ -252,12 +253,16 @@ local function paint(b, unit, p)
 	end
 end
 
---[[ Groups ]]
+--[[ Groups and rows ]]
 
--- the rod: secure button whose click rolls the group up or opens it
+-- Groups sit side by side in rows ("Groups per row", default 4: a 40-man raid
+-- is two rows, a 20-man one). In the banner style each row hangs from one rod
+-- on one sheet of paper; clicking the rod rolls the whole row up (the sheet is
+-- a protected frame holding the row's group headers, toggled by a secure
+-- snippet, so it works in combat too).
 local ROD_SNIPPET = [[
-	local h = self:GetFrameRef("header")
-	if h:IsShown() then h:Hide() else h:Show() end
+	local s = self:GetFrameRef("sheet")
+	if s:IsShown() then s:Hide() else s:Show() end
 ]]
 
 local function rodTexture(rod)
@@ -337,10 +342,43 @@ local function initString()
 	]]):format(math.floor(d.raidWidth + 0.5), math.floor(d.raidHeight + 0.5))
 end
 
-local function makeGroup(g)
+local function makeRow(r)
 	local c = R.container
+	local row = { index = r, groups = {} }
+	-- the sheet holds the row's groups and its paper: hiding it rolls the row up
+	local sheet = CreateFrame("Frame", nil, c, "SecureHandlerBaseTemplate")
+	row.paper = sheet:CreateTexture(nil, "BACKGROUND", nil, -2)
+	row.paper:SetAllPoints()
+	row.edge = {}
+	for i = 1, 4 do row.edge[i] = sheet:CreateTexture(nil, "BACKGROUND", nil, -1) end
+
+	local rod = CreateFrame("Button", nil, c, "SecureHandlerClickTemplate")
+	rod:RegisterForClicks("AnyUp")
+	rod:SetFrameRef("sheet", sheet)
+	rod:SetAttribute("_onclick", ROD_SNIPPET)
+	rod:HookScript("PostClick", function()
+		H.char.raidRolled = H.char.raidRolled or {}
+		H.char.raidRolled[r] = not sheet:IsShown() or nil
+		R:PaintRolled(row)
+	end)
+	rodTexture(rod)
+	rod:SetFrameLevel(sheet:GetFrameLevel() + 10)
+	-- shown under the rod while rolled up
+	row.strip = CreateFrame("Frame", nil, rod)
+	row.strip.paper = row.strip:CreateTexture(nil, "BACKGROUND")
+	row.strip.paper:SetAllPoints()
+	row.strip.text = row.strip:CreateFontString(nil, "OVERLAY")
+	row.strip.text:SetPoint("CENTER", 0, 1)
+	row.strip:Hide()
+
+	row.sheet, row.rod = sheet, rod
+	R.rows[r] = row
+	return row
+end
+
+local function makeGroup(g)
 	local G = { index = g }
-	local h = CreateFrame("Frame", "HeraldryRaidGroup" .. g, c, "SecureGroupHeaderTemplate")
+	local h = CreateFrame("Frame", "HeraldryRaidGroup" .. g, R.container, "SecureGroupHeaderTemplate")
 	h:SetAttribute("template", "SecureUnitButtonTemplate")
 	h:SetAttribute("showRaid", true)
 	h:SetAttribute("groupFilter", tostring(g))
@@ -366,34 +404,9 @@ local function makeGroup(g)
 		ClickCastFrames = ClickCastFrames or {}
 		ClickCastFrames[b] = true
 	end
-	-- the paper behind the members (part of the header: it rolls up with it)
-	G.paper = h:CreateTexture(nil, "BACKGROUND", nil, -2)
-	G.edge = {}
-	for i = 1, 4 do G.edge[i] = h:CreateTexture(nil, "BACKGROUND", nil, -1) end
-
-	local rod = CreateFrame("Button", nil, c, "SecureHandlerClickTemplate")
-	rod:RegisterForClicks("AnyUp")
-	rod:SetFrameRef("header", h)
-	rod:SetAttribute("_onclick", ROD_SNIPPET)
-	rod:HookScript("PostClick", function()
-		H.char.raidRolled = H.char.raidRolled or {}
-		H.char.raidRolled[g] = not h:IsShown() or nil
-		R:PaintRolled(G)
-	end)
-	rodTexture(rod)
-	rod:SetFrameLevel(h:GetFrameLevel() + 10)
-	-- shown under the rod while rolled up
-	G.strip = CreateFrame("Frame", nil, rod)
-	G.strip.paper = G.strip:CreateTexture(nil, "BACKGROUND")
-	G.strip.paper:SetAllPoints()
-	G.strip.text = G.strip:CreateFontString(nil, "OVERLAY")
-	G.strip.text:SetPoint("CENTER", 0, 1)
-	G.strip:Hide()
-
 	-- tiles style: a small group number over the column
-	G.number = c:CreateFontString(nil, "OVERLAY")
-
-	G.header, G.rod = h, rod
+	G.number = h:CreateFontString(nil, "OVERLAY")
+	G.header = h
 	h.G = G
 	h:Show()
 	R.groups[g] = G
@@ -410,29 +423,39 @@ local function members(G)
 	return list
 end
 
-function R:PaintRolled(G)
-	local rolled = not G.header:IsShown()
+function R:PaintRolled(row)
+	local rolled = not row.sheet:IsShown()
 	local banner = db().raidStyle == "banner"
-	G.strip:SetShown(banner and rolled and G.rod:IsShown())
+	row.strip:SetShown(banner and rolled and row.rod:IsShown())
 	if banner and rolled then
-		G.strip.text:SetText(("Group %d · %d"):format(G.index, #members(G)))
+		local n, used = 0, {}
+		for _, G in ipairs(row.groups) do
+			local m = #members(G)
+			if m > 0 or db().raidShowEmpty then used[#used + 1] = G.index end
+			n = n + m
+		end
+		local first, last = used[1] or row.groups[1].index, used[#used] or row.groups[#row.groups].index
+		local label = first == last and ("Group %d"):format(first) or ("Groups %d–%d"):format(first, last)
+		row.strip.text:SetText(("%s · %d"):format(label, n))
 	end
-	self:UpdateWarn(G)
+	self:UpdateWarn(row)
 end
 
--- a rolled group's rod pulses when a member of it is dead
-function R:UpdateWarn(G)
+-- a rolled row's rod pulses when a member in it is dead
+function R:UpdateWarn(row)
 	local warn = false
-	if db().raidWarn and db().raidStyle == "banner" and not G.header:IsShown() then
-		for _, b in ipairs(members(G)) do
-			if b.hDead then warn = true end
+	if db().raidWarn and db().raidStyle == "banner" and not row.sheet:IsShown() then
+		for _, G in ipairs(row.groups) do
+			for _, b in ipairs(members(G)) do
+				if b.hDead then warn = true end
+			end
 		end
 	end
-	G.rod.glow:SetShown(warn)
+	row.rod.glow:SetShown(warn)
 	if warn then
-		if not G.rod.pulse:IsPlaying() then G.rod.pulse:Play() end
+		if not row.rod.pulse:IsPlaying() then row.rod.pulse:Play() end
 	else
-		G.rod.pulse:Stop()
+		row.rod.pulse:Stop()
 	end
 end
 
@@ -446,91 +469,89 @@ function UF:LayoutRaid()
 	end
 	local d = self.db
 	local banner = d.raidStyle == "banner"
-	local w, hgt, sp = d.raidWidth, d.raidHeight, d.raidSpacing
+	local w, hgt, sp, gs = d.raidWidth, d.raidHeight, d.raidSpacing, d.raidGroupSpacing
 	local rodH = banner and d.raidRodSize or 0
-	local pad = banner and 6 or 0
-	local labelH = banner and 0 or 14
+	local pad = banner and 8 or 6
+	local top = banner and rodH / 2 + pad or 18          -- above the members: under the rod, or the group number
 	local inset = banner and math.floor(capWidth(rodH) * 0.7) or 0
-	local blockW = w + 2 * pad + 2 * inset
-	local blockH = rodH + labelH + pad * 2 + PER_GROUP * hgt + (PER_GROUP - 1) * sp
-	local perRow = math.max(1, d.raidGroupsPerRow)
+	local membersH = PER_GROUP * hgt + (PER_GROUP - 1) * sp
+	local perRow = math.max(1, math.min(GROUPS, d.raidGroupsPerRow))
+	local nRows = math.ceil(GROUPS / perRow)
+	local rowH = (banner and rodH / 2 or 0) + top + membersH + pad
+	local rowGap = banner and gs or 8
+	local maxW = 0
 
-	for g = 1, GROUPS do
-		local G = R.groups[g] or makeGroup(g)
-		local col, row = (g - 1) % perRow, math.floor((g - 1) / perRow)
-		local x = col * (blockW + d.raidGroupSpacing)
-		local y = -row * (blockH + d.raidGroupSpacing)
-		local h, rod = G.header, G.rod
+	for _, row in pairs(R.rows) do
+		row.groups = {}
+		row.sheet:Hide()
+		row.rod:Hide()
+	end
+	for r = 1, nRows do
+		local row = R.rows[r] or makeRow(r)
+		local first = (r - 1) * perRow + 1
+		local count = math.min(perRow, GROUPS - first + 1)
+		local sheetW = count * w + (count - 1) * gs + 2 * pad
+		local y = -(r - 1) * (rowH + rowGap)
+		local sheet, rod = row.sheet, row.rod
+		maxW = math.max(maxW, sheetW + 2 * inset)
 
 		rod:ClearAllPoints()
-		rod:SetPoint("TOPLEFT", R.container, "TOPLEFT", x, y)
+		rod:SetPoint("TOPLEFT", R.container, "TOPLEFT", 0, y)
+		sheet:ClearAllPoints()
 		if banner then
-			skinRod(rod, rodH, blockW)
-			G.strip:ClearAllPoints()
-			G.strip:SetPoint("TOPLEFT", rod, "BOTTOMLEFT", inset, rodH / 2)
-			G.strip:SetPoint("TOPRIGHT", rod, "BOTTOMRIGHT", -inset, rodH / 2)
-			G.strip:SetHeight(16)
-			H.Paper:Apply(G.strip.paper, d.raidPaper, 0.95)
-			H.Fonts:Apply(G.strip.text, "body", 10, UF)
+			skinRod(rod, rodH, sheetW + 2 * inset)
+			sheet:SetPoint("TOPLEFT", rod, "TOPLEFT", inset, -rodH / 2)
+			sheet:SetSize(sheetW, top + membersH + pad)
+			row.strip:ClearAllPoints()
+			row.strip:SetPoint("TOPLEFT", sheet, "TOPLEFT", 0, 0)
+			row.strip:SetPoint("TOPRIGHT", sheet, "TOPRIGHT", 0, 0)
+			row.strip:SetHeight(rodH / 2 + 16)
+			H.Paper:Apply(row.strip.paper, d.raidPaper, 0.95)
+			H.Fonts:Apply(row.strip.text, "body", 10, UF)
+			row.strip.text:ClearAllPoints()
+			row.strip.text:SetPoint("BOTTOM", 0, 3)
 			local ink = H.Paper:IsInk(d.raidPaper)
-			G.strip.text:SetTextColor(ink and 0.2 or 0.9, ink and 0.13 or 0.78, ink and 0.06 or 0.55)
-		end
-
-		h:ClearAllPoints()
-		if banner then
-			h:SetPoint("TOP", rod, "CENTER", 0, -pad - 2)
+			row.strip.text:SetTextColor(ink and 0.2 or 0.9, ink and 0.13 or 0.78, ink and 0.06 or 0.55)
+			H.Paper:Apply(row.paper, d.raidPaper, 0.96)
+			H.Paper:Crop(row.paper, d.raidPaper, sheetW, top + membersH + pad)
+			H.Paper:Shades(row.edge, d.raidPaper, 0.9, 6)
 		else
-			h:SetPoint("TOPLEFT", R.container, "TOPLEFT", x + 6, y - labelH - 6)
+			sheet:SetPoint("TOPLEFT", R.container, "TOPLEFT", 0, y)
+			sheet:SetSize(sheetW, rowH)
 		end
-		h:SetAttribute("yOffset", -sp)
-		h:SetAttribute("initialConfigFunction", initString())
-		for i = 1, select("#", h:GetChildren()) do
-			local b = select(i, h:GetChildren())
-			if b.hDressed then
-				b:SetSize(w, hgt)
-				layoutMember(b)
-			end
-		end
+		row.paper:SetShown(banner)
+		for _, t in ipairs(row.edge) do t:SetShown(banner) end
 
-		-- the paper hanging from the rod, around the members
-		G.paper:ClearAllPoints()
-		G.paper:SetPoint("TOPLEFT", h, "TOPLEFT", -pad, pad + 2)
-		G.paper:SetPoint("BOTTOMRIGHT", h, "BOTTOMRIGHT", pad, -pad)
-		G.paper:SetShown(banner)
-		for _, t in ipairs(G.edge) do t:SetShown(banner) end
-		if banner then
-			H.Paper:Apply(G.paper, d.raidPaper, 0.96)
-			H.Paper:Crop(G.paper, d.raidPaper, blockW, blockH)
-			H.Paper:Shades(G.edge, d.raidPaper, 0.9)
-			for i, t in ipairs(G.edge) do
-				t:ClearAllPoints()
-				if i <= 2 then
-					t:SetPoint(i == 1 and "TOPLEFT" or "TOPRIGHT", G.paper, i == 1 and "TOPLEFT" or "TOPRIGHT")
-					t:SetPoint(i == 1 and "BOTTOMLEFT" or "BOTTOMRIGHT", G.paper, i == 1 and "BOTTOMLEFT" or "BOTTOMRIGHT")
-					t:SetWidth(6)
-				else
-					t:SetPoint(i == 3 and "TOPLEFT" or "BOTTOMLEFT", G.paper, i == 3 and "TOPLEFT" or "BOTTOMLEFT")
-					t:SetPoint(i == 3 and "TOPRIGHT" or "BOTTOMRIGHT", G.paper, i == 3 and "TOPRIGHT" or "BOTTOMRIGHT")
-					t:SetHeight(6)
+		for i = 1, count do
+			local g = first + i - 1
+			local G = R.groups[g] or makeGroup(g)
+			local h = G.header
+			G.row = row
+			row.groups[i] = G
+			h:SetParent(sheet)
+			h:ClearAllPoints()
+			h:SetPoint("TOPLEFT", sheet, "TOPLEFT", pad + (i - 1) * (w + gs), -top)
+			h:SetAttribute("yOffset", -sp)
+			h:SetAttribute("initialConfigFunction", initString())
+			for j = 1, select("#", h:GetChildren()) do
+				local b = select(j, h:GetChildren())
+				if b.hDressed then
+					b:SetSize(w, hgt)
+					layoutMember(b)
 				end
 			end
+			-- tiles: the group number over the column
+			G.number:ClearAllPoints()
+			G.number:SetPoint("BOTTOMLEFT", h, "TOPLEFT", 1, 3)
+			H.Fonts:Apply(G.number, "header", 11, UF)
+			G.number:SetTextColor(accent())
+			G.number:SetText(g)
 		end
-
-		-- tiles: the group number over the column
-		G.number:ClearAllPoints()
-		G.number:SetPoint("TOPLEFT", R.container, "TOPLEFT", x + 7, y - 4)
-		H.Fonts:Apply(G.number, "header", 11, UF)
-		G.number:SetTextColor(accent())
-		G.number:SetText(g)
-
 	end
-	R:UpdateGroups()
+	R.nRows = nRows
 
 	-- the container and the tiles' panel
-	local rows = math.ceil(GROUPS / perRow)
-	local W = perRow * blockW + (perRow - 1) * d.raidGroupSpacing + (banner and 0 or 12)
-	local Hh = rows * blockH + (rows - 1) * d.raidGroupSpacing + (banner and 0 or 12)
-	R.container:SetSize(W, Hh)
+	R.container:SetSize(maxW, nRows * rowH + (nRows - 1) * rowGap)
 	R.panel:SetShown(not banner)
 	if not banner then
 		H.Paper:Apply(R.panel.bg, "glass", 0.9)
@@ -544,16 +565,18 @@ function UF:LayoutRaid()
 		end
 	end
 	self:LayoutRaidPreview()
+	R:UpdateGroups()
 	H.Movers:Apply(R.container.mover)
 	R:UpdateAll()
 end
 
 --[[ Updates ]]
 
--- which groups have members: empty ones hide (unless set), rolled ones keep
--- only their rod. Groups are fixed slots, so nothing moves when one empties.
+-- which groups have members: empty ones hide (unless set), a row with none
+-- hides whole, rolled rows keep only their rod. Groups are fixed slots, so
+-- nothing moves when one empties.
 function R:UpdateGroups()
-	if not self.container then return end
+	if not self.container or not self.nRows then return end
 	if InCombatLockdown() then
 		H:RunOutOfCombat(function() R:UpdateGroups() end, "uf-raid-groups")
 		return
@@ -569,13 +592,19 @@ function R:UpdateGroups()
 			if sub then used[sub] = true end
 		end
 	end
-	for g, G in pairs(self.groups) do
-		local on = used[g] or d.raidShowEmpty
-		local rolled = banner and H.char.raidRolled and H.char.raidRolled[g]
-		G.rod:SetShown(banner and on)
-		G.header:SetShown(on and not rolled)
-		G.number:SetShown(not banner and on)
-		self:PaintRolled(G)
+	for r = 1, self.nRows do
+		local row = self.rows[r]
+		local any = false
+		for _, G in ipairs(row.groups) do
+			local on = used[G.index] or d.raidShowEmpty
+			any = any or on
+			G.header:SetShown(on)
+			G.number:SetShown(not banner)
+		end
+		local rolled = banner and H.char.raidRolled and H.char.raidRolled[r]
+		row.rod:SetShown(banner and any)
+		row.sheet:SetShown(any and not rolled)
+		self:PaintRolled(row)
 	end
 end
 
@@ -588,7 +617,7 @@ end
 
 function R:UpdateAll()
 	for unit, b in pairs(self.byUnit) do self:UpdateButton(b) end
-	for _, G in pairs(self.groups) do self:PaintRolled(G) end
+	for r = 1, self.nRows or 0 do self:PaintRolled(self.rows[r]) end
 end
 
 function R:UpdateRange()
@@ -725,7 +754,7 @@ function UF:EnableRaid()
 				R:UpdateButton(b)
 				if e == "UNIT_HEALTH" or e == "UNIT_FLAGS" then
 					local G = b:GetParent().G
-					if G then R:UpdateWarn(G) end
+					if G and G.row then R:UpdateWarn(G.row) end
 				end
 			end
 		else
