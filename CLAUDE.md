@@ -43,6 +43,7 @@ Heraldry/                      core (always loaded)
   Core/Paper.lua               H.Paper: papers (dark/light/glass), Apply, Crop, Shades, InkOf
   Themes/Standard.lua          neutral theme (colours only)
   Themes/Paladin.lua           Paladin theme (art pieces, accent, bronze finish)
+  Themes/Priest.lua            PRIEST (Holy Light) and PRIEST_SHADOW themes (Canva kits, see project doc arte-classes-prompts)
   Core/GameMenu.lua            "Heraldry" button in the ESC menu
   Core/Commands.lua            /hui, /heraldry
   Media/Themes/Paladin/*.tga   ButtonFrame, ButtonFrameSlim, Plate, PlateDouble,
@@ -64,6 +65,7 @@ Heraldry_Chat/                 Chat.lua Text.lua Settings.lua
 Heraldry_Tooltips/             Tooltips.lua Settings.lua
 Heraldry_Auras/                Auras.lua Rows.lua Settings.lua (auras in the orbs' gems; buff/debuff rows)
 Heraldry_ClickCast/            ClickCast.lua Settings.lua (click casting on unit frames)
+Heraldry_DataBar/              DataBar.lua Settings.lua (top bar: micro menu, XP on the theme rail, gold, bags, durability, FPS/latency)
 ```
 
 ### `.toc` conventions
@@ -165,6 +167,7 @@ Each piece type says which numbers a theme must provide, measured in texture pix
 | `frame.gem` | `file, size` |
 | `scroll.rod` | `cap, capR?, mid, size, capW, midW?, shaft` (cap mirrored when no capR; mid tiled when midW, else stretched) |
 | `scroll.rodV` | `cap, capB?, mid, size, capH, midH?, shaft` (standing rod; cap flipped when no capB) |
+| `minimap.frame` | `file, size, window, sockets{3}, socketSize, plate, mask, art` (falls back to the Paladin frame) |
 
 - Optional theme fields:
   - `accent = {r,g,b}`: the metal colour for thin lines.
@@ -273,6 +276,7 @@ Settings tabs per page:
 | Tooltips | Look / Position / Text / Behaviour / Font |
 | Auras | Power orb / Life orb / Buffs / Debuffs / Font |
 | Click casting | Bindings / Behaviour |
+| Data bar | Bar / Blocks / Text / Behaviour / Font |
 
 ## Untested (needs the situation in game)
 
