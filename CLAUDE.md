@@ -246,7 +246,7 @@ Art is designed **as a whole**, not as loose pieces. The first Paladin art (a pi
 | M4 | Quest tracker as a parchment scroll (Q4): theme rods, light/dark paper, roll up, own tracker | approved |
 | M6 | Tooltips on paper (T2): dark/light/glass, metal or quality rim, class names, thin health strip, movable anchor | approved |
 | M5 | Chat as a sideways scroll: standing rods, dark/light/glass paper or panel, roll up with glow, tabs and input inside the paper, abbreviations, colours/ink, input history | approved |
-| M3 | Unit frames: **target**. Styles Plaque (fixed plaque with the slot cut out and the bars behind it, finish and jewels by target, level in a ring set into the left medallion; per-text size/offset settings) and Minimal (glass panel, theme gem, halo). Secure button, Blizzard target hidden | approved, cast bar in the power row (C4) approved; class emblems delivered |
+| M3 | Unit frames: **target**. Styles Plaque (fixed plaque with the slot cut out and the bars behind it, finish and jewels by target, level in a ring set into the left medallion; per-text size/offset settings) and Minimal (glass panel, theme gem, halo). Secure button, Blizzard target hidden | approved, cast bar in the power row (C4) approved; class emblems approved |
 | — | Unit frames: **party** (cartouche / banner / compact) | approved |
 | — | Swing bar and player cast bar on the block's rails (RailLight) | approved |
 
@@ -280,7 +280,7 @@ Settings tabs per page:
 
 ## Next steps
 
-1. ~~Target cast bar~~: approved as C4 — the target's casts take the power row (Cast.lua; gold interruptible, grey not, red interrupted/failed; game timer via SetTimerDuration when available, else GetTime maths in pcall). Class emblems in the medallions: delivered with the party symbols (`UF.EMBLEMS`, `PLAQUE.medallions`, setting `emblem` = colour/metal/off), awaiting test.
+1. ~~Target cast bar~~: approved as C4 — the target's casts take the power row (Cast.lua; gold interruptible, grey not, red interrupted/failed; game timer via SetTimerDuration when available, else GetTime maths in pcall). Class emblems in the medallions: delivered with the party symbols (`UF.EMBLEMS`, `PLAQUE.medallions`, setting `emblem` = colour/metal/off), approved. Extra for later: bespoke per-class medallions from Canva (Tiago's prompt wording).
 2. Target of target and focus delivered (Small.lua: smaller plaques, same finish/jewel rules, per-frame prefixed settings tot*/focus*, ToT docked right of the target). Party: see 7.
 3. **Minimap**: delivered as prototype M1 (TimelessUI Paladin_PlateM frame, level 1.5 like the target): map cut to the window by a mask, sockets = day/night (GameTimeFrame), addon buttons panel toggle, mail; zone + clock on the plate with per-text settings. Approved.
 4. **Quest tracker**: delivered as Q4, a parchment scroll (`Heraldry_Quests`): theme rods top and bottom (`scroll.rod`), light (ink) or dark paper, click the top rod to roll up, own tracker reading C_QuestLog with classic fallbacks. The game's tracker is hidden with Hide() + an OnShow hook (Questie's approach on this client; the frame is protected, so it is not reparented). Steps aside when Questie's tracker is on. Only the level carries the difficulty colour; ready/failed shown on the title; rolled up shows a strip with the quest count. Approved. The quest log window itself comes later.
