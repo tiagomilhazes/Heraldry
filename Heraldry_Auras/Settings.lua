@@ -1,6 +1,6 @@
 --[[
 	Heraldry_Auras - Settings.lua
-	Options page. Tabs: Power orb | Life orb | Font.
+	Options page. Tabs: Power orb | Life orb | Buffs | Debuffs | Font.
 ]]
 
 local H = Heraldry
@@ -12,6 +12,15 @@ local function field(name)
 		AU:Layout()
 	end
 end
+
+local function rowField(name)
+	return function() return AU.db[name] end, function(v)
+		AU.db[name] = v
+		if AU.LayoutRows then AU:LayoutRows() end
+	end
+end
+
+local function pct(v) return ("%d%%"):format(v * 100 + 0.5) end
 
 local WHERE = { "Top gem", "Right gem", "Bottom gem", "Left gem" }
 
@@ -64,7 +73,38 @@ H:RegisterOptionsPage({
 			get, set = field("debuffTimeSize")
 			page:Slider({ label = "Time left size", min = 6, max = 24, step = 1, get = get, set = set })
 		end },
+		{ key = "buffs", label = "Buffs", build = function(page)
+			page:Text("All your buffs in a small row at the top of the screen, by the minimap. Right click one to cancel it, in combat too. Move it in edit mode (\"Buffs\").")
+			page:Section("Buffs")
+			local get, set = rowField("buffsShow")
+			page:Toggle({ label = "Show the buff row", get = get, set = set })
+			get, set = rowField("buffsScale")
+			page:Slider({ label = "Size", min = 0.5, max = 2, step = 0.05, format = pct, get = get, set = set })
+			get, set = rowField("buffsPerRow")
+			page:Slider({ label = "Icons per row", min = 4, max = 24, step = 1, get = get, set = set })
+			get, set = rowField("buffsTime")
+			page:Toggle({ label = "Time left", desc = "Under each icon. Applies after a /reload.", get = get, set = set })
+			get, set = rowField("hideBlizzardAuras")
+			page:Toggle({ label = "Hide the game's buff and debuff frames", get = get, set = set })
+		end },
+		{ key = "debuffs", label = "Debuffs", build = function(page)
+			page:Text("Serious debuffs (crowd control: stuns, fears, roots, silences...) as big icons over the life orb. The life orb's gems already show the debuff types. Move them in edit mode (\"Serious debuffs\").")
+			page:Section("Debuffs")
+			local get, set = rowField("debuffsShow")
+			page:Toggle({ label = "Show serious debuffs", get = get, set = set })
+			get, set = rowField("debuffsAll")
+			page:Toggle({ label = "Every debuff", desc = "Off: crowd control only.", get = get, set = set })
+			get, set = rowField("debuffsScale")
+			page:Slider({ label = "Size", min = 0.5, max = 2.5, step = 0.05, format = pct, get = get, set = set })
+			get, set = rowField("debuffsPerRow")
+			page:Slider({ label = "Icons per row", min = 2, max = 16, step = 1, get = get, set = set })
+			get, set = rowField("debuffsTime")
+			page:Toggle({ label = "Time left", desc = "Under each icon. Applies after a /reload.", get = get, set = set })
+		end },
 		{ key = "font", label = "Font", build = function(page)
+			page:Section("Rows")
+			local get, set = rowField("rowsTimeSize")
+			page:Slider({ label = "Time left size (buffs and debuffs)", desc = "Applies after a /reload.", min = 6, max = 20, step = 1, get = get, set = set })
 			page:FontSection(AU, function() AU:Layout() end)
 		end },
 	},

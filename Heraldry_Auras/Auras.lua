@@ -278,7 +278,7 @@ local function setTime(s, aura, drain, text)
 		end
 	end)
 	if done or not text or not d then return end
-	local fmt = formatter()
+	local fmt = AU.TimeFormatter and AU.TimeFormatter() or formatter()
 	if fmt and C_DurationUtil and C_DurationUtil.CreateDurationTextBinding then
 		pcall(function()
 			s.binding = s.binding or C_DurationUtil.CreateDurationTextBinding()
@@ -410,10 +410,16 @@ function AU:OnEnable()
 	H:On("THEME_CHANGED", function() AU:Layout() end)
 	H:On("FONTS_CHANGED", function() AU:Layout() end)
 	self:Layout()
+	if self.LayoutRows then
+		self:LayoutRows()
+		-- the minimap and the orbs register their movers after this module
+		C_Timer.After(0.5, function() AU:LayoutRows() end)
+	end
 end
 
 function AU:OnProfileChanged()
 	self:Layout()
+	if self.LayoutRows then self:LayoutRows() end
 end
 
 H.previews = H.previews or {}

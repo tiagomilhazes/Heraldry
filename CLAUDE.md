@@ -62,7 +62,7 @@ Heraldry_Minimap/              Minimap.lua Settings.lua Media/{Frame,Mask}.tga
 Heraldry_Quests/               Quests.lua Settings.lua
 Heraldry_Chat/                 Chat.lua Text.lua Settings.lua
 Heraldry_Tooltips/             Tooltips.lua Settings.lua
-Heraldry_Auras/                Auras.lua Settings.lua (auras in the orbs' gems)
+Heraldry_Auras/                Auras.lua Rows.lua Settings.lua (auras in the orbs' gems; buff/debuff rows)
 Heraldry_ClickCast/            ClickCast.lua Settings.lua (click casting on unit frames)
 ```
 
@@ -271,7 +271,7 @@ Settings tabs per page:
 | Quests | Look / Text / Behaviour / Font |
 | Chat | Look / Size / Text / Channels / Input / Behaviour / Font |
 | Tooltips | Look / Position / Text / Behaviour / Font |
-| Auras | Power orb / Life orb / Font |
+| Auras | Power orb / Life orb / Buffs / Debuffs / Font |
 | Click casting | Bindings / Behaviour |
 
 ## Untested (needs the situation in game)
@@ -297,7 +297,7 @@ Settings tabs per page:
    **Cast on the top rail, swing on the bottom rail** by default (each has "Where" = top rail / bottom rail / a bar of its own; nothing is added to the block): RailLight.lua (`AB.RailLight`) draws a lit rail right over one of the block's rails (tiles lined up; the bottom one flipped) or on a separate holder with a mover (`ActionBars.swing`, `ActionBars.cast`), A theme without `bar.rail` (Standard) gets a plain bar in the accent. Bar 1's scale is undone with SetScale(1/scale), never SetIgnoreParentScale (that drops the UI scale). Cast.lua: UNIT_SPELLCAST_* for the player, channels empty, interrupted/failed flash red, name and time under the block; the game's PlayerCastingBarFrame/CastingBarFrame reparented away. Approved.
 9. **C3 class overrides**, when the first module needs them.
 8. **C7:** installer, presets ("Altar" plus a Healer variant), import/export.
-9. **Auras** (`Heraldry_Auras`, prototype P2, step 1 approved): the power orb's gems hold chosen auras per character (`H.char.auraSockets`, names or spell IDs; paladin defaults to seals), icon round in the gem, darkening via a Cooldown from `C_UnitAuras.GetAuraDuration`; the life orb's gems light in debuff-type colours (top magic, right curse, bottom poison, left disease), pulsing when removable. Step 2 to come: long buffs in a small row by the minimap (the game's BuffFrame moved), big icons only for serious debuffs, extra short buffs. Then themes for the other classes. These start only once Standard and Paladin are complete.
+9. **Auras** (`Heraldry_Auras`, prototype P2, step 1 approved): the power orb's gems hold chosen auras per character (`H.char.auraSockets`, names or spell IDs; paladin defaults to seals), icon round in the gem, darkening via a Cooldown from `C_UnitAuras.GetAuraDuration`; the life orb's gems light in debuff-type colours (top magic, right curse, bottom poison, left disease), pulsing when removable. Step 2 delivered (Rows.lua): the client's own aura containers (`CreateFrame("AuraContainer", nil, holder, "CustomAuraContainerTemplate")` after loading Blizzard_AuraContainer; `AddAuraGroup(key, filter, {maxFrameCount, initializeFrame, layout})`, `SetUnit`, flow layout setters; buttons styled only in their creation window: `SetIcon`, `SetDurationCooldown`, `SetApplicationCount`, `SetDurationText(fs, {textFormatter})`, `SetCancelAuraButtons("RightButtonUp")`). Buffs (`HELPFUL`) in a row docked left of the minimap (`Auras.buffs`); serious debuffs (`HARMFUL|CROWD_CONTROL`, optionally `HARMFUL|!CROWD_CONTROL` too) big over the life orb (`Auras.debuffs`). Size = holder scale; game's BuffFrame/DebuffFrame hidden (Hide + Show hook, as EllesmereUI does). Reference for this API: EllesmereUI/EllesmereUI_AuraKit.lua. Then themes for the other classes. These start only once Standard and Paladin are complete.
 10. **Click casting** (`Heraldry_ClickCast`, step 1 approved): bindings per character (`H.char.clickcast`: mods + button 1-5 + action spell/macro/item/target/menu/focus/assist), spells by name so the highest rank is cast (pin with "Name(Rank n)"); a spell may have an enemy and a dead alternative, then the click is a `/cast [@unit,dead,help] ..; [@unit,harm] ..; [@unit] ..` macro built per frame. Applied to every frame in `ClickCastFrames` (a metatable catches frames added later); attributes we set are tracked per frame and cleared before re-applying; combat defers. Steps aside when Clique is loaded. Capture box in the panel (click with the combination). Steps 2-3 (hovercast keys, bindings in the tooltip, out-of-combat set, copy between characters) parked by Tiago as extras.
 11. **Pending tuning:** default margins of the block, waiting for Tiago's preferred values.
 
