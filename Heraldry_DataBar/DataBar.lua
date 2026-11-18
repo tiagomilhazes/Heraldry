@@ -25,11 +25,11 @@ local DB = H:NewModule("DataBar", {
 	fonts = true,
 	defaults = {
 		edge = "top",            -- top | bottom
-		height = 22,
+		height = 30,
 		bgAlpha = 0.85,
 		rail = true,
-		railSize = 6,
-		textSize = 11,
+		railSize = 8,
+		textSize = 15,
 		gap = 18,
 		hideBlizzard = true,
 		microPlace = "left",      microOrder = 1,
@@ -219,8 +219,27 @@ end
 function DB:Blizzard()
 	local hide = self.db.hideBlizzard
 	self.moved = self.moved or {}
+	-- Edit Mode's own status bar containers call their parent: they stay where
+	-- they are and only go invisible (alpha 0, no mouse)
+	for _, fr in ipairs({ _G.StatusTrackingBarManager, _G.MainStatusTrackingBarContainer, _G.SecondaryStatusTrackingBarContainer }) do
+		if fr then
+			if not fr.hHooked then
+				fr.hHooked = true
+				hooksecurefunc(fr, "SetAlpha", function(self, a)
+					if DB.db.hideBlizzard and a > 0 and not self.hSetting then
+						self.hSetting = true
+						self:SetAlpha(0)
+						self.hSetting = false
+					end
+				end)
+			end
+			fr.hSetting = true
+			fr:SetAlpha(hide and 0 or 1)
+			fr.hSetting = false
+			pcall(fr.EnableMouse, fr, not hide)
+		end
+	end
 	local list = {
-		_G.StatusTrackingBarManager, _G.MainStatusTrackingBarContainer, _G.SecondaryStatusTrackingBarContainer,
 		_G.MainMenuExpBar, _G.ReputationWatchBar, _G.MainMenuBarMaxLevelBar, _G.BagsBar,
 		-- the bag buttons themselves (this client keeps them loose, not in BagsBar)
 		_G.MainMenuBarBackpackButton, _G.KeyRingButton, _G.BagBarExpandToggle, _G.CharacterReagentBag0Slot,

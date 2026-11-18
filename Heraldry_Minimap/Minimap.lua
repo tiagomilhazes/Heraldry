@@ -218,10 +218,39 @@ end
 -- on the minimap that is a button and not one of the game's.
 local GAME = { MinimapPing = true, MiniMapTrackingButton = true, MiniMapTracking = true }
 
+local function addonLike(child)
+	local name = child:GetName()
+	local game = GAME[name or ""] or (name and (name:find("Queue") or name:find("LFG") or name:find("Battlefield")
+		or name:find("Tracking") or name:find("^Heraldry") or name:find("^GameTime") or name:find("^MiniMapMail")))
+	if game then return false end
+	return (name and name:find("^LibDBIcon10_")) or child.icon or child.Icon or (name and name:find("Minimap")) and true or false
+end
+
 function MM:CollectAddonButtons()
 	self.addonButtons = self.addonButtons or {}
 	local seen = {}
 	for _, b in ipairs(self.addonButtons) do seen[b] = true end
+	local function add(b)
+		if b and not seen[b] and b ~= self.frame and not b:IsForbidden() then
+			self.addonButtons[#self.addonButtons + 1] = b
+			seen[b] = true
+		end
+	end
+	-- buttons left in the game's minimap cluster (we took the map out of it)
+	if MinimapCluster then
+		for _, child in ipairs({ MinimapCluster:GetChildren() }) do
+			if child:IsObjectType("Button") and addonLike(child) then add(child) end
+		end
+	end
+	-- LibDBIcon buttons wherever they are
+	for name, obj in pairs(_G) do
+		if type(name) == "string" and name:find("^LibDBIcon10_") and type(obj) == "table" and obj.GetObjectType then add(obj) end
+	end
+	-- buttons the player put there (/hui grab)
+	for name in pairs(H.global.minimapGrab or {}) do
+		local b = _G[name]
+		if type(b) == "table" and b.GetObjectType then add(b) end
+	end
 	for _, child in ipairs({ Minimap:GetChildren() }) do
 		local name = child:GetName()
 		local isButton = child:IsObjectType("Button") or (name and name:find("^LibDBIcon10_"))
@@ -316,6 +345,25 @@ function MM:ToggleAddons()
 		self:ArrangeAddons()
 		p:Show()
 	end
+end
+
+-- /hui grab: the button under the mouse joins the panel (kept by name, every character)
+H.commands = H.commands or {}
+H.commands.grab = function()
+	local foci = GetMouseFoci and GetMouseFoci() or { GetMouseFocus and GetMouseFocus() }
+	local f = foci and foci[1]
+	-- climb to the first named frame (the button, not its icon)
+	while f and not f:GetName() and f:GetParent() do f = f:GetParent() end
+	local name = f and f:GetName()
+	if not name or f == UIParent or f == WorldFrame or name:find("^Heraldry") then
+		H:Error("Point the mouse at an addon's button, then type /hui grab.")
+		return
+	end
+	H.global.minimapGrab = H.global.minimapGrab or {}
+	H.global.minimapGrab[name] = true
+	H:Print(("'%s' now lives in the minimap's addon panel."):format(name))
+	MM:ArrangeAddons()
+	if not MM.frame.addonPanel:IsShown() then MM.frame.addonPanel:Hide() end
 end
 
 --[[ Texts ]]

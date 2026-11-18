@@ -36,6 +36,7 @@ local function help()
 	print(W .. "/hui profile rename <new name>|r " .. G .. "- rename the active profile|r")
 	print(W .. "/hui profile delete <name>|r")
 	print(W .. "/hui profile reset|r " .. G .. "- reset the active profile|r")
+	print(W .. "/hui grab|r " .. G .. "- put the button under the mouse into the minimap's addon panel|r")
 	print(W .. "/hui spec|r " .. G .. "- show profiles per spec|r")
 	print(W .. "/hui spec on/off|r")
 	print(W .. "/hui spec <number> <profile>|r " .. G .. "(or 'none')|r")
@@ -137,6 +138,8 @@ SlashCmdList.HERALDRY = function(msg)
 		profileCmd(rest)
 	elseif cmd == "spec" then
 		specCmd(rest)
+	elseif H.commands and H.commands[cmd] then
+		H.commands[cmd](rest)   -- added by modules
 	else
 		H:Error("Unknown command: " .. cmd)
 		help()
