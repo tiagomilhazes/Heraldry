@@ -33,6 +33,26 @@ H:RegisterOptionsPage({
 				return ("Active now: |cffffffff%s|r"):format(Themes:Active().label)
 			end, 20)
 		end },
+		{ key = "forms", label = "Forms", build = function(page)
+			page:Section("Theme by form", "While you are in a form (Shadowform, a druid form, a warrior stance), its theme replaces the one above. A change in combat shows when combat ends.")
+			local forms = Themes:Forms()
+			if #forms == 0 then
+				page:Text("Your character has no forms yet.", 20)
+				return
+			end
+			for _, form in ipairs(forms) do
+				page:Dropdown({
+					label = form.name,
+					values = function()
+						local t = { { value = false, text = "Same as the theme above" } }
+						for _, theme in ipairs(Themes.list) do t[#t + 1] = { value = theme.key, text = theme.label } end
+						return t
+					end,
+					get = function() local m = Themes:FormThemes() return m and m[form.id] or false end,
+					set = function(v) Themes:SetFormTheme(form.id, v or nil) end,
+				})
+			end
+		end },
 		{ key = "finish", label = "Finish", build = function(page)
 			page:Section("Finish")
 			page:Dropdown({

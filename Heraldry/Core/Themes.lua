@@ -2,7 +2,9 @@
 	Heraldry - Core/Themes.lua
 	Themes: the art set of the interface. The active theme is per character
 	(HeraldryDB.chars[...].theme): "auto" follows the class, falling back to
-	Standard when the class has no theme yet.
+	Standard when the class has no theme yet. A theme can also be tied to a form
+	(chars[...].formThemes[formSpellID] = key): it wins while the player is in
+	that form (Shadowform, a druid form, a warrior stance).
 
 	The geometry contract
 	A theme is a set of pieces. Each piece has a type, and the type says what
@@ -161,7 +163,67 @@ function H:RegisterTheme(key, def)
 	return theme
 end
 
+-- the form the player is in (shapeshift, stance, Shadowform): its spell ID, or nil
+function Themes:CurrentForm()
+	local i = GetShapeshiftForm and GetShapeshiftForm() or 0
+	if not i or i <= 0 then return nil end
+	local _, _, _, spellID = GetShapeshiftFormInfo(i)
+	return spellID
+end
+
+-- the player's forms: { { id = spellID, name = ... }, ... }
+function Themes:Forms()
+	local list = {}
+	for i = 1, (GetNumShapeshiftForms and GetNumShapeshiftForms() or 0) do
+		local icon, _, _, spellID = GetShapeshiftFormInfo(i)
+		if spellID then
+			local name = (C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(spellID)) or (GetSpellInfo and GetSpellInfo(spellID)) or ("Form " .. i)
+			list[#list + 1] = { id = spellID, name = name, icon = icon }
+		end
+	end
+	return list
+end
+
+-- form themes a class starts with (until the player sets their own)
+Themes.FORM_DEFAULTS = {
+	PRIEST = { [15473] = "PRIEST_SHADOW" },   -- Shadowform
+}
+
+-- the character's form -> theme table (or the class's defaults)
+function Themes:FormThemes()
+	if not H.char then return nil end
+	if H.char.formThemes then return H.char.formThemes end
+	local _, class = UnitClass("player")
+	return self.FORM_DEFAULTS[class]
+end
+
+-- a theme chosen for a form wins while the player is in it (per character)
+function Themes:SetFormTheme(spellID, key)
+	if not H.char.formThemes then
+		H.char.formThemes = {}
+		for k, v in pairs(self:FormThemes() or {}) do H.char.formThemes[k] = v end
+	end
+	H.char.formThemes[spellID] = key
+	self:CheckForm()
+end
+
+-- fires THEME_CHANGED when the active theme moved (form in or out)
+function Themes:CheckForm()
+	if not H.char then return end
+	local key = self:ActiveKey()
+	if self.lastKey and key ~= self.lastKey then
+		self.lastKey = key
+		H:Debug("Theme by form ->", key)
+		H:Fire("THEME_CHANGED", key)
+	end
+	self.lastKey = key
+end
+
 function Themes:ActiveKey()
+	local map = self:FormThemes()
+	local form = map and self:CurrentForm()
+	local byForm = form and map[form]
+	if byForm and self.byKey[byForm] then return byForm end
 	local choice = H.char and H.char.theme or "auto"
 	if choice == "auto" then
 		local _, class = UnitClass("player")
@@ -219,9 +281,15 @@ function Themes:Set(key)
 	H.char.theme = key
 	local active = self:ActiveKey()
 	H:Debug("Theme:", key, "->", active)
+	self.lastKey = active
 	H:Fire("THEME_CHANGED", active)
 end
 
+-- entering or leaving a form can change the theme
+H:RegisterEvent("UPDATE_SHAPESHIFT_FORM", function() Themes:CheckForm() end)
+H:RegisterEvent("UPDATE_SHAPESHIFT_FORMS", function() Themes:CheckForm() end)
+
 H:On("READY", function()
+	Themes.lastKey = Themes:ActiveKey()
 	for _, msg in ipairs(Themes.problems or {}) do H:Debug(msg) end
 end)

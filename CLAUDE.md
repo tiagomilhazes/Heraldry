@@ -178,7 +178,7 @@ Each piece type says which numbers a theme must provide, measured in texture pix
   - `Themes:Paint(tex)` applies the finish to theme art
   - `Themes:Accent()` returns the toned accent colour, or nil
   - `Themes:Set(key)`, `Themes:SetFinish(key)`
-- The theme is chosen per character, and `"auto"` follows the class.
+- The theme is chosen per character, and `"auto"` follows the class. A form (shapeshift/stance/Shadowform, by its spell ID) can have its own theme (`H.char.formThemes`, class defaults in `Themes.FORM_DEFAULTS`: priest Shadowform -> PRIEST_SHADOW); UPDATE_SHAPESHIFT_FORM fires THEME_CHANGED when it changes.
 
 ### Fonts: three layers, no duplication
 
@@ -263,7 +263,7 @@ Settings tabs per page:
 |---|---|
 | General | Character / Panel / Testing |
 | Profiles | Active profile / Manage |
-| Theme | Theme / Finish |
+| Theme | Theme / Forms / Finish |
 | Fonts | Fonts / Scale |
 | Layout | Edit mode / Positions |
 | Modules | (single page) |
