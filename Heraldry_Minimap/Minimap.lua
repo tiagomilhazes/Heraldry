@@ -44,6 +44,7 @@ MM.FRAME = {
 	socketSize = 104,                         -- what fits inside a socket
 	plate = { 200, 768, 806, 860 },           -- the zone plate
 	mask = M .. "Mask",                       -- the window's shape, for the map
+	art = { 17, 89, 999, 905 },               -- where the art is: the frame is cut to it
 }
 
 MM.TEXTS = {
@@ -353,14 +354,19 @@ function MM:Layout()
 	local f, db, F = self.frame, self.db, self.FRAME
 	local size = db.size
 	local k = size / F.size
-	f:SetSize(size, size)
+	-- the frame is only as big as the art (the file has empty margins), so it can
+	-- go right up to the screen's edges; every position below is from its corner
+	local a = F.art
+	local ox, oy = a[1], a[2]
+	f:SetSize((a[3] - a[1]) * k, (a[4] - a[2]) * k)
+	f.tex:SetTexCoord(a[1] / F.size, a[3] / F.size, a[2] / F.size, a[4] / F.size)
 	Themes:Paint(f.tex)
 
 	-- the map: a square as wide as the window, cut to it by the mask
 	local w = F.window
 	local ww, wh = (w[3] - w[1]) * k, (w[4] - w[2]) * k
 	f.holder:ClearAllPoints()
-	f.holder:SetPoint("TOPLEFT", f, "TOPLEFT", w[1] * k, -w[2] * k)
+	f.holder:SetPoint("TOPLEFT", f, "TOPLEFT", (w[1] - ox) * k, -(w[2] - oy) * k)
 	f.holder:SetSize(ww, wh)
 	self.mapSize = ww
 	self:FitMap()
@@ -370,7 +376,7 @@ function MM:Layout()
 	for i, pos in ipairs(F.sockets) do
 		local sock = f.sockets[i]
 		sock:ClearAllPoints()
-		sock:SetPoint("CENTER", f, "TOPLEFT", pos[1] * k, -pos[2] * k)
+		sock:SetPoint("CENTER", f, "TOPLEFT", (pos[1] - ox) * k, -(pos[2] - oy) * k)
 		sock:SetSize(s, s)
 		local c = sock.content
 		if c then
@@ -382,7 +388,7 @@ function MM:Layout()
 
 	-- texts on the plate: zone, and the clock under it
 	local pl = F.plate
-	local px, py = (pl[1] + pl[3]) / 2 * k, -(pl[2] + pl[4]) / 2 * k
+	local px, py = ((pl[1] + pl[3]) / 2 - ox) * k, -((pl[2] + pl[4]) / 2 - oy) * k
 	H.Fonts:Apply(f.zone, "header", db.zoneSize, self)
 	H.Fonts:Apply(f.clock, "body", db.clockSize, self)
 	f.zone:ClearAllPoints()
