@@ -4,10 +4,10 @@
 
 	  style "emblem" (default)
 	      [class symbol in the theme's button frame] [life + power, thin metal rim] (o)
-	      The class symbols (Media/Class/<CLASS>.tga) are sculpted emblems in the
-	      lion's art family: for now the emblems of the TimelessUI class orbs
-	      (Paladin lion, Warrior helm, Hunter wolf, ...). New art can replace the
-	      files with the same names.
+	      The class symbols (Media/Class/<CLASS>.tga) are gold emblems made in
+	      Canva in the lion's style (Paladin hammer, Warrior sword, Hunter bow,
+	      Rogue hood, Priest cross, Shaman totem, Mage flame, Warlock grimoire,
+	      Druid paw), cut to the inner disc; they take the theme's finish.
 	      The jewel on the right shows the colour of the member's debuff (magic,
 	      curse, disease, poison) and stays dark when there is none.
 	  style "compact"
@@ -251,7 +251,9 @@ function Member:SetClass(class, off)
 		return
 	end
 	if class then f.symbol:SetTexture(SYMBOLS .. class) end
-	f.symbol:SetDesaturation(off and 1 or 0)
+	-- the symbols are gold: they take the theme's finish, like the frame around them
+	Themes:Paint(f.symbol)
+	if off then f.symbol:SetDesaturation(1) end
 	f.symbol:SetAlpha(off and 0.6 or 1)
 end
 
