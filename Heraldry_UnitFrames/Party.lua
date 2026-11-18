@@ -34,17 +34,17 @@ local Themes = H.Themes
 local FLAT = "Interface\\Buttons\\WHITE8X8"
 local MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local LEADER = "Interface\\GroupFrame\\UI-Group-LeaderIcon"
-local SYMBOLS = "Interface\\AddOns\\Heraldry_UnitFrames\\Media\\Class\\"
+local SYMBOLS = "Interface\\AddOns\\Heraldry_UnitFrames\\Media\\Party\\Class\\"
 
 -- The cartouche (pixels of the 1024 x 512 file; the art fills the top 301 rows)
 UF.CARTOUCHE = {
 	file = "Interface\\AddOns\\Heraldry_UnitFrames\\Media\\Party\\Frame",
-	size = { 1024, 512 }, art = { 1024, 301 },
-	window = { 95, 55, 281, 242 },      -- the class symbol
-	life = { 326, 93, 816, 146 },       -- slot of the life bar
-	power = { 325, 160, 816, 212 },     -- slot of the power bar
-	gem = { 916, 146, 46 },             -- centre and radius of the gem
-	split = { 440, 700 },               -- only these columns stretch
+	size = { 1024, 512 }, art = { 940, 301 },
+	window = { 11, 55, 197, 242 },      -- the class symbol, set into the frame
+	life = { 242, 93, 732, 146 },       -- slot of the life bar
+	power = { 241, 160, 732, 212 },     -- slot of the power bar
+	gem = { 832, 146, 46 },             -- centre and radius of the gem
+	split = { 356, 616 },               -- only these columns stretch
 }
 
 local hidden = CreateFrame("Frame")
@@ -169,7 +169,7 @@ function Member:Create()
 	for _, t in ipairs(f.slotBg) do t:SetColorTexture(0.03, 0.025, 0.02, 0.95) end
 	f.symHolder = CreateFrame("Frame", nil, f)
 	f.symbolBg = f.symHolder:CreateTexture(nil, "BACKGROUND")
-	f.symbolBg:SetColorTexture(0.015, 0.012, 0.01, 1)
+	f.symbolBg:SetColorTexture(0, 0, 0, 0)
 	f.symbol = f.symHolder:CreateTexture(nil, "ARTWORK")
 	if self.unit == "player" then
 		-- the player is there anyway: show it only in a group
@@ -327,9 +327,11 @@ function Member:SetClass(class, off)
 		return
 	end
 	if class then f.symbol:SetTexture(SYMBOLS .. class) end
-	-- bright gold against the frame's finished metal, so the symbol stands out
-	f.symbol:SetVertexColor(1, 1, 1)
-	f.symbol:SetDesaturation(off and 1 or 0)
+	-- the symbol is part of the frame: the same metal and finish, a shade darker
+	-- (it sits recessed, with the shadow baked into the art)
+	local desat, cr, cg, cb = UF:Finish("player")
+	f.symbol:SetDesaturation(off and 1 or desat)
+	f.symbol:SetVertexColor(cr * 0.85, cg * 0.85, cb * 0.85)
 	f.symbol:SetAlpha(off and 0.6 or 1)
 end
 
