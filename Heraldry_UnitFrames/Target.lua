@@ -51,6 +51,7 @@ local UF = H:NewModule("UnitFrames", {
 		castTimeShow = true, castTimeSize = 10, castTimeX = 0, castTimeY = 0,
 		castInPower = true,      -- the target's casts take the power row (Cast.lua)
 		classColor = true,
+		emblem = "colour",       -- players: class emblem in the medallions ("colour", "metal" or "off")
 		panelAlpha = 0.82,
 		hideBlizzard = true,
 	},
@@ -183,6 +184,17 @@ function UF:Create()
 	plaque:SetAllPoints()
 	f.plaque = plaque
 	f.slices = { plaque:CreateTexture(nil, "ARTWORK"), plaque:CreateTexture(nil, "ARTWORK"), plaque:CreateTexture(nil, "ARTWORK") }
+	-- class emblems over the lions (players only), cut round to the medallions
+	f.emblems = {}
+	for i = 1, 2 do
+		local e = plaque:CreateTexture(nil, "ARTWORK", nil, 1)
+		local m = plaque:CreateMaskTexture()
+		m:SetTexture(MASK)
+		m:SetAllPoints(e)
+		e:AddMaskTexture(m)
+		e:Hide()
+		f.emblems[i] = e
+	end
 	-- the level's ring, part of the left medallion
 	f.levelBack = plaque:CreateTexture(nil, "ARTWORK", nil, 2)
 	f.levelBack:SetTexture(MASK)
@@ -399,6 +411,23 @@ function UF:UpdateArt()
 	end
 	f.levelRing:SetDesaturation(desat)
 	f.levelRing:SetVertexColor(cr, cg, cb)
+	-- players: their class emblem replaces the lions
+	local _, class = UnitClass(UNIT)
+	local style = self.db.emblem
+	local file = kind == "player" and class and self.EMBLEMS[style]
+	for _, e in ipairs(f.emblems) do
+		if file then
+			e:SetTexture(file .. class)
+			if style == "metal" then
+				e:SetDesaturation(desat)
+				e:SetVertexColor(cr, cg, cb)
+			else
+				e:SetDesaturation(0)
+				e:SetVertexColor(1, 1, 1)
+			end
+		end
+		e:SetShown(file and true or false)
+	end
 	local r, g, b = self:JewelColor(kind)
 	for _, j in ipairs(f.jewels) do
 		j:SetDesaturation(1)
@@ -441,6 +470,18 @@ function UF:LayoutPlaque(barsH)
 			j:SetPoint("CENTER", f, "TOPLEFT", (x - sl) * k, -(y - st) * k)
 		else
 			j:SetPoint("CENTER", f, "TOPRIGHT", (x - sr) * k, -(y - st) * k)
+		end
+	end
+	-- emblem discs over the medallions
+	for i, md in ipairs(P.medallions) do
+		local e = f.emblems[i]
+		local x, y, rad = md[1], md[2], md[3]
+		e:SetSize(2 * rad * k, 2 * rad * k)
+		e:ClearAllPoints()
+		if i == 1 then
+			e:SetPoint("CENTER", f, "TOPLEFT", (x - sl) * k, -(y - st) * k)
+		else
+			e:SetPoint("CENTER", f, "TOPRIGHT", (x - sr) * k, -(y - st) * k)
 		end
 	end
 	-- the level's ring

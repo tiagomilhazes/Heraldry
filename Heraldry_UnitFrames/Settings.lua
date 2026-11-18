@@ -92,6 +92,15 @@ local target = {
 			page:Section("Colours")
 			get, set = field("classColor")
 			page:Toggle({ label = "Class colour for players", desc = "Off: players use the reaction colour, like NPCs.", get = get, set = set })
+			get, set = field("emblem")
+			page:Dropdown({
+				label = "Class emblem for players",
+				desc = "Plaque: players get their class emblem in the medallions instead of the lions. Coloured: the party frames' enamelled symbols. Metal: the same symbols in the plaque's metal.",
+				values = function()
+					return { { value = "colour", text = "Coloured" }, { value = "metal", text = "Metal" }, { value = "off", text = "Off (lions)" } }
+				end,
+				get = get, set = set,
+			})
 			page:Section("Minimal")
 			get, set = field("showGem")
 			page:Toggle({ label = "Show the gem", desc = "The level, and a halo for elite, rare and boss units.", get = get, set = set })

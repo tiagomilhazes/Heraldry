@@ -20,6 +20,8 @@
 	               (Theme page), like the action bar block. The others are
 	               applied at the theme finish's brightness (UF:Finish)
 	  JEWEL        jewel colour per kind (players: their class colour)
+	  EMBLEMS      class emblems set into the medallions for players: the party's
+	               class-coloured symbols, or the plain gold ones in the plaque's metal
 ]]
 
 local UF = Heraldry.Modules.byName.UnitFrames
@@ -30,12 +32,20 @@ UF.PLAQUE = {
 	slot = { 208, 84, 814, 174 },
 	split = { 300, 724 },
 	gems = { { 195, 130, 18 }, { 827, 130, 18 } },
+	-- {x, y, radius} of the inside of the two medallions (the lions): players
+	-- get their class emblem there
+	medallions = { { 115, 124, 62 }, { 907, 124, 62 } },
 	-- the level's ring, set into the left medallion (above its jewel)
 	level = {
 		file = "Interface\\AddOns\\Heraldry_UnitFrames\\Media\\Target\\LevelRing",
 		x = 186, y = 58, size = 96,   -- centre and size in plaque pixels
 		hole = 0.58,                  -- dark disc behind the number, as a share of the size
 	},
+}
+
+UF.EMBLEMS = {
+	colour = "Interface\\AddOns\\Heraldry_UnitFrames\\Media\\Party\\Class\\",
+	metal = "Interface\\AddOns\\Heraldry_UnitFrames\\Media\\Class\\",
 }
 
 UF.FINISH = {
