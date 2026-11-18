@@ -62,6 +62,7 @@ Heraldry_Minimap/              Minimap.lua Settings.lua Media/{Frame,Mask}.tga
 Heraldry_Quests/               Quests.lua Settings.lua
 Heraldry_Chat/                 Chat.lua Text.lua Settings.lua
 Heraldry_Tooltips/             Tooltips.lua Settings.lua
+Heraldry_Auras/                Auras.lua Settings.lua (auras in the orbs' gems)
 ```
 
 ### `.toc` conventions
@@ -159,7 +160,7 @@ Each piece type says which numbers a theme must provide, measured in texture pix
 | `bar.plate` / `block.plate` | `file + size`, or `color{r,g,b,a}` |
 | `bar.rail` | `file, size, band{top,bottom}` (width must be a power of 2) |
 | `bar.cap` | `file, size, join{x,y,h}` |
-| `orb.health` / `orb.power` | `file, size, hole{cx,cy,r}, reach` |
+| `orb.health` / `orb.power` | `file, size, hole{cx,cy,r}, reach`, optional `sockets{{x,y,r}...}` (the ring's gems: top, right, bottom, left) |
 | `frame.gem` | `file, size` |
 | `scroll.rod` | `cap, capR?, mid, size, capW, midW?, shaft` (cap mirrored when no capR; mid tiled when midW, else stretched) |
 | `scroll.rodV` | `cap, capB?, mid, size, capH, midH?, shaft` (standing rod; cap flipped when no capB) |
@@ -267,6 +268,7 @@ Settings tabs per page:
 | Quests | Look / Text / Behaviour / Font |
 | Chat | Look / Size / Text / Channels / Input / Behaviour / Font |
 | Tooltips | Look / Position / Text / Behaviour / Font |
+| Auras | Power orb / Life orb |
 
 ## Untested (needs the situation in game)
 
@@ -291,7 +293,7 @@ Settings tabs per page:
    **Cast on the top rail, swing on the bottom rail** by default (each has "Where" = top rail / bottom rail / a bar of its own; nothing is added to the block): RailLight.lua (`AB.RailLight`) draws a lit rail right over one of the block's rails (tiles lined up; the bottom one flipped) or on a separate holder with a mover (`ActionBars.swing`, `ActionBars.cast`), A theme without `bar.rail` (Standard) gets a plain bar in the accent. Bar 1's scale is undone with SetScale(1/scale), never SetIgnoreParentScale (that drops the UI scale). Cast.lua: UNIT_SPELLCAST_* for the player, channels empty, interrupted/failed flash red, name and time under the block; the game's PlayerCastingBarFrame/CastingBarFrame reparented away. Approved.
 9. **C3 class overrides**, when the first module needs them.
 8. **C7:** installer, presets ("Altar" plus a Healer variant), import/export.
-9. Later: `Heraldry_Auras` (buffs and debuffs attached to the block), then themes for the other classes. These start only once Standard and Paladin are complete.
+9. **Auras** (`Heraldry_Auras`, prototype P2, step 1 delivered): the power orb's gems hold chosen auras per character (`H.char.auraSockets`, names or spell IDs; paladin defaults to seals), icon round in the gem, darkening via a Cooldown from `C_UnitAuras.GetAuraDuration`; the life orb's gems light in debuff-type colours (top magic, right curse, bottom poison, left disease), pulsing when removable. Step 2 to come: long buffs in a small row by the minimap (the game's BuffFrame moved), big icons only for serious debuffs, extra short buffs. Then themes for the other classes. These start only once Standard and Paladin are complete.
 10. **Pending tuning:** default margins of the block, waiting for Tiago's preferred values.
 
 ## Workflow

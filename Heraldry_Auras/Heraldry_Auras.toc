@@ -1,0 +1,13 @@
+## Interface: 16001
+## Title: |cffE8B04BHeraldry|r Auras
+## Notes: Your auras set into the orbs: chosen buffs in the power orb's gems, debuff types in the life orb's.
+## Author: Tiago
+## Version: 0.1.0
+## Dependencies: Heraldry
+## OptionalDeps: Heraldry_Orbs
+## X-Heraldry-Module: 1
+## X-Heraldry-Label: Auras
+## IconTexture: Interface\Icons\Spell_Holy_SealOfWisdom
+
+Auras.lua
+Settings.lua

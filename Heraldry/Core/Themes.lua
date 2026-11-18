@@ -27,6 +27,8 @@
 	      file, size = { w, h }, hole = { cx, cy, r }, reach
 	      hole: centre and radius of the glass; reach: how far the ring goes
 	      from that centre towards the bars (it tucks against the plate)
+	      sockets (optional): { {x, y, r}, ... } the gems set in the ring, in the
+	      order top, right, bottom, left (Heraldry_Auras puts auras in them)
 
 	  frame.gem                         gem on the edge of a unit frame (the target's level)
 	      file, size = { w, h }
