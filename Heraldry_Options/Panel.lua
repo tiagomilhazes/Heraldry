@@ -61,7 +61,7 @@ local function savePosition()
 end
 
 local function buildNav(sidebar)
-	local y = -92
+	local y = -8
 	local lastGroup
 	for _, def in ipairs(sortedPages()) do
 		local g = groupOf(def)
@@ -74,7 +74,7 @@ local function buildNav(sidebar)
 			y = y - 28
 		end
 		local b = CreateFrame("Button", nil, sidebar)
-		b:SetSize(SIDEBAR_W, 32)
+		b:SetSize(SIDEBAR_W - 1, 32)
 		b:SetPoint("TOPLEFT", 0, y)
 		b.key = def.key
 		b.bg = UI.Fill(b, C.navSelected)
@@ -97,12 +97,14 @@ local function buildNav(sidebar)
 		navButtons[def.key] = b
 		y = y - 32
 	end
+	sidebar:SetHeight(-y + 8)
 end
 
-local function buildScrollBar()
-	local bar = CreateFrame("Frame", nil, frame)
-	bar:SetPoint("TOPLEFT", scroll, "TOPRIGHT", 6, 0)
-	bar:SetPoint("BOTTOMLEFT", scroll, "BOTTOMRIGHT", 6, 0)
+-- a thin bar beside a scroll frame (x: its gap from the scroll's right edge)
+local function buildScrollBar(scroll, x)
+	local bar = CreateFrame("Frame", nil, scroll:GetParent())
+	bar:SetPoint("TOPLEFT", scroll, "TOPRIGHT", x, 0)
+	bar:SetPoint("BOTTOMLEFT", scroll, "BOTTOMRIGHT", x, 0)
 	bar:SetWidth(4)
 	UI.Fill(bar, { 1, 1, 1, 0.05 })
 	local thumb = UI.Tex(bar, { 1, 1, 1, 0.25 }, "ARTWORK")
@@ -170,7 +172,16 @@ function Panel:Build()
 	local ver = UI.Text(sidebar, 11, C.faint)
 	ver:SetPoint("TOPLEFT", logo, "BOTTOMLEFT", 1, -6)
 	ver:SetText("v" .. H.version)
-	buildNav(sidebar)
+	-- the page list scrolls under the logo when it no longer fits
+	local navScroll = CreateFrame("ScrollFrame", nil, sidebar)
+	navScroll:SetPoint("TOPLEFT", 0, -84)
+	navScroll:SetPoint("BOTTOMRIGHT", -1, 1)
+	local nav = CreateFrame("Frame", nil, navScroll)
+	nav:SetWidth(SIDEBAR_W - 1)
+	navScroll:SetScrollChild(nav)
+	navScroll:EnableMouseWheel(true)
+	buildNav(nav)
+	buildScrollBar(navScroll, -6)
 
 	-- Header
 	local header = CreateFrame("Frame", nil, frame)
@@ -257,7 +268,7 @@ function Panel:Build()
 	sline:SetHeight(1)
 	subBar:Hide()
 	scroll:EnableMouseWheel(true)
-	buildScrollBar()
+	buildScrollBar(scroll, 6)
 end
 
 local function anchorScroll(withTabs, withSub)
