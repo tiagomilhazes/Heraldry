@@ -39,12 +39,12 @@ local SYMBOLS = "Interface\\AddOns\\Heraldry_UnitFrames\\Media\\Party\\Class\\"
 -- The cartouche (pixels of the 1024 x 512 file; the art fills the top 301 rows)
 UF.CARTOUCHE = {
 	file = "Interface\\AddOns\\Heraldry_UnitFrames\\Media\\Party\\Frame",
-	size = { 1024, 512 }, art = { 940, 301 },
-	window = { 11, 55, 197, 242 },      -- the class symbol, set into the frame
-	life = { 242, 93, 732, 168 },       -- slot of the life bar
-	power = { 241, 182, 732, 212 },     -- slot of the power bar
-	gem = { 832, 146, 46 },             -- centre and radius of the gem
-	split = { 356, 616 },               -- only these columns stretch
+	size = { 1024, 512 }, art = { 990, 301 },
+	window = { 61, 55, 247, 242 },      -- the class symbol, set into the frame
+	life = { 292, 93, 782, 176 },       -- slot of the life bar
+	power = { 291, 190, 782, 212 },     -- slot of the power bar
+	gem = { 882, 146, 46 },             -- centre and radius of the gem
+	split = { 406, 666 },               -- only these columns stretch
 }
 
 local hidden = CreateFrame("Frame")
