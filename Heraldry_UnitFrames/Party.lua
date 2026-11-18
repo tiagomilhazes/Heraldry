@@ -41,8 +41,8 @@ UF.CARTOUCHE = {
 	file = "Interface\\AddOns\\Heraldry_UnitFrames\\Media\\Party\\Frame",
 	size = { 1024, 512 }, art = { 940, 301 },
 	window = { 11, 55, 197, 242 },      -- the class symbol, set into the frame
-	life = { 242, 93, 732, 146 },       -- slot of the life bar
-	power = { 241, 160, 732, 212 },     -- slot of the power bar
+	life = { 242, 93, 732, 168 },       -- slot of the life bar
+	power = { 241, 182, 732, 212 },     -- slot of the power bar
 	gem = { 832, 146, 46 },             -- centre and radius of the gem
 	split = { 356, 616 },               -- only these columns stretch
 }
@@ -55,7 +55,7 @@ local DEFAULTS = {
 	partyStyle = "cartouche",     -- "cartouche" | "compact"
 	partyHeight = 56,             -- cartouche: height of the whole frame (the art scales with it)
 	partyLifeFill = 1,            -- cartouche: share of the life slot the bar fills
-	partyPowerFill = 0.6,         -- cartouche: share of the mana slot the bar fills
+	partyPowerFill = 1,           -- cartouche: share of the mana slot the bar fills
 	partyMuted = true,            -- bar colours toned down to sit with the metal
 	partyWidth = 210, partyHealthHeight = 16, partyPowerHeight = 5, partyShowPower = true,
 	partyNameSize = 11, partyPctSize = 10,
@@ -327,11 +327,10 @@ function Member:SetClass(class, off)
 		return
 	end
 	if class then f.symbol:SetTexture(SYMBOLS .. class) end
-	-- the symbol is part of the frame: the same metal and finish, a shade darker
-	-- (it sits recessed, with the shadow baked into the art)
-	local desat, cr, cg, cb = UF:Finish("player")
-	f.symbol:SetDesaturation(off and 1 or desat)
-	f.symbol:SetVertexColor(cr * 0.85, cg * 0.85, cb * 0.85)
+	-- the symbol is set into the frame (recess and shadow baked into the art) and
+	-- carries its class colour in the art, so no finish on it; greyed when off
+	f.symbol:SetDesaturation(off and 1 or 0)
+	f.symbol:SetVertexColor(1, 1, 1)
 	f.symbol:SetAlpha(off and 0.6 or 1)
 end
 
