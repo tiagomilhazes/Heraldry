@@ -4,7 +4,7 @@
 	       antlers on the life orb, the World Tree on the mana orb, a bear paw
 	       crest, amber gems. Generated in Canva from the shared recipe (project
 	       doc "arte-classes-prompts"); the mana orb is an edit of the life orb.
-	Form variants (bear, cat, moonkin) come later and inherit from this theme.
+	Form variants (bear, cat, moonkin) below inherit from this theme.
 	Numbers measured on the files (see the contract in Core/Themes.lua).
 ]]
 
@@ -34,3 +34,35 @@ Heraldry:RegisterTheme("DRUID", {
 		                         plate = { 287, 869, 742, 942 }, mask = D .. "MinimapMask", art = { 0, 0, 1024, 985 } },
 	},
 })
+
+--[[ Form variants: only the hero pieces (both orbs and the block's crest)
+     change; everything else comes from the Ancient Grove (base = "DRUID").
+     The life orb is an edit of the grove's, the power orb an edit of the
+     form's life orb (the animal mirrored on the right), the crest an edit of
+     the grove's. No class: "auto" still picks the grove; Themes.FORM_DEFAULTS
+     puts each form in its variant. ]]
+
+local function variant(key, label, dir, h, p)
+	local M = Heraldry.Themes.MEDIA .. dir .. "\\"
+	Heraldry:RegisterTheme(key, {
+		label = label,
+		base = "DRUID",
+		pieces = {
+			["orb.health"] = { file = M .. "OrbHealth", size = { 512, 512 }, hole = h.hole, reach = h.reach, sockets = h.sockets },
+			["orb.power"]  = { file = M .. "OrbPower",  size = { 512, 512 }, hole = p.hole, reach = p.reach, sockets = p.sockets },
+			["bar.cap"]    = { file = M .. "Cap",       size = { 256, 256 }, join = { 150, 128, 110 } },
+		},
+	})
+end
+
+variant("DRUID_BEAR", "Druid: Bear", "DruidBear",
+	{ hole = { 287.2, 292.0, 131.5 }, reach = 210, sockets = { { 288, 106, 15 }, { 466, 290, 14 }, { 288, 475, 14 }, { 105, 290, 14 } } },
+	{ hole = { 228.2, 289.3, 133.8 }, reach = 215, sockets = { { 228, 103, 15 }, { 411, 285, 14 }, { 229, 474, 15 }, { 45, 286, 14 } } })
+
+variant("DRUID_CAT", "Druid: Cat", "DruidCat",
+	{ hole = { 286.5, 279.3, 139.2 }, reach = 222, sockets = { { 288, 83, 16 }, { 476, 277, 15 }, { 287, 472, 15 }, { 93, 277, 15 } } },
+	{ hole = { 220.9, 276.2, 139.2 }, reach = 219, sockets = { { 218, 82, 15 }, { 414, 276, 15 }, { 224, 467, 15 }, { 34, 274, 15 } } })
+
+variant("DRUID_MOONKIN", "Druid: Moonkin", "DruidMoonkin",
+	{ hole = { 286.5, 295.2, 130.5 }, reach = 208, sockets = { { 287, 111, 15 }, { 465, 293, 14 }, { 287, 476, 14 }, { 106, 294, 14 } } },
+	{ hole = { 231.5, 290.1, 134.8 }, reach = 216, sockets = { { 241, 104, 15 }, { 417, 288, 14 }, { 234, 476, 14 }, { 47, 287, 15 } } })

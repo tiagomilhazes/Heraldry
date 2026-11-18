@@ -44,7 +44,7 @@ Heraldry/                      core (always loaded)
   Themes/Standard.lua          neutral theme (colours only)
   Themes/Paladin.lua           Paladin theme (art pieces, accent, bronze finish)
   Themes/Priest.lua            PRIEST (Holy Light) and PRIEST_SHADOW themes (Canva kits, see project doc arte-classes-prompts)
-  Themes/Druid.lua             DRUID (Ancient Grove) theme; form variants (bear, cat, moonkin) to come
+  Themes/Druid.lua             DRUID (Ancient Grove) theme + DRUID_BEAR / DRUID_CAT / DRUID_MOONKIN form variants (base = DRUID)
   Core/GameMenu.lua            "Heraldry" button in the ESC menu
   Core/Commands.lua            /hui, /heraldry
   Media/Themes/Paladin/*.tga   ButtonFrame, ButtonFrameSlim, Plate, PlateDouble,
@@ -179,7 +179,8 @@ Each piece type says which numbers a theme must provide, measured in texture pix
   - `Themes:Paint(tex)` applies the finish to theme art
   - `Themes:Accent()` returns the toned accent colour, or nil
   - `Themes:Set(key)`, `Themes:SetFinish(key)`
-- The theme is chosen per character, and `"auto"` follows the class. A form (shapeshift/stance/Shadowform, by its spell ID) can have its own theme (`H.char.formThemes`, class defaults in `Themes.FORM_DEFAULTS`: priest Shadowform -> PRIEST_SHADOW); UPDATE_SHAPESHIFT_FORM fires THEME_CHANGED when it changes.
+- The theme is chosen per character, and `"auto"` follows the class. A form (shapeshift/stance/Shadowform, by its spell ID) can have its own theme (`H.char.formThemes`, class defaults in `Themes.FORM_DEFAULTS`: priest Shadowform -> PRIEST_SHADOW, druid bear/cat/moonkin -> DRUID_BEAR/CAT/MOONKIN); UPDATE_SHAPESHIFT_FORM fires THEME_CHANGED when it changes.
+- A theme may set `base = "KEY"`: a variant takes every piece, accent and finish it lacks from its base (`Themes:Field(t, name)`), then Standard. Variants have no `class`, so "auto" keeps picking the main theme.
 
 ### Fonts: three layers, no duplication
 

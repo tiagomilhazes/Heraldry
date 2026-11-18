@@ -156,8 +156,9 @@ function H:RegisterTheme(key, def)
 			table.insert(Themes.problems, ("Theme %s: piece %s dropped (%s)"):format(key, kind, check and ok or "unknown type"))
 		end
 	end
+	-- a variant (def.base) takes every piece, accent and finish it does not give from its base theme
 	local theme = { key = key, label = def.label or key, class = def.class, pieces = pieces,
-		accent = def.accent, finish = def.finish }
+		accent = def.accent, finish = def.finish, base = def.base }
 	if not Themes.byKey[key] then Themes.list[#Themes.list + 1] = theme end
 	Themes.byKey[key] = theme
 	return theme
@@ -187,6 +188,11 @@ end
 -- form themes a class starts with (until the player sets their own)
 Themes.FORM_DEFAULTS = {
 	PRIEST = { [15473] = "PRIEST_SHADOW" },   -- Shadowform
+	DRUID = {
+		[5487] = "DRUID_BEAR", [9634] = "DRUID_BEAR",   -- Bear Form, Dire Bear Form
+		[768] = "DRUID_CAT",                            -- Cat Form
+		[24858] = "DRUID_MOONKIN",                      -- Moonkin Form
+	},
 }
 
 -- the character's form -> theme table (or the class's defaults)
@@ -239,10 +245,25 @@ function Themes:Active()
 	return self.byKey[self:ActiveKey()]
 end
 
+-- a field of a theme, looked up through its bases
+function Themes:Field(t, name)
+	local depth = 0
+	while t and depth < 5 do
+		if t[name] ~= nil then return t[name] end
+		t = t.base and self.byKey[t.base]
+		depth = depth + 1
+	end
+end
+
 function Themes:Piece(kind)
 	local t = self:Active()
-	local p = t and t.pieces[kind]
-	if p then return p end
+	local depth = 0
+	while t and depth < 5 do
+		local p = t.pieces[kind]
+		if p then return p end
+		t = t.base and self.byKey[t.base]
+		depth = depth + 1
+	end
 	local std = self.byKey.STANDARD
 	return std and std.pieces[kind]
 end
@@ -251,8 +272,8 @@ end
 function Themes:FinishKey()
 	local choice = H.char and H.char.finish
 	if choice and self.FINISHES[choice] then return choice end
-	local t = self:Active()
-	return t and self.FINISHES[t.finish or "none"] and t.finish or "none"
+	local fin = self:Field(self:Active(), "finish") or "none"
+	return self.FINISHES[fin] and fin or "none"
 end
 
 function Themes:SetFinish(key)
@@ -267,8 +288,7 @@ function Themes:Paint(tex)
 end
 
 function Themes:Accent()
-	local t = self:Active()
-	local a = t and t.accent
+	local a = self:Field(self:Active(), "accent")
 	if not a then return nil end
 	local f = self.FINISHES[self:FinishKey()]
 	-- the same toning as the art: towards grey, then multiplied
