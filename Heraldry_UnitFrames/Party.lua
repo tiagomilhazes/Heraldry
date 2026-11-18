@@ -2,14 +2,12 @@
 	Heraldry_UnitFrames - Party.lua
 	The party, one row per member:
 
-	  style "emblem" (default)
-	      [class symbol in the theme's button frame] [life + power, thin metal rim] (o)
-	      The class symbols (Media/Class/<CLASS>.tga) are gold emblems made in
-	      Canva in the lion's style (Paladin hammer, Warrior sword, Hunter bow,
-	      Rogue hood, Priest cross, Shaman totem, Mage flame, Warlock grimoire,
-	      Druid paw), cut to the inner disc; they take the theme's finish.
-	      The jewel on the right shows the colour of the member's debuff (magic,
-	      curse, disease, poison) and stays dark when there is none.
+	  style "cartouche" (default)
+	      one piece of art (Media/Party/Frame.tga, made in Canva in the lion's
+	      style): a square window on the left for the class symbol, two slots for
+	      life and mana, and a gem socket on the right whose gem takes the colour
+	      of the member's debuff (magic, curse, disease, poison), dark when none.
+	      The bars sit behind the frame; only the middle stretches with the width.
 	  style "compact"
 	      slim rows with a small class jewel and a percentage; the rim turns red
 	      when life is low
@@ -38,15 +36,26 @@ local MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local LEADER = "Interface\\GroupFrame\\UI-Group-LeaderIcon"
 local SYMBOLS = "Interface\\AddOns\\Heraldry_UnitFrames\\Media\\Class\\"
 
+-- The cartouche (pixels of the 1024 x 512 file; the art fills the top 301 rows)
+UF.CARTOUCHE = {
+	file = "Interface\\AddOns\\Heraldry_UnitFrames\\Media\\Party\\Frame",
+	size = { 1024, 512 }, art = { 1024, 301 },
+	window = { 95, 55, 281, 242 },      -- the class symbol
+	life = { 326, 93, 816, 146 },       -- slot of the life bar
+	power = { 325, 160, 816, 212 },     -- slot of the power bar
+	gem = { 916, 146, 46 },             -- centre and radius of the gem
+	split = { 440, 700 },               -- only these columns stretch
+}
+
 local hidden = CreateFrame("Frame")
 hidden:Hide()
 
 local DEFAULTS = {
 	partyShow = true,
-	partyStyle = "emblem",        -- "emblem" | "compact"
-	partyWidth = 170, partyHealthHeight = 16, partyPowerHeight = 5, partyShowPower = true,
+	partyStyle = "cartouche",     -- "cartouche" | "compact"
+	partyHeight = 56,             -- cartouche: height of the whole frame (the art scales with it)
+	partyWidth = 210, partyHealthHeight = 16, partyPowerHeight = 5, partyShowPower = true,
 	partyNameSize = 11, partyPctSize = 10,
-	partySymbolSize = 40,         -- the class symbol's box
 	partyDirection = "down",      -- "down" | "up" | "right" | "left"
 	partySpacing = 6,
 	partyPlayer = false,
@@ -127,33 +136,29 @@ function Member:Create()
 	Small.Create(self)
 	local f = self.frame
 	f:SetParent(UF.party.container)
-	f.plaque:Hide()   -- this frame has its own art
 	local art = f.texts
 	f.leader = art:CreateTexture(nil, "OVERLAY", nil, 2)
 	f.leader:SetTexture(LEADER)
-	-- thin metal rim around the bars
+	-- compact: a thin metal rim around the bars and a class jewel
 	f.rim = {}
 	for i = 1, 4 do f.rim[i] = art:CreateTexture(nil, "BORDER") end
-	-- class symbol in a straight frame (the theme's button frame)
-	f.symbolBg = art:CreateTexture(nil, "BACKGROUND")
-	f.symbolBg:SetColorTexture(0.04, 0.035, 0.03, 0.9)
-	f.symbol = art:CreateTexture(nil, "ARTWORK", nil, 0)
-	f.symbolFrame = art:CreateTexture(nil, "OVERLAY", nil, 0)
-	f.symbolRim = {}
-	for i = 1, 4 do f.symbolRim[i] = art:CreateTexture(nil, "OVERLAY", nil, 1) end
-	-- the jewel: debuff colour (emblem style) or class colour (compact)
-	f.jewelRim = art:CreateTexture(nil, "ARTWORK", nil, 0)
-	f.jewelRim:SetTexture(FLAT)
-	local m2 = art:CreateMaskTexture()
-	m2:SetTexture(MASK)
-	m2:SetAllPoints(f.jewelRim)
-	f.jewelRim:AddMaskTexture(m2)
-	f.jewel = art:CreateTexture(nil, "ARTWORK", nil, 1)
-	f.jewel:SetTexture(FLAT)
+	f.dot = art:CreateTexture(nil, "ARTWORK", nil, 1)
+	f.dot:SetTexture(FLAT)
 	local m = art:CreateMaskTexture()
 	m:SetTexture(MASK)
-	m:SetAllPoints(f.jewel)
-	f.jewel:AddMaskTexture(m)
+	m:SetAllPoints(f.dot)
+	f.dot:AddMaskTexture(m)
+	f.dotRim = art:CreateTexture(nil, "ARTWORK", nil, 0)
+	f.dotRim:SetTexture(FLAT)
+	local m2 = art:CreateMaskTexture()
+	m2:SetTexture(MASK)
+	m2:SetAllPoints(f.dotRim)
+	f.dotRim:AddMaskTexture(m2)
+	-- cartouche: the class symbol sits behind the frame, in its window
+	f.symHolder = CreateFrame("Frame", nil, f)
+	f.symbolBg = f.symHolder:CreateTexture(nil, "BACKGROUND")
+	f.symbolBg:SetColorTexture(0.04, 0.035, 0.03, 1)
+	f.symbol = f.symHolder:CreateTexture(nil, "ARTWORK")
 	if self.unit == "player" then
 		-- the player is there anyway: show it only in a group
 		UnregisterUnitWatch(f)
@@ -161,18 +166,17 @@ function Member:Create()
 	end
 end
 
-function Member:JewelSize()
-	return math.max(8, self.frame:GetHeight() * (self:Compact() and 0.6 or 0.75))
+-- how far the art reaches past the button: left, top, right, bottom
+function Member:Reach()
+	if self:Compact() then
+		local j = self:DotSize()
+		return j + 6, 1, 1, 1
+	end
+	return 0, 0, 0, 0   -- the cartouche is the button
 end
 
--- how far the art reaches past the bars: left, top, right, bottom
-function Member:Reach()
-	local h = self.frame:GetHeight()
-	local j = self:JewelSize()
-	if self:Compact() then return j + 6, 1, 1, 1 end
-	local s = math.max(self:Get("SymbolSize"), h)
-	local v = math.max((s - h) / 2, 0) + 2
-	return s + 8, v, j + 6, v
+function Member:DotSize()
+	return math.max(8, self.frame:GetHeight() * 0.6)
 end
 
 function Member:Layout()
@@ -182,92 +186,134 @@ function Member:Layout()
 	end
 	Small.Layout(self)
 	local f = self.frame
-	f.plaque:Hide()
 	local compact = self:Compact()
-	local h = f:GetHeight()
 	local ar, ag, ab = accent()
+	local base = f:GetFrameLevel()
+	f.symHolder:SetFrameLevel(base + 2)
 
-	rimAround(f.rim, f, 1)
+	f.plaque:SetShown(not compact)
+	f.symHolder:SetShown(not compact)
+	for _, t in ipairs(f.rim) do t:SetShown(compact) end
+	f.dot:SetShown(compact)
+	f.dotRim:SetShown(compact)
 
-	-- the jewel: on the right (debuff), or on the left (compact: class)
-	local j = self:JewelSize()
-	f.jewel:SetSize(j, j)
-	f.jewelRim:SetSize(j + 3, j + 3)
-	f.jewel:ClearAllPoints()
 	if compact then
-		f.jewel:SetPoint("RIGHT", f, "LEFT", -4, 0)
+		rimAround(f.rim, f, 1)
+		local j = self:DotSize()
+		f.dot:SetSize(j, j)
+		f.dot:ClearAllPoints()
+		f.dot:SetPoint("RIGHT", f, "LEFT", -4, 0)
+		f.dotRim:SetSize(j + 3, j + 3)
+		f.dotRim:ClearAllPoints()
+		f.dotRim:SetPoint("CENTER", f.dot)
+		f.dotRim:SetVertexColor(ar, ag, ab)
 	else
-		f.jewel:SetPoint("LEFT", f, "RIGHT", 4, 0)
-	end
-	f.jewelRim:ClearAllPoints()
-	f.jewelRim:SetPoint("CENTER", f.jewel)
-	f.jewelRim:SetVertexColor(ar, ag, ab)
-	f.jewel:Show()
-	f.jewelRim:Show()
-
-	-- the class symbol, in a straight frame
-	for _, t in ipairs({ f.symbol, f.symbolBg, f.symbolFrame }) do t:SetShown(not compact) end
-	for _, t in ipairs(f.symbolRim) do t:Hide() end
-	if not compact then
-		local s = math.max(self:Get("SymbolSize"), h)
-		f.symbol:SetSize(s, s)
-		f.symbol:ClearAllPoints()
-		f.symbol:SetPoint("RIGHT", f, "LEFT", -6, 0)
-		f.symbolBg:ClearAllPoints()
-		f.symbolBg:SetAllPoints(f.symbol)
-		local piece = Themes:Piece("button.frame")
-		if piece then
-			-- the frame's hole fits the symbol's box
-			local hole = piece.hole
-			local k = s / (hole[3] - hole[1])
-			f.symbolFrame:SetTexture(piece.file)
-			f.symbolFrame:SetSize(piece.size[1] * k, piece.size[2] * k)
-			f.symbolFrame:ClearAllPoints()
-			f.symbolFrame:SetPoint("TOPLEFT", f.symbol, "TOPLEFT", -hole[1] * k, hole[2] * k)
-			Themes:Paint(f.symbolFrame)
-		else
-			f.symbolFrame:Hide()
-			rimAround(f.symbolRim, f.symbol, 1)
-			for _, t in ipairs(f.symbolRim) do
-				t:SetColorTexture(ar, ag, ab, 0.9)
-				t:Show()
-			end
-		end
+		self:LayoutCartouche()
 	end
 
-	-- the crown sits on the top left corner of the life bar
-	local cs = math.max(10, f.health:GetHeight() * 0.8)
+	-- the crown sits on the top of the life bar's left end (compact) or the window (cartouche)
+	local cs = math.max(10, f.health:GetHeight() * (compact and 0.8 or 1.2))
 	f.leader:SetSize(cs, cs)
 	f.leader:ClearAllPoints()
-	f.leader:SetPoint("CENTER", f.health, "TOPLEFT", 6, 1)
+	if compact then
+		f.leader:SetPoint("CENTER", f.health, "TOPLEFT", 6, 1)
+	else
+		f.leader:SetPoint("CENTER", f.symbol, "TOPLEFT", 2, -2)
+	end
 	self:Update()
+end
+
+-- The cartouche: three slices of the art over the bars; the button is the whole frame.
+function Member:LayoutCartouche()
+	local f, C = self.frame, UF.CARTOUCHE
+	local FW, FH = C.size[1], C.size[2]
+	local AW, AH = C.art[1], C.art[2]
+	local k = self:Get("Height") / AH
+	local a, b = C.split[1], C.split[2]
+	local minW = (a + (AW - b)) * k
+	local W = math.max(self:Get("Width"), minW)
+	f:SetSize(W, AH * k)
+
+	local L, M, R = f.slices[1], f.slices[2], f.slices[3]
+	for _, t in ipairs(f.slices) do
+		t:SetTexture(C.file)
+		t:ClearAllPoints()
+	end
+	local v = AH / FH
+	L:SetTexCoord(0, a / FW, 0, v)
+	M:SetTexCoord(a / FW, b / FW, 0, v)
+	R:SetTexCoord(b / FW, AW / FW, 0, v)
+	L:SetSize(a * k, AH * k)
+	R:SetSize((AW - b) * k, AH * k)
+	L:SetPoint("TOPLEFT")
+	R:SetPoint("TOPRIGHT")
+	M:SetPoint("TOPLEFT", L, "TOPRIGHT")
+	M:SetPoint("BOTTOMRIGHT", R, "BOTTOMLEFT")
+
+	-- bars behind the slots (a pixel larger, so no gap shows at the rims)
+	local function slot(bar, s)
+		bar:ClearAllPoints()
+		bar:SetPoint("TOPLEFT", f, "TOPLEFT", s[1] * k - 1, -s[2] * k + 1)
+		bar:SetPoint("BOTTOMRIGHT", f, "TOPRIGHT", -(AW - s[3]) * k + 1, -s[4] * k - 1)
+	end
+	slot(f.health, C.life)
+	f.power:Show()
+	slot(f.power, C.power)
+
+	-- the class symbol fills the window
+	local w = C.window
+	f.symbol:ClearAllPoints()
+	f.symbol:SetPoint("TOPLEFT", f, "TOPLEFT", w[1] * k, -w[2] * k)
+	f.symbol:SetSize((w[3] - w[1]) * k, (w[4] - w[2]) * k)
+	f.symbolBg:ClearAllPoints()
+	f.symbolBg:SetAllPoints(f.symbol)
+
+	-- the gem, drawn again on top to recolour it (debuff)
+	local g = C.gem
+	local gem = f.jewels[1]
+	gem:SetTexture(C.file)
+	gem:SetTexCoord((g[1] - g[3]) / FW, (g[1] + g[3]) / FW, (g[2] - g[3]) / FH, (g[2] + g[3]) / FH)
+	gem:SetSize(2 * g[3] * k, 2 * g[3] * k)
+	gem:ClearAllPoints()
+	gem:SetPoint("CENTER", f, "TOPRIGHT", -(AW - g[1]) * k, -g[2] * k)
+	f.jewels[2]:Hide()
+	gem:SetShown(self:Get("Debuff"))
+
+	-- texts inside the life bar
+	f.name:ClearAllPoints()
+	f.name:SetPoint("LEFT", f.health, "LEFT", 4, 0)
+	f.name:SetPoint("RIGHT", f.health, "RIGHT", -4 - self:Get("PctSize") * 2.8, 0)
+	f.pct:ClearAllPoints()
+	f.pct:SetPoint("RIGHT", f.health, "RIGHT", -4, 0)
 end
 
 function Member:SetClass(class, off)
 	local f = self.frame
 	if self:Compact() then
 		local r, g, b = classRGB(class)
-		f.jewel:SetVertexColor(r, g, b)
+		f.dot:SetVertexColor(r, g, b)
 		return
 	end
 	if class then f.symbol:SetTexture(SYMBOLS .. class) end
-	-- the symbols are gold: they take the theme's finish, like the frame around them
 	Themes:Paint(f.symbol)
 	if off then f.symbol:SetDesaturation(1) end
 	f.symbol:SetAlpha(off and 0.6 or 1)
 end
 
+-- the gem takes the debuff's colour; without one it stays a dark stone
 function Member:SetDebuff(color)
 	if self:Compact() then return end
-	local f = self.frame
-	local show = self:Get("Debuff")
-	f.jewel:SetShown(show)
-	f.jewelRim:SetShown(show)
-	if not show then return end
+	local gem = self.frame.jewels[1]
+	if not self:Get("Debuff") then
+		gem:Hide()
+		return
+	end
+	gem:Show()
+	gem:SetDesaturation(1)
 	if color then
-		f.jewel:SetVertexColor(color[1], color[2], color[3])
+		gem:SetVertexColor(color[1] * 1.3, color[2] * 1.3, color[3] * 1.3)
 	else
-		f.jewel:SetVertexColor(0.09, 0.08, 0.07)   -- an empty socket
+		gem:SetVertexColor(0.32, 0.29, 0.25)
 	end
 end
 
@@ -283,7 +329,6 @@ function Member:Update()
 	local unit = self.unit
 	if not UnitExists(unit) then return end
 	Small.Update(self)
-	f.plaque:Hide()
 
 	local offline = not UnitIsConnected(unit)
 	if offline then
@@ -326,6 +371,11 @@ function Member:UpdatePreview(p)
 		f.power:SetStatusBarColor(0.25, 0.45, 0.95)
 	end
 	f.leader:SetShown(self:Get("Leader") and p.leader or false)
+	local desat, cr, cg, cb = UF:Finish("player")
+	for _, t in ipairs(f.slices) do
+		t:SetDesaturation(desat)
+		t:SetVertexColor(cr, cg, cb)
+	end
 	self:SetClass(p.class, p.dead)
 	self:SetDebuff(p.debuff and DEBUFF[p.debuff])
 	f:SetAlpha(1)

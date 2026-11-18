@@ -163,7 +163,10 @@ local party = {
 	size = function(page)
 		page:Section("Each member")
 		local get, set = pf("Width")
-		page:Slider({ label = "Width", min = 80, max = 320, step = 2, get = get, set = set })
+		page:Slider({ label = "Width", desc = "Cartouche: only the middle of the frame stretches.", min = 80, max = 400, step = 2, get = get, set = set })
+		get, set = pf("Height")
+		page:Slider({ label = "Height (cartouche)", desc = "The whole frame; the bars and the symbol follow the art.", min = 30, max = 120, step = 1, get = get, set = set })
+		page:Section("Compact style")
 		get, set = pf("HealthHeight")
 		page:Slider({ label = "Life bar height", min = 6, max = 40, step = 1, get = get, set = set })
 		get, set = pf("ShowPower")
@@ -184,8 +187,7 @@ local party = {
 		})
 		get, set = pf("Spacing")
 		page:Slider({ label = "Space between members", min = 0, max = 40, step = 1, get = get, set = set })
-		get, set = pf("SymbolSize")
-		page:Slider({ label = "Class symbol size", desc = "Emblem style. Never smaller than the bars.", min = 16, max = 80, step = 1, get = get, set = set })
+
 	end,
 	text = function(page)
 		page:Section("Text")
@@ -199,8 +201,8 @@ local party = {
 		local get, set = pf("Style")
 		page:Dropdown({
 			label = "Style",
-			desc = "Emblem: the class symbol in a frame, and a jewel for debuffs. Compact: slim rows with a class jewel.",
-			values = function() return { { value = "emblem", text = "Emblem" }, { value = "compact", text = "Compact" } } end,
+			desc = "Cartouche: one framed piece with the class symbol, life, mana and a debuff gem. Compact: slim rows with a class jewel.",
+			values = function() return { { value = "cartouche", text = "Cartouche" }, { value = "compact", text = "Compact" } } end,
 			get = get, set = set,
 		})
 		get, set = pf("LowLife")
@@ -208,7 +210,7 @@ local party = {
 			format = pctFormat, get = get, set = set })
 		page:Section("Debuff jewel")
 		get, set = pf("Debuff")
-		page:Toggle({ label = "Show the debuff's colour", desc = "Emblem style: the jewel on the right takes the colour of magic, curse, disease or poison.", get = get, set = set })
+		page:Toggle({ label = "Show the debuff's colour", desc = "Cartouche: the gem takes the colour of magic, curse, disease or poison.", get = get, set = set })
 		get, set = pf("DispelOnly")
 		page:Toggle({ label = "Only debuffs you can remove", get = get, set = set })
 		page:Section("Other")
