@@ -1,6 +1,6 @@
 --[[
 	Heraldry_ActionBars - Settings.lua
-	Tabs: Block | Bars | Look | Visibility | Text | Font.
+	Tabs: Block | Bars | Look | Visibility | Text | Swing | Font.
 	Bars, Look and Visibility work on one bar, picked at the top of each of
 	them (the same choice in all three). Block, Text and Font are for every bar.
 ]]
@@ -179,6 +179,50 @@ H:RegisterOptionsPage({
 				get, set = global(k .. "Y")
 				page:Slider({ label = "Offset, up and down", min = -20, max = 20, step = 1, get = get, set = set })
 			end
+		end },
+
+		{ key = "swing", label = "Swing", build = function(page)
+			if not AB.LayoutSwing then
+				page:Text("This client has no swing timer.")
+				return
+			end
+			local function sw(name)
+				return function() return AB.db[name] end, function(v)
+					AB.db[name] = v
+					AB:LayoutSwing()
+					AB:SwingBlizzard()
+				end
+			end
+			page:Text("The theme's rail lights up as your swing builds. Main hand from the left; with two weapons the off hand comes from the right, and when they meet in the middle your hands are in sync.")
+			page:Section("Swing bar")
+			local get, set = sw("swingShow")
+			page:Toggle({ label = "Show the swing bar", get = get, set = set })
+			get, set = sw("swingHideIdle")
+			page:Toggle({ label = "Hide when idle", desc = "Fades out when nothing is swinging and auto attack is off.", get = get, set = set })
+			get, set = sw("swingHideBlizzard")
+			page:Toggle({ label = "Hide the game's swing bars", get = get, set = set })
+			page:Section("Place and size")
+			get, set = sw("swingDock")
+			page:Toggle({ label = "On top of the block", desc = "Sits on the block's top rail and follows it; you can still drag it in edit mode. Off: on its own.", get = get, set = set })
+			get, set = sw("swingGap")
+			page:Slider({ label = "Gap above the block", min = -10, max = 30, step = 1, get = get, set = set })
+			get, set = sw("swingMatch")
+			page:Toggle({ label = "As long as the block", desc = "The same length as the block's rails.", get = get, set = set })
+			get, set = sw("swingWidth")
+			page:Slider({ label = "Length", desc = "When not as long as the block.", min = 100, max = 1200, step = 10, get = get, set = set })
+			get, set = sw("swingHeight")
+			page:Slider({ label = "Thickness", min = 6, max = 40, step = 1, get = get, set = set })
+			page:Section("Look")
+			get, set = sw("swingDim")
+			page:Slider({ label = "Unlit rail brightness", min = 0, max = 0.8, step = 0.05, format = pct, get = get, set = set })
+			get, set = sw("swingSpark")
+			page:Toggle({ label = "Spark at the edge", get = get, set = set })
+			get, set = sw("swingOffHand")
+			page:Toggle({ label = "Off hand from the right", desc = "With two weapons. Off: only the main hand.", get = get, set = set })
+			get, set = sw("swingRanged")
+			page:Toggle({ label = "Ranged swings", desc = "Auto shot and wands light the rail too.", get = get, set = set })
+			get, set = sw("swingShotWindow")
+			page:Toggle({ label = "Red end on ranged", desc = "The last half second of a shot, where moving holds it.", get = get, set = set })
 		end },
 
 		{ key = "font", label = "Font", build = function(page)

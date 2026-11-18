@@ -2,7 +2,7 @@
 ## Title: |cffE8B04BHeraldry|r Action Bars
 ## Notes: Action bars 1 to 8: layout, size, spacing, fading. Uses the game's own buttons.
 ## Author: Tiago
-## Version: 0.9.0
+## Version: 0.10.0
 ## Dependencies: Heraldry
 ## X-Heraldry-Module: 1
 ## X-Heraldry-Label: Action bars
@@ -11,4 +11,5 @@
 ActionBars.lua
 Art.lua
 Text.lua
+Swing.lua
 Settings.lua

@@ -53,7 +53,7 @@ Heraldry/                      core (always loaded)
 Heraldry_Options/              settings panel, LoadOnDemand
   Style.lua Widgets.lua Panel.lua
   Pages/General|Profiles|Theme|Fonts|Layout|Modules.lua
-Heraldry_ActionBars/           ActionBars.lua Art.lua Text.lua Settings.lua
+Heraldry_ActionBars/           ActionBars.lua Art.lua Text.lua Swing.lua Settings.lua
 Heraldry_Orbs/                 Orbs.lua Settings.lua Media/{Liquid1,Liquid2,Glass,Surface}.tga
 Heraldry_UnitFrames/           Target.lua Cast.lua Small.lua Party.lua TargetPlaque.lua Settings.lua Media/Target/{Plaque,LevelRing}.tga
                                Media/Party/{Frame,Banner}.tga, Media/Party/Class/<CLASS>.tga (class-coloured symbols)
@@ -259,7 +259,7 @@ Settings tabs per page:
 | Fonts | Fonts / Scale |
 | Layout | Edit mode / Positions |
 | Modules | (single page) |
-| Action bars | Block / Bars / Look / Visibility / Text / Font |
+| Action bars | Block / Bars / Look / Visibility / Text / Swing / Font |
 | Orbs | Place / Text / Font / Behaviour |
 | Unit frames | Target (Size / Text / Look / Behaviour) / Target of target (Size / Text / Behaviour) / Focus (Size / Text / Behaviour) / Party (Size / Text / Look / Behaviour) / Font. Raid will be a new top-level tab |
 | Minimap | Size / Text / Addons / Behaviour / Font |
@@ -286,7 +286,7 @@ Settings tabs per page:
 5. **Chat**: delivered as a sideways scroll (`Heraldry_Chat`): standing theme rods (`scroll.rodV`), dark/light/glass paper or a flat panel, rolls up to the fixed side (the mover's anchor), glow on new messages, Enter opens to type. ChatFrame1 kept at its open size and placed in our frame (SetPoint/SetSize hooks); Blizzard art killed by alpha hooks; ink by wrapping AddMessage. Fonts via `H.Fonts:Resolve` (chat frames' SetFont answers nothing). Approved. Text.lua: channel names full/short/number/hidden with per-channel short names, "says" dropped, faded timestamps (the game's CVar), fading, input history with plain Up/Down (SetAltArrowKeyMode(false)) saved per character; light paper uses an ink palette per chat type (ink_<key> overrides; on other papers the colour pickers write the game's chat colours); player names without brackets; message body in plain ink.
 6. **Tooltips** (T2): the game's tooltips on paper (dark default, light ink, glass) with a metal rim, quality rim for items, class-coloured names, thin health strip, anchor game/fixed/cursor, hide units in combat. Background/border only (NineSlice hidden by alpha hook); skinned via TooltipDataProcessor post-calls. Anchor defaults to our mover (`Tooltips.anchor`), growing from the corner nearest the screen edge. Approved.
 7. **Party**: approved (Party.lua). Members built on Small.lua (`UF.Small`); container mover `UnitFrames.party` (SecureHandlerStateTemplate, hidden in raid unless set), grows down/up/right/left. Styles: **cartouche** (default; one Canva piece: class symbol window, thick life slot, thin mana slot, debuff gem, rope at both ends), **banner** (same art rebuilt with the symbol standing on the bars, for a row) and compact. Geometry tables `UF.CARTOUCHE` / `UF.BANNER` in art pixels: `window`, `life`, `power`, `gem`, and `cols` + `stretch` (the art is cut into up to five column pieces; the stretching ones share the extra width; `at(x)` maps art columns into the frame). Height = the bar block's height (301 art rows) in both styles. Class symbols are recessed, class-coloured art (no finish on them; desaturated when dead/offline). Dead/ghost/offline, range fade (pcall), leader crown, debuff gem (dispellable only option), Blizzard party frames reparented away, preview with made-up members (`H.previews`).
-8. Swing bar styling.
+8. **Swing bar** (Swing.lua in Heraldry_ActionBars, prototype S1): the theme rail drawn dim, lit as the swing builds; main hand from the left, off hand from the right (in sync when they meet), ranged with a red end window. Data from the client's own `PLAYER_SWING(duration, type)` (`Enum.PlayerSwingType`; the combat log is gone for addons). Plain child of bar 1 (hides with the bars, ignores its scale/alpha), mover `ActionBars.swing` movably docked on top of the block. Game's bars (`SwingTimer*Frame`) reparented away. Awaiting test.
 9. **C3 class overrides**, when the first module needs them.
 8. **C7:** installer, presets ("Altar" plus a Healer variant), import/export.
 9. Later: `Heraldry_Auras` (buffs and debuffs attached to the block), then themes for the other classes. These start only once Standard and Paladin are complete.
@@ -298,7 +298,7 @@ Settings tabs per page:
 - **Game folder:** `D:\World of Warcraft\_forever_\Interface\AddOns\`.
   - Deploy by copying the changed addon folders there and verify them (checksums) before asking for a test.
   - Other bar addons (TimelessUI, EllesmereUI Action Bars) must be disabled while testing the bars.
-- **There is no Lua interpreter in the cloud environment.** If you have `luac` or `luacheck` locally, run a syntax check before deploying.
+- **Syntax check:** `texluac -p file.lua` (Lua 5.3, from TeX Live) is available in the cloud environment; run it on changed files before deploying.
 - **Debugging:**
   - `/hui debug` toggles debug output and `/hui status` shows the state.
   - `/hui edit` opens edit mode.
