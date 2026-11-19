@@ -23,17 +23,17 @@ local function readable(t)
 	return type(t) == "string" and not (issecretvalue and issecretvalue(t))
 end
 
--- the visible chat window's last lines, oldest first
+-- the visible chat window's last lines, oldest first, and how many the game hides
 local function chatLines()
 	local cf = SELECTED_CHAT_FRAME or ChatFrame1
-	local lines = {}
-	if not (cf and cf.GetNumMessages and cf.GetMessageInfo) then return lines end
+	local lines, hidden = {}, 0
+	if not (cf and cf.GetNumMessages and cf.GetMessageInfo) then return lines, hidden end
 	local n = cf:GetNumMessages()
 	for i = math.max(1, n - MAX_LINES + 1), n do
 		local text = cf:GetMessageInfo(i)
-		if readable(text) then lines[#lines + 1] = clean(text) end
+		if readable(text) then lines[#lines + 1] = clean(text) elseif issecretvalue and issecretvalue(text) then hidden = hidden + 1 end
 	end
-	return lines
+	return lines, hidden
 end
 
 local function edges(f, r, g, b)
@@ -126,9 +126,13 @@ end
 
 function CH:ShowCopy()
 	box = box or build()
-	local lines = chatLines()
+	local lines, hidden = chatLines()
 	box.eb:SetText(table.concat(lines, "\n"))
-	box.count:SetText(("%d lines · Ctrl+C to copy"):format(#lines))
+	if #lines == 0 then
+		box.count:SetText(hidden > 0 and ("Nothing to copy: the game hides these %d lines"):format(hidden) or "Nothing to copy in this window")
+	else
+		box.count:SetText(("%d lines%s · Ctrl+C to copy"):format(#lines, hidden > 0 and (", %d hidden by the game"):format(hidden) or ""))
+	end
 	box:Show()
 	box.eb:SetFocus()
 	box.eb:HighlightText()
