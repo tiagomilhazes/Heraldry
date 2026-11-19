@@ -2,7 +2,7 @@
 
 All-in-one, modular, immersive UI addon for **World of Warcraft: Forever**. Successor to the author's older addon TimelessUI. Only TimelessUI's **art** is reused; none of its code is.
 
-`README.md` is the full project documentation: architecture, every feature with its state, file list, decisions, untested list, future work, history, and a list of contradictions found (§10). Read it before making changes. This file holds the standing rules and the context needed to continue exactly where the work stopped (commit `804a2b7`, 2026-11-19, when the project moved from Claude chat to Claude Code).
+`README.md` is the full project documentation: architecture, every feature with its state, file list, decisions, untested list, future work, history, and a list of contradictions found (§10). Read it before making changes. This file holds the standing rules and the context needed to continue exactly where the work stopped (commit `804a2b7`, 2026-11-19, when the project moved from Claude chat to Claude Code), plus the Claude Code work since then: the git clone and local deploy, the bug fixes of 2026-11-19 and the chat copy box.
 
 ## Working with Tiago (read first)
 
@@ -33,6 +33,8 @@ All-in-one, modular, immersive UI addon for **World of Warcraft: Forever**. Succ
   - The ESC menu is the modern one, even though it looks classic.
   - **No combat log for addons.** The client has a native swing timer instead: `PLAYER_SWING(duration, type)`, `C_SwingTimer`, `Enum.PlayerSwingType`, `Blizzard_SwingTimer`.
   - Tables cannot be indexed with secret keys. Guard any lookup by possibly secret text with `type(t) == "string" and not issecretvalue(t)`.
+  - `UnitHealthPercent(unit, true, CurveConstants.ScaleTo100)` returns a **secret** value even out of combat, and `FontString:SetFormattedText("%d%%", secret)` accepts it (tested 2026-11-19).
+  - `Frame:RegisterUnitEvent(event, unit1, unit2)` takes **two units at most**. For more units, register the event plainly and filter in the handler.
   - Aura names and IDs can be secret in combat, so indicators can't match them then.
   - Edit Mode's status-tracking containers call their parent's methods, so **never reparent them**. Use alpha 0, a `SetAlpha` hook and `EnableMouse(false)`.
   - The mail frame calls `parent:Layout()`. Any parent we give it needs `Layout` / `MarkDirty` / `MarkClean`.
@@ -85,7 +87,7 @@ Heraldry_UnitFrames/           Target.lua Cast.lua Small.lua Indicators.lua Part
                                Media/Class/<CLASS>.tga (plain gold symbols, kept for the target emblems)
 Heraldry_Minimap/              Minimap.lua Settings.lua Media/{Frame,Mask}.tga (TimelessUI Paladin frame: fallback when the theme has no minimap.frame)
 Heraldry_Quests/               Quests.lua Settings.lua
-Heraldry_Chat/                 Chat.lua Text.lua Settings.lua
+Heraldry_Chat/                 Chat.lua Text.lua Copy.lua Settings.lua (Copy.lua: /hui copy box and the copy button)
 Heraldry_Tooltips/             Tooltips.lua Settings.lua
 Heraldry_Auras/                Auras.lua Rows.lua Settings.lua (auras in the orbs' gems; buff/debuff rows)
 Heraldry_ClickCast/            ClickCast.lua Settings.lua (click casting on unit frames)
@@ -117,21 +119,21 @@ Optional dependencies between modules: `Heraldry_Orbs` lists `## OptionalDeps: H
   ## IconTexture: Interface\Icons\INV_Shield_06
   ```
   List the code file first and `Settings.lua` last. `Settings.lua` registers the module's options page from inside the module addon.
-- Bump `## Version` when a delivery changes an addon. Versions at the handover:
+- Bump `## Version` when a delivery changes an addon. Versions on 2026-11-19 (commit `80443ea`):
 
   | Addon | Version |
   |---|---|
-  | core | 0.14.0 |
-  | Options | 0.7.10 |
-  | ActionBars | 0.11.4 |
+  | core | 0.14.2 |
+  | Options | 0.7.11 |
+  | ActionBars | 0.11.6 |
   | Orbs | 0.8.0 |
-  | UnitFrames | 0.12.0 |
+  | UnitFrames | 0.12.3 |
   | Minimap | 0.2.1 |
   | Quests | 0.1.3 |
-  | Chat | 0.2.6 |
+  | Chat | 0.2.9 |
   | Tooltips | 0.1.1 |
-  | Auras | 0.2.6 |
-  | ClickCast | 0.1.0 |
+  | Auras | 0.2.7 |
+  | ClickCast | 0.1.1 |
   | DataBar | 0.2.0 |
 
 ## Namespaces and globals
@@ -182,7 +184,7 @@ Optional dependencies between modules: `Heraldry_Orbs` lists `## OptionalDeps: H
 
 ### Events
 
-- `H:RegisterEvent(event, fn)` for game events.
+- `H:RegisterEvent(event, fn)` for game events. It has no unit filter: for unit events of one or two units, use a local frame with `RegisterUnitEvent` so the game filters them.
 - `H:On(msg, fn)` and `H:Fire(msg, ...)` for internal messages. Listener lists are copy-on-write and each listener runs in `xpcall`.
 - Internal messages: `DB_LOADED`, `READY`, `PROFILE_CHANGED`, `PROFILE_RENAMED`, `THEME_CHANGED`, `FONTS_CHANGED`, `MOVER_ADDED`.
 - `H.previews`: list of `{ key, label, desc, get, set }` toggles that modules add (made-up content). Each shows only in its own module's settings, via `page:Preview(key)` at the end of the matching tab.
@@ -365,6 +367,8 @@ Art is designed **as a whole**, not as loose pieces. The first Paladin art (a pi
 | — | Class themes: Priest Holy Light + Shadow | approved |
 | — | Theme by form + variants; Druid Ancient Grove + Bear/Cat/Moonkin | base approved; forms delivered, untested |
 | — | Warrior Warlord + Defensive/Berserker stances (commit `804a2b7`) | delivered, untested |
+| — | Audit fixes (2026-11-19): party events for every member, missing-buff indicators with secret auras, click-cast alternatives via `@mouseover`, swing-bar scan only when needed, cleanups | approved; party, indicators and raid click-cast need a group to confirm |
+| — | Chat copy: `/hui copy` and a note button at the end of the tab row (prototypes K2 box, I1 button) | approved |
 
 Settings tabs per page:
 
@@ -402,12 +406,17 @@ The full list is in README §7 and in the project docs ("Por testar"). The most 
 - **Form themes:** Shadowform, druid forms and warrior stances, in and out of combat. Gem sockets on every variant orb. The Warrior crest join `{160,128,120}` was set by eye.
 - **Data bar:** micro menu in vehicles; hide in combat.
 - **Minimap:** cooldown manager icon gathered (else `/hui grab`). The Druid minimap outdoors (it looked black indoors).
+- **Party in a real group:** every member's life, mana and debuff gem update live (the 2026-11-19 event fix).
+- **Indicators in combat:** missing-buff indicators must not all light up when aura names turn secret.
+- **Raid click casting:** enemy/dead alternatives (`@mouseover`) hit the right member after roster changes in combat.
+- **Blizzard Edit Mode:** open it with every module on and check for errors. Several Edit Mode frames are reparented (PlayerFrame, TargetFrame, FocusFrame, PartyFrame, MinimapCluster, PlayerCastingBarFrame).
+- **Chat copy on the Combat Log tab:** which message the box shows (lines hidden by the game, or none).
 
 ## Next steps
 
 1. **Wait for Tiago's in-game result on the Warrior** (delivered at `804a2b7`) and fix what he reports. Then the next class, in the order Tiago picks: Hunter, Mage, Rogue, Shaman and Warlock have no theme yet. Use the Canva recipe (below), with form or stance variants where the class has them. Tiago had about two weeks of Canva from 2026-11-18.
 2. **Druid forms:** prototypes approved, the in-game test is pending.
-3. **Pending tuning:** default margins of the block, waiting for Tiago's preferred values. Target health percentage: one screenshot showed only the value; check whether the setting was off or the calculation failed.
+3. **Pending tuning:** default margins of the block, waiting for Tiago's preferred values. (The target percentage report was the `hpPctShow` setting turned off; closed.)
 4. **Open option (unanswered):** health orb liquid colour as class / red / custom.
 5. **C3 class overrides**, when the first module needs them (`HeraldryDB.overrides` exists, unused).
 6. **C7:** installer, presets ("Altar" plus a Healer variant), import/export (planned with `C_EncodingUtil`, existence on Forever not confirmed).
@@ -489,7 +498,7 @@ Reference notes for the delivered work (implementation details):
     - Test mode with plain look-alike icons (containers only show real auras).
 - **Click casting** (`Heraldry_ClickCast`, step 1):
   - Bindings per character (`H.char.clickcast`: mods + button 1-5 + action spell/macro/item/target/menu/focus/assist).
-  - Spells by name, so the highest rank is cast (pin with "Name(Rank n)"). A spell may have an enemy and a dead alternative; then the click is a `/cast [@unit,dead,help] ..; [@unit,harm] ..; [@unit] ..` macro built per frame.
+  - Spells by name, so the highest rank is cast (pin with "Name(Rank n)"). A spell may have an enemy and a dead alternative; then the click is a `/cast [@mouseover,dead,help] ..; [@mouseover,harm] ..; [@mouseover] ..` macro. `@mouseover` and not the frame's unit, because raid buttons change unit (also in combat).
   - Applied to every frame in `ClickCastFrames` (a metatable catches frames added later). Attributes we set are tracked per frame and cleared before re-applying; combat defers. Steps aside when Clique is loaded.
   - Capture box in the panel (click with the combination).
 - **Data bar** (`Heraldry_DataBar`, prototype D1):
@@ -534,16 +543,23 @@ Reference notes for the delivered work (implementation details):
 
 ## Workflow
 
-- **Repo:** `github.com/tiagomilhazes/Heraldry` (private), branch `main`. Commit each delivery with a descriptive message.
-- **Game folder:** `D:\World of Warcraft\_forever_\Interface\AddOns\`.
-  - Deploy by copying the changed addon folders there and verify them (checksums) before asking for a test. In the cloud sessions the folder was reached through the desktop bridge, where the shell saw it as `$HOME/mnt/AddOns`. Use a fresh staging folder per deploy, because re-used paths delivered stale files once.
+- **Repo:** `github.com/tiagomilhazes/Heraldry` (private), branch `main`. The working clone is `D:\Dev\Heraldry` on Tiago's PC, with a local `core.autocrlf=false` so files stay LF, byte-identical to the deployed ones. Edit and commit there.
+- **Delivery loop:** change in the clone, commit (one per delivery, descriptive message), deploy, verify, report, wait for Tiago's test. **Push to `main` only after Tiago approves.**
+  - On Windows PowerShell 5.1, pass multi-line commit messages through a file (`git commit -F file`): inline messages with quotes get split into pathspecs.
+- **Game folder:** `D:\World of Warcraft\_forever_\Interface\AddOns\` is deploy-only. Mirror each changed addon folder:
+  ```
+  robocopy D:\Dev\Heraldry\<Addon> "D:\World of Warcraft\_forever_\Interface\AddOns\<Addon>" /MIR /XD .claude graphify-out /XF CLAUDE.md README.md
+  ```
+  `/MIR` also deletes files the repo no longer has (old deploys only copied, so 29 stale files had piled up). The excludes keep the non-addon files in the game's `Heraldry\` folder (`.claude\`, `graphify-out\`, the pointer `CLAUDE.md`). Robocopy exit codes below 8 are success.
+  - Verify after every deploy: `cmp` each `git ls-files <Addon>` file against the game copy, and compare the file lists. Report "0 differences" before asking for a test.
   - Other bar addons (TimelessUI, EllesmereUI Action Bars) must be disabled while testing the bars. During tests only Heraldry (plus Zygor) is enabled.
-- **Syntax check:** `texluac -p file.lua` (Lua 5.3, from TeX Live) is available in the cloud environment; run it on changed files before deploying.
+- **Syntax check:** there is no Lua compiler on the PC. Until one is installed, check changed files at least for balanced blocks and brackets, and say the check was partial.
 - **Debugging:**
   - `/hui debug` toggles debug output and `/hui status` shows the state.
   - `/hui edit` opens edit mode.
   - `/hui profile ...` manages profiles.
   - `/hui grab` puts the button under the mouse into the minimap's addon panel.
+  - `/hui copy` (or the note button at the end of the chat tabs) shows the chat's last lines ready to copy: ask Tiago to paste chat output instead of sending screenshots.
   - BugGrabber + BugSack are recommended for Lua errors.
 - **Reporting:** after a delivery, tell Tiago in PT-PT what changed, whether `/reload` is enough or "Reinício do jogo necessário", and what to test. Then update "Por testar".
 - **Reference docs** in the claude.ai project (PT-PT):

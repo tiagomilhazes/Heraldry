@@ -2,7 +2,7 @@
 
 An all-in-one, modular, immersive UI addon for **World of Warcraft: Forever**. It is the successor to the author's (Tiago's) older addon **TimelessUI**. From TimelessUI only the **art** is reused, never the code.
 
-This README documents the project as it stands at commit `804a2b7` (2026-11-19). The project moved from Claude chat to Claude Code at that point. `CLAUDE.md` holds the standing instructions for an AI agent continuing the work. Where this README and the code disagree, the code wins. Known disagreements are listed in [§10](#10-contradictions-and-stale-information).
+This README documents the project as it stood at commit `804a2b7` (2026-11-19), when it moved from Claude chat to Claude Code, updated for the Claude Code work up to commit `80443ea`: the git clone and local deploy (§9.1), the audit fixes and the chat copy box. `CLAUDE.md` holds the standing instructions for an AI agent continuing the work. Where this README and the code disagree, the code wins. Known disagreements are listed in [§10](#10-contradictions-and-stale-information).
 
 Contents:
 
@@ -368,7 +368,7 @@ Status comes from Tiago's in-game tests: **approved** means tested in game and a
 
 ### 2.3 Modules
 
-**Heraldry_ActionBars** (v0.11.4). Page tabs: Block / Bars / Look / Visibility / Text / Swing / Cast / Font.
+**Heraldry_ActionBars** (v0.11.6). Page tabs: Block / Bars / Look / Visibility / Text / Swing / Cast / Font.
 
 - **Bars:**
   - Action bars 1–8, plus the stance bar and the pet bar (10 buttons each).
@@ -412,7 +412,7 @@ Status comes from Tiago's in-game tests: **approved** means tested in game and a
   - The life colour follows the class (`LIFE[class]`: priest white, druid orange, warrior brown…).
   - The power colour follows `PowerBarColor` for the power type (rage red, energy yellow, mana blue).
 
-**Heraldry_UnitFrames** (v0.12.0). Page tabs: Target (Size / Text / Look / Behaviour) / Target of target (Size / Text / Behaviour) / Focus (Size / Text / Behaviour) / Party (Size / Text / Look / Behaviour) / Raid (Size / Text / Look / Behaviour) / Indicators / Font.
+**Heraldry_UnitFrames** (v0.12.3). Page tabs: Target (Size / Text / Look / Behaviour) / Target of target (Size / Text / Behaviour) / Focus (Size / Text / Behaviour) / Party (Size / Text / Look / Behaviour) / Raid (Size / Text / Look / Behaviour) / Indicators / Font.
 
 - **Target (Target.lua + TargetPlaque.lua):** approved (M3).
   - **Plaque style** (default): one fixed plaque from the TimelessUI Paladin kit, with lion medallions and two jewels. The slot is cut out and the bars sit behind it.
@@ -490,7 +490,7 @@ Status comes from Tiago's in-game tests: **approved** means tested in game and a
 - The game's `ObjectiveTrackerFrame` is hidden with `Hide()` plus an `OnShow` hook. It is protected, so it is not reparented.
 - It steps aside when Questie's tracker is on.
 
-**Heraldry_Chat** (v0.2.6). Page tabs: Look / Size / Text / Channels / Input / Behaviour / Font. **State:** approved (M5).
+**Heraldry_Chat** (v0.2.9). Page tabs: Look / Size / Text / Channels / Input / Behaviour / Font. **State:** approved (M5).
 
 - **Look:**
   - The chat is a sideways scroll between standing theme rods (`scroll.rodV`), on dark, light or glass paper, or a flat "panel" style.
@@ -505,6 +505,7 @@ Status comes from Tiago's in-game tests: **approved** means tested in game and a
   - Plain Up/Down input history (`SetAltArrowKeyMode(false)`), saved per character.
   - Player names without brackets; message body in plain ink.
   - On light paper, an ink palette per chat type (`ink_<key>`). On the other papers, the colour pickers write the game's own chat colours.
+- **Copy (Copy.lua):** `/hui copy`, or the note button at the right end of the tab row (prototype I1), opens a dark-parchment box (prototype K2) with the last 200 lines of the visible chat window, already selected for Ctrl+C. Colours, links and icons are stripped; secret lines are skipped and counted ("N hidden by the game"). Approved 2026-11-19.
 
 **Heraldry_Tooltips** (v0.1.1). Page tabs: Look / Position / Text / Behaviour / Font. **State:** approved (T2).
 
@@ -514,7 +515,7 @@ Status comes from Tiago's in-game tests: **approved** means tested in game and a
 - Hide unit tooltips in combat (option).
 - Skinned through `TooltipDataProcessor` post-calls.
 
-**Heraldry_Auras** (v0.2.6). Page tabs: Power orb / Life orb / Buffs / Debuffs / Font. **State:** steps 1 and 2 approved.
+**Heraldry_Auras** (v0.2.7). Page tabs: Power orb / Life orb / Buffs / Debuffs / Font. **State:** steps 1 and 2 approved.
 
 - **Power-orb gems:** chosen auras per character (`H.char.auraSockets`). The icon shows round in the gem and darkens through a Cooldown driven by `C_UnitAuras.GetAuraDuration`; the time sits in the centre.
   - Defaults apply only when `auraSockets` is nil.
@@ -538,11 +539,11 @@ Status comes from Tiago's in-game tests: **approved** means tested in game and a
   - The game's `BuffFrame` / `DebuffFrame` are hidden with Hide plus a Show hook.
   - Test mode with look-alike icons.
 
-**Heraldry_ClickCast** (v0.1.0). Page tabs: Bindings / Behaviour. **State:** step 1 approved.
+**Heraldry_ClickCast** (v0.1.1). Page tabs: Bindings / Behaviour. **State:** step 1 approved.
 
 - Per-character bindings (`H.char.clickcast`): modifiers + mouse button 1–5 + an action. Actions are spell, macro, item, target, menu, focus or assist.
 - Spells are stored by name, so the highest rank is always cast. "Name(Rank n)" pins a rank.
-- Optional enemy and dead alternatives build a `/cast [@unit,dead,help] ..; [@unit,harm] ..; [@unit] ..` macro.
+- Optional enemy and dead alternatives build a `/cast [@mouseover,dead,help] ..; [@mouseover,harm] ..; [@mouseover] ..` macro. It uses `@mouseover` (the clicked frame's unit) because raid buttons are made without a unit and change unit with the roster, also in combat (fixed 2026-11-19).
 - Applied to every frame in `ClickCastFrames`; a metatable catches frames added later.
 - The attributes it sets are tracked and cleared before re-applying. Changes made in combat wait for the end of combat.
 - It steps aside when Clique is loaded.
@@ -613,6 +614,8 @@ Status comes from Tiago's in-game tests: **approved** means tested in game and a
   - In combat, aura names and IDs can be secret. Indicators then match nothing and say so once in debug output.
   - Edit Mode's status-tracking bar containers call their parent's methods, so they must not be reparented (this caused a `StatusTrackingManager.lua:228` error before the fix).
   - Tables cannot be indexed with secret keys (this caused a `Swing.lua:217` error before the fix).
+  - `UnitHealthPercent(unit, true, CurveConstants.ScaleTo100)` is secret even out of combat; `FontString:SetFormattedText("%d%%", secret)` accepts it (tested 2026-11-19).
+  - `Frame:RegisterUnitEvent` takes at most two units. The party passed four or five, so some members never updated (fixed 2026-11-19).
 - **APIs guarded because they may be missing:** `UnitIsTapDenied`, `C_ClassColor`, `GetCreatureDifficultyColor`, `GetNumSpecializations`, `GetShapeshiftFormInfo`, and others.
 
 ---
@@ -621,7 +624,7 @@ Status comes from Tiago's in-game tests: **approved** means tested in game and a
 
 There are no `.xml` files, no bundled libraries and no locale files. Textures are `.tga` (RLE).
 
-### `Heraldry/` (core, v0.14.0)
+### `Heraldry/` (core, v0.14.2)
 
 | File | Purpose |
 |---|---|
@@ -651,7 +654,7 @@ There are no `.xml` files, no bundled libraries and no locale files. Textures ar
 | `Media/Themes/{Priest,PriestShadow,Druid,Warrior}/` | 15-texture kits |
 | `Media/Themes/{DruidBear,DruidCat,DruidMoonkin,WarriorDefensive,WarriorBerserker}/` | `OrbHealth`, `OrbPower`, `Cap` |
 
-### `Heraldry_Options/` (v0.7.10, LoadOnDemand)
+### `Heraldry_Options/` (v0.7.11, LoadOnDemand)
 
 | File | Purpose |
 |---|---|
@@ -669,15 +672,15 @@ There are no `.xml` files, no bundled libraries and no locale files. Textures ar
 
 | Folder (version) | Files | Media |
 |---|---|---|
-| `Heraldry_ActionBars` (0.11.4) | `ActionBars.lua` (bars), `Art.lua` (theme art), `Text.lua` (button texts), `RailLight.lua` (lit rail engine), `Swing.lua`, `Cast.lua`, `Settings.lua` | — |
+| `Heraldry_ActionBars` (0.11.6) | `ActionBars.lua` (bars), `Art.lua` (theme art), `Text.lua` (button texts), `RailLight.lua` (lit rail engine), `Swing.lua`, `Cast.lua`, `Settings.lua` | — |
 | `Heraldry_Orbs` (0.8.0, OptionalDeps ActionBars) | `Orbs.lua`, `Settings.lua` | `Media/{Liquid1,Liquid2,Glass,Surface}.tga` |
-| `Heraldry_UnitFrames` (0.12.0) | `Target.lua` (module, target), `Cast.lua` (target casts), `Small.lua` (ToT, focus; base for party), `Indicators.lua`, `Party.lua`, `Raid.lua`, `TargetPlaque.lua` (plaque geometry, finishes, jewels, emblems), `Settings.lua` | `Media/Target/{Plaque,LevelRing}.tga`, `Media/Party/{Frame,Banner}.tga`, `Media/Party/Class/<CLASS>.tga` (class-coloured symbols, 9 classes), `Media/Class/<CLASS>.tga` (plain gold symbols, 9 classes) |
+| `Heraldry_UnitFrames` (0.12.3) | `Target.lua` (module, target), `Cast.lua` (target casts), `Small.lua` (ToT, focus; base for party), `Indicators.lua`, `Party.lua`, `Raid.lua`, `TargetPlaque.lua` (plaque geometry, finishes, jewels, emblems), `Settings.lua` | `Media/Target/{Plaque,LevelRing}.tga`, `Media/Party/{Frame,Banner}.tga`, `Media/Party/Class/<CLASS>.tga` (class-coloured symbols, 9 classes), `Media/Class/<CLASS>.tga` (plain gold symbols, 9 classes) |
 | `Heraldry_Minimap` (0.2.1) | `Minimap.lua`, `Settings.lua` | `Media/{Frame,Mask}.tga` (TimelessUI Paladin frame) |
 | `Heraldry_Quests` (0.1.3) | `Quests.lua`, `Settings.lua` | — |
-| `Heraldry_Chat` (0.2.6) | `Chat.lua`, `Text.lua`, `Settings.lua` | — |
+| `Heraldry_Chat` (0.2.9) | `Chat.lua`, `Text.lua`, `Copy.lua` (copy box and button), `Settings.lua` | — |
 | `Heraldry_Tooltips` (0.1.1) | `Tooltips.lua`, `Settings.lua` | — |
-| `Heraldry_Auras` (0.2.6, OptionalDeps Orbs) | `Auras.lua` (gems), `Rows.lua` (buff and debuff rows), `Settings.lua` | — |
-| `Heraldry_ClickCast` (0.1.0) | `ClickCast.lua`, `Settings.lua` | — |
+| `Heraldry_Auras` (0.2.7, OptionalDeps Orbs) | `Auras.lua` (gems), `Rows.lua` (buff and debuff rows), `Settings.lua` | — |
+| `Heraldry_ClickCast` (0.1.1) | `ClickCast.lua`, `Settings.lua` | — |
 | `Heraldry_DataBar` (0.2.0) | `DataBar.lua`, `Settings.lua` | — |
 
 ### Root files
@@ -709,6 +712,7 @@ There are no `.xml` files, no bundled libraries and no locale files. Textures ar
 
 - **Downloaded Canva sources** on Tiago's PC: `C:\Users\tiago\Downloads\Imagens Wow\<Class>\` (`Druid/`, `Warrior/`, `Priest/`, plus older loose files).
 - **Art pipeline scripts** (`cut.py`, `orbsX.py`, `kitX.py`, Python with PIL, numpy and scipy) lived in the cloud session's `/tmp/pr`. They are not in the repository; see §9.4.
+- **Working clone:** `D:\Dev\Heraldry` on Tiago's PC (see §9.1). The game folder only receives deploys.
 
 ---
 
@@ -851,11 +855,13 @@ The decisions are numbered as in the project docs. Superseded ones are marked.
 - Minimap addon panel (48): the cooldown manager icon gathered automatically (otherwise use `/hui grab`).
 - Warrior (50): stance switching in and out of combat; gem sockets on the orbs of all three stances (Berserker's power-orb sockets were measured by hand); the minimap with its sockets inside the ring (a smaller map window); the crest joining the block (the join `{160,128,120}` was set by eye).
 - Druid minimap outdoors: in one screenshot, taken inside an inn, it was black.
+- Audit fixes of 2026-11-19, approved without a group: party frames updating every member in a real group; missing-buff indicators staying down when aura names turn secret in combat; raid click-cast alternatives (`@mouseover`) after roster changes in combat.
+- Chat copy on the Combat Log tab: which message the box shows.
 
 **Open questions and pending tuning:**
 
 - Block default margins (side margins, top and bottom margin, "Plate and rails past the bar"): waiting for Tiago's preferred values.
-- Target health percentage: one screenshot showed only the value. Confirm whether the percentage was turned off or the calculation failed.
+- Target health percentage: closed. The setting `hpPctShow` was off (checked in game 2026-11-19).
 - Health orb liquid colour: offering a choice (class / red / custom) was proposed; Tiago did not answer.
 
 **Known limitations (by design or caused by the client):**
@@ -888,14 +894,21 @@ Planned or discussed, **not implemented**:
 
 ### 9.1 Delivery process (what Tiago expects)
 
-1. Syntax-check every changed Lua file with `texluac -p file.lua` (Lua 5.3 from TeX Live, available in the cloud environment).
-2. Commit with a descriptive message and push to `main`.
-3. Copy the changed files to the game folder `D:\World of Warcraft\_forever_\Interface\AddOns\` and **verify the checksums** (md5) on the PC before asking for a test.
-   - Each deploy used a fresh `outputs/deploy-<commit>/` folder, because re-using a path could deliver stale versions.
-   - The PC folder is reachable through the desktop bridge; the shell there sees it as `$HOME/mnt/AddOns`.
+Since 2026-11-19 the work happens in a git clone on Tiago's PC, `D:\Dev\Heraldry`, with a local `core.autocrlf=false` so files stay LF and byte-identical to the deployed copies.
+
+1. Syntax-check every changed Lua file. There is no Lua compiler on the PC yet (the cloud sessions had `texluac`); until one is installed, at least check balanced blocks and brackets and say the check was partial.
+2. Commit in the clone with a descriptive message. On Windows PowerShell 5.1 pass multi-line messages through a file (`git commit -F file`).
+3. Mirror each changed addon folder into `D:\World of Warcraft\_forever_\Interface\AddOns\` and **verify byte for byte** (`cmp` against `git ls-files`, and the file lists) before asking for a test:
+   ```
+   robocopy D:\Dev\Heraldry\<Addon> "D:\World of Warcraft\_forever_\Interface\AddOns\<Addon>" /MIR /XD .claude graphify-out /XF CLAUDE.md README.md
+   ```
+   - `/MIR` deletes files the repo no longer has: the old copy-only deploys had left 29 stale files (removed 2026-11-19).
+   - The excludes keep the non-addon files in the game's `Heraldry\` folder (`.claude\` with the graphify skill, `graphify-out\`, a pointer `CLAUDE.md`).
+   - Robocopy exit codes below 8 mean success.
 4. Say whether a `/reload` is enough or a **game restart** is needed ("Reinício do jogo necessário"), which applies to any new texture, file or addon, or a `.toc` file-list change.
 5. Update "Por testar" in the project decisions doc.
 6. Report to Tiago in PT-PT, short, and wait for approval before the next step.
+7. **Push to `main` only after Tiago approves.**
 
 ### 9.2 Behaviour notes
 
@@ -958,11 +971,11 @@ These were found while writing this document. None of them has been changed in c
    | `H.Theme:DefinePieceType`, `H.Config:RegisterPage`, `OnThemeChanged` | `H:RegisterTheme` with validators in `Themes.lua`, `H:RegisterOptionsPage`, the `THEME_CHANGED` message |
    | module on/off "per character" | account-wide (decision 12, and the `GetAddOnEnableState` fact) |
 
-3. **Swing/cast rail defaults:** the header of `RailLight.lua` says the swing uses the top rail and the cast the bottom one. The code (`castPlace = "top"`, `swingPlace = "bottom"`), decision 39 and CLAUDE.md say cast top, swing bottom. Tiago swapped them; the comment is stale.
-4. **`Party.lua` header** lists only the "cartouche" and "compact" styles. The code and settings also have **"banner"**, which Tiago approved.
-5. **Raid settings text** (`Settings.lua`, raid style description) says "each group a parchment banner under the theme's rod". The code and decision 42 give **one rod per row of groups** (default 4 groups per row).
-6. **`Heraldry_Options/Style.lua` header** says "until the theme system exists (C5)". The theme system exists; the comment is stale.
-7. **`Core/Database.lua` header** lists only some character fields. The code also stores `finish`, `formThemes`, `auraSockets`, `indicators`, `clickcast`, `raidRolled`, chat history, and `global.minimapGrab`.
+3. **Swing/cast rail defaults:** the header of `RailLight.lua` says the swing uses the top rail and the cast the bottom one. The code (`castPlace = "top"`, `swingPlace = "bottom"`), decision 39 and CLAUDE.md say cast top, swing bottom. Tiago swapped them; the comment is stale. **Fixed 2026-11-19** (commit `80443ea`).
+4. **`Party.lua` header** lists only the "cartouche" and "compact" styles. The code and settings also have **"banner"**, which Tiago approved. **Fixed 2026-11-19** (commit `80443ea`).
+5. **Raid settings text** (`Settings.lua`, raid style description) says "each group a parchment banner under the theme's rod". The code and decision 42 give **one rod per row of groups** (default 4 groups per row). **Fixed 2026-11-19** (commit `80443ea`).
+6. **`Heraldry_Options/Style.lua` header** says "until the theme system exists (C5)". The theme system exists; the comment is stale. **Fixed 2026-11-19** (commit `80443ea`).
+7. **`Core/Database.lua` header** lists only some character fields. The code also stores `finish`, `formThemes`, `auraSockets`, `indicators`, `clickcast`, `raidRolled`, chat history, and `global.minimapGrab`. **Fixed 2026-11-19** (commit `80443ea`).
 8. **The previous `CLAUDE.md`** had duplicated numbers in "Next steps" (two items 8 and two items 9), and its "Implemented" table missed raid, indicators, the data bar and the class themes. Both are corrected in the new `CLAUDE.md`.
 9. **Decision 9** ("other classes only once Standard + Paladin are complete and everything works") versus the class art done on 2026-11-18/19 for Priest, Druid and Warrior. That art was Tiago's explicit decision, driven by his remaining Canva time.
 10. **Approval wording:** "Aprovado, podes avançar" (2026-11-18) came after the data bar "maximum configuration" delivery, while the Druid base theme was also waiting for approval. Both are treated as approved. For the Druid forms Tiago approved the prototypes ("Estão muito bons") but has not reported an in-game test.
