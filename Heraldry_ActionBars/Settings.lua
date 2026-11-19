@@ -190,7 +190,10 @@ H:RegisterOptionsPage({
 				return function() return AB.db[name] end, function(v)
 					AB.db[name] = v
 					AB:LayoutSwing()
-					AB:SwingBlizzard()
+					-- the scan walks every global and frame: only for the option that needs it
+					if name == "swingHideBlizzard" then
+						H:RunOutOfCombat(function() AB:SwingBlizzard() end, "actionbars-swing-blizz")
+					end
 				end
 			end
 			page:Text("The theme's rail lights up as your swing builds. Main hand from the left; with two weapons the off hand comes from the right, and when they meet in the middle your hands are in sync.")

@@ -280,7 +280,9 @@ end)
 H:RegisterEvent("ADDON_LOADED", function(_, name)
 	if name == "Blizzard_SwingTimer" then H:RunOutOfCombat(function() AB:SwingBlizzard() end, "actionbars-swing-blizz") end
 end)
-H:RegisterEvent("PLAYER_ENTERING_WORLD", function()
+H:RegisterEvent("PLAYER_ENTERING_WORLD", function(_, isLogin, isReload)
+	-- hidden bars stay hidden across zones: only scan after a login or /reload
+	if not (isLogin or isReload) then return end
 	H:RunOutOfCombat(function() AB:SwingBlizzard() end, "actionbars-swing-blizz")
 	-- the game may build its bars a moment later
 	C_Timer.After(3, function() H:RunOutOfCombat(function() AB:SwingBlizzard() end, "actionbars-swing-blizz") end)
