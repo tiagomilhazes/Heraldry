@@ -7,8 +7,9 @@
 	new rank and the binding uses it); type "Name(Rank 3)" to pin a rank.
 	A spell binding can also have a spell for enemies (the same click hurts
 	instead of heals) and one for when the unit is dead (the same click
-	resurrects); then the click is a macro with conditions on the frame's unit,
-	worked out by the game, so it holds in combat.
+	resurrects); then the click is a macro with conditions on the unit under
+	the mouse (the clicked frame's unit), worked out by the game, so it holds
+	in combat and when raid buttons change unit.
 
 	Bindings are per character (spells are a class's own). They go on every
 	frame in ClickCastFrames (ours register there, as do other addons' frames,
@@ -107,8 +108,11 @@ local function put(f, name, value)
 	list[#list + 1] = name
 end
 
--- the macro for a spell binding with an enemy and/or dead alternative
-local function macroFor(unit, b)
+-- the macro for a spell binding with an enemy and/or dead alternative.
+-- @mouseover, not the frame's unit: raid buttons change unit as the roster
+-- changes (also in combat), and a unit written into the macro would go stale.
+local function macroFor(b)
+	local unit = "mouseover"
 	local parts = {}
 	if b.dead and b.dead ~= "" then parts[#parts + 1] = ("[@%s,dead,help] %s"):format(unit, b.dead) end
 	if b.harm and b.harm ~= "" then parts[#parts + 1] = ("[@%s,harm] %s"):format(unit, b.harm) end
@@ -127,15 +131,14 @@ function CC:Apply(f)
 	clear(f)
 	if not self.db.enabled or self.away then return end
 	if f.RegisterForClicks then f:RegisterForClicks("AnyUp") end
-	local unit = f:GetAttribute("unit")
 	for _, b in ipairs(self:Bindings()) do
 		local n = b.button
 		local t = TYPE[b.action]
 		if t then
 			local spellish = b.action == "spell" and ((b.harm and b.harm ~= "") or (b.dead and b.dead ~= ""))
-			if spellish and unit then
+			if spellish then
 				put(f, b.mods .. "type" .. n, "macro")
-				put(f, b.mods .. "macrotext" .. n, macroFor(unit, b))
+				put(f, b.mods .. "macrotext" .. n, macroFor(b))
 			else
 				put(f, b.mods .. "type" .. n, t)
 				if t == "spell" then put(f, b.mods .. "spell" .. n, b.value)

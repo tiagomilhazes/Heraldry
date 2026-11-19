@@ -2,7 +2,7 @@
 ## Title: |cffE8B04BHeraldry|r Click Casting
 ## Notes: Cast on unit frames with mouse clicks; spells always use your highest rank.
 ## Author: Tiago
-## Version: 0.1.0
+## Version: 0.1.1
 ## Dependencies: Heraldry
 ## X-Heraldry-Module: 1
 ## X-Heraldry-Label: Click casting
