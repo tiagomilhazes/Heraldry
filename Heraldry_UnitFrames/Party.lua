@@ -621,11 +621,10 @@ function UF:EnableParty()
 	for _, e in ipairs({ "GROUP_ROSTER_UPDATE", "PARTY_LEADER_CHANGED", "PLAYER_ENTERING_WORLD" }) do
 		ev:RegisterEvent(e)
 	end
-	local units = {}
-	for _, m in ipairs(P.members) do units[#units + 1] = m.unit end
+	-- RegisterUnitEvent takes two units at most: listen to all and filter below
 	for _, e in ipairs({ "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_POWER_UPDATE", "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER",
 		"UNIT_NAME_UPDATE", "UNIT_CONNECTION", "UNIT_FLAGS", "UNIT_AURA" }) do
-		pcall(ev.RegisterUnitEvent, ev, e, unpack(units))
+		pcall(ev.RegisterEvent, ev, e)
 	end
 	ev:SetScript("OnEvent", function(_, e, unit)
 		if P.preview then return end
