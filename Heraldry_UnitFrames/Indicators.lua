@@ -414,7 +414,7 @@ local function scan(unit)
 		warnedSecret = true
 		H:Debug("Raid indicators: aura names are secret here (in combat?); indicators can't match them.")
 	end
-	return any, mine
+	return any, mine, secret
 end
 
 local function find(set, auras)
@@ -430,8 +430,8 @@ function IND:Update(host, unit)
 	holder.unit, holder.fake = unit, nil
 	if not holder:IsShown() then return end
 	local list = self:List()
-	local any, mine
-	if unit and UnitExists(unit) and #list > 0 then any, mine = scan(unit) end
+	local any, mine, blind
+	if unit and UnitExists(unit) and #list > 0 then any, mine, blind = scan(unit) end
 	for i = 1, #list do
 		local e = holder.elements[i]
 		if e then
@@ -439,13 +439,14 @@ function IND:Update(host, unit)
 			if any and self:Get(i, "enabled") then
 				aura = find(self:Spells(i), self:Get(i, "mine") and mine or any)
 			end
-			self:Show(e, i, aura, unit)
+			self:Show(e, i, aura, unit, nil, blind)
 		end
 	end
 end
 
--- puts one indicator up (aura found), down, or up as a missing buff
-function IND:Show(e, i, aura, unit, fake)
+-- puts one indicator up (aura found), down, or up as a missing buff;
+-- blind: some aura names were secret, so "not found" may not mean missing
+function IND:Show(e, i, aura, unit, fake, blind)
 	local missing = self:Get(i, "missing")
 	local spells = self:Spells(i)
 	if not self:Get(i, "enabled") or #spells.list == 0 and not fake then
@@ -455,7 +456,7 @@ function IND:Show(e, i, aura, unit, fake)
 	end
 	if missing then
 		stopTime(e)
-		e:SetShown(aura == nil and (unit ~= nil or fake))
+		e:SetShown(aura == nil and not blind and (unit ~= nil or fake))
 		if e.look == "icon" then e.icon:SetTexture(self:SpellIcon(i) or 134400) end
 		e.count:SetText("")
 		return
