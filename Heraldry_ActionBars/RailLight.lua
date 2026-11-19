@@ -1,7 +1,7 @@
 --[[
 	Heraldry_ActionBars - RailLight.lua
-	A rail that lights up: shared by the swing bar (the block's top rail) and
-	the player's cast bar (the bottom rail).
+	A rail that lights up: shared by the swing bar (the block's bottom rail by default) and
+	the player's cast bar (the top rail by default).
 
 	The art sits right over one of the block's rails, with the rail's tiles
 	lined up, or on a separate holder frame of its own (with a mover). It has a

@@ -59,7 +59,7 @@ H:RegisterOptionsPage({
 				label = "Finish",
 				desc = "Tones the art so it sits in the game. Per character.",
 				values = function()
-					local def = Themes:Active().finish or "none"
+					local def = Themes:Field(Themes:Active(), "finish") or "none"   -- variants take it from their base
 					local t = { { value = false, text = ("Theme default (%s)"):format(Themes.FINISHES[def].label) } }
 					for _, k in ipairs(Themes.FINISH_ORDER) do
 						t[#t + 1] = { value = k, text = Themes.FINISHES[k].label }

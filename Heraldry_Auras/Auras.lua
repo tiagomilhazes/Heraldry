@@ -412,9 +412,9 @@ function AU:OnEnable()
 	if Orbs and Orbs.Layout then
 		hooksecurefunc(Orbs, "Layout", function() AU:Layout() end)
 	end
-	H:RegisterEvent("UNIT_AURA", function(_, unit)
-		if unit == "player" then AU:Update() end
-	end)
+	local ev = CreateFrame("Frame")   -- the player's auras only, filtered by the game
+	ev:RegisterUnitEvent("UNIT_AURA", "player")
+	ev:SetScript("OnEvent", function() AU:Update() end)
 	H:RegisterEvent("PLAYER_ENTERING_WORLD", function() AU:Update() end)
 	H:On("THEME_CHANGED", function() AU:Layout() end)
 	H:On("FONTS_CHANGED", function() AU:Layout() end)

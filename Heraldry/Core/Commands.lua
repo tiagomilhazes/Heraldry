@@ -36,8 +36,10 @@ local function help()
 	print(W .. "/hui profile rename <new name>|r " .. G .. "- rename the active profile|r")
 	print(W .. "/hui profile delete <name>|r")
 	print(W .. "/hui profile reset|r " .. G .. "- reset the active profile|r")
-	print(W .. "/hui grab|r " .. G .. "- put the button under the mouse into the minimap's addon panel|r")
-	print(W .. "/hui copy|r " .. G .. "- the chat's last lines in a box you can copy from|r")
+	-- commands added by modules: only when the module is loaded
+	local cmds = H.commands or {}
+	if cmds.grab then print(W .. "/hui grab|r " .. G .. "- put the button under the mouse into the minimap's addon panel|r") end
+	if cmds.copy then print(W .. "/hui copy|r " .. G .. "- the chat's last lines in a box you can copy from|r") end
 	print(W .. "/hui spec|r " .. G .. "- show profiles per spec|r")
 	print(W .. "/hui spec on/off|r")
 	print(W .. "/hui spec <number> <profile>|r " .. G .. "(or 'none')|r")

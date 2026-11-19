@@ -184,17 +184,25 @@ end
 
 local function mine(unit) return unit == "player" end
 
-H:RegisterEvent("UNIT_SPELLCAST_START", function(_, unit, guid) if mine(unit) then readCast(false, guid) end end)
-H:RegisterEvent("UNIT_SPELLCAST_DELAYED", function(_, unit) if mine(unit) and cast and not cast.channel then readCast(false, cast.guid) end end)
-H:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START", function(_, unit) if mine(unit) then readCast(true) end end)
-H:RegisterEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", function(_, unit) if mine(unit) then readCast(true) end end)
-H:RegisterEvent("UNIT_SPELLCAST_STOP", function(_, unit, guid)
+-- the player's spellcast events only (the game filters them, not Lua)
+local playerEvents, handlers = CreateFrame("Frame"), {}
+playerEvents:SetScript("OnEvent", function(_, e, ...) handlers[e](e, ...) end)
+local function onPlayer(e, fn)
+	handlers[e] = fn
+	pcall(playerEvents.RegisterUnitEvent, playerEvents, e, "player")
+end
+
+onPlayer("UNIT_SPELLCAST_START", function(_, unit, guid) if mine(unit) then readCast(false, guid) end end)
+onPlayer("UNIT_SPELLCAST_DELAYED", function(_, unit) if mine(unit) and cast and not cast.channel then readCast(false, cast.guid) end end)
+onPlayer("UNIT_SPELLCAST_CHANNEL_START", function(_, unit) if mine(unit) then readCast(true) end end)
+onPlayer("UNIT_SPELLCAST_CHANNEL_UPDATE", function(_, unit) if mine(unit) then readCast(true) end end)
+onPlayer("UNIT_SPELLCAST_STOP", function(_, unit, guid)
 	if mine(unit) and cast and not cast.channel and (not plain(guid) or not cast.guid or guid == cast.guid) then
 		cast = nil
 		wake()
 	end
 end)
-H:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP", function(_, unit)
+onPlayer("UNIT_SPELLCAST_CHANNEL_STOP", function(_, unit)
 	if mine(unit) and cast and cast.channel then
 		cast = nil
 		wake()
@@ -210,8 +218,8 @@ local function stopped(word)
 		wake()
 	end
 end
-H:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED", stopped("Interrupted"))
-H:RegisterEvent("UNIT_SPELLCAST_FAILED", stopped("Failed"))
+onPlayer("UNIT_SPELLCAST_INTERRUPTED", stopped("Interrupted"))
+onPlayer("UNIT_SPELLCAST_FAILED", stopped("Failed"))
 
 --[[ The game's cast bar ]]
 

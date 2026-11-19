@@ -8,6 +8,9 @@
 	      life and mana, and a gem socket on the right whose gem takes the colour
 	      of the member's debuff (magic, curse, disease, poison), dark when none.
 	      The bars sit behind the frame; only the middle stretches with the width.
+	  style "banner"
+	      the same art with the class symbol standing on the bars, for a party
+	      in a row
 	  style "compact"
 	      slim rows with a small class jewel and a percentage; the rim turns red
 	      when life is low

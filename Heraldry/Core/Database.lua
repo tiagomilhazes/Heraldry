@@ -4,12 +4,14 @@
 
 	HeraldryDB = {
 		version   = 1,
-		global    = { debug = false },               -- account-wide options
+		global    = { debug, editMode, options, minimapGrab },   -- account-wide
 		profiles  = { ["Default"] = <profile> },
-		overrides = { [CLASS] = { ["*"] = {...}, [spec] = {...} } },   -- used from C3
-		chars     = { ["Name-Realm"] = { profile, theme, useSpecProfiles, specProfiles } },
+		overrides = { [CLASS] = { ["*"] = {...}, [spec] = {...} } },   -- reserved for C3, unused
+		chars     = { ["Name-Realm"] = { profile, theme, finish, formThemes, auraSockets,
+		                                 indicators, clickcast, raidRolled, chat history,
+		                                 useSpecProfiles, specProfiles } },
 	}
-	<profile> = { modules = {}, layout = {}, preset = "altar" }
+	<profile> = { modules = {}, layout = {}, preset = "altar", fonts (made on first use) }
 
 	H.sv      the whole HeraldryDB
 	H.global  HeraldryDB.global

@@ -1,7 +1,7 @@
 --[[
 	Heraldry_Options - Style.lua
 	Colors, font and drawing helpers for the settings panel.
-	Neutral dark look with a gold accent until the theme system exists (C5).
+	Neutral dark look with a gold accent, the same for every theme.
 ]]
 
 local H = Heraldry

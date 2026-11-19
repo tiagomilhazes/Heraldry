@@ -2,7 +2,7 @@
 	Heraldry_UnitFrames - Small.lua
 	Target of target and focus: smaller versions of the target's plaque
 	(same art, same finish and jewel rules, see TargetPlaque.lua), with the
-	life bar (and, for the focus, the power row, where its casts show too).
+	life bar (and, for the focus, the power row; casts show on the target only).
 	No level ring: these frames are glanced at, not read.
 
 	Each frame has its own settings, stored with a prefix in the module's

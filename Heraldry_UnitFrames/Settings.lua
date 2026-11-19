@@ -297,7 +297,7 @@ local raid = {
 		local get, set = rf("Style")
 		page:Dropdown({
 			label = "Style",
-			desc = "Banners: each group a parchment banner under the theme's rod; click the rod to roll the group up. Tiles: every group in one framed panel.",
+			desc = "Banners: each row of groups is one parchment sheet hanging from the theme's rod; click the rod to roll the row up. Tiles: every group in one framed panel.",
 			values = function() return { { value = "banner", text = "Banners (roll up)" }, { value = "tiles", text = "Tiles" } } end,
 			get = get, set = set,
 		})
