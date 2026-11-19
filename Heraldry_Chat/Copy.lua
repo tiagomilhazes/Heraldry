@@ -1,6 +1,6 @@
 --[[
 	Heraldry_Chat - Copy.lua
-	/hui copy: the last lines of the chat window in a box you can copy from
+	/hui copy (or the note button at the end of the tab row): the last lines of the chat window in a box you can copy from
 	(prototype K2, dark parchment like the chat). The text opens selected, so
 	Ctrl+C copies it at once; Escape closes the box. Colours, links and icons
 	are stripped so it reads clean when pasted. Lines the game keeps secret
@@ -142,3 +142,56 @@ end
 
 H.commands = H.commands or {}
 H.commands.copy = function() CH:ShowCopy() end
+
+--[[ The button (prototype I1): a small note at the right end of the tab row.
+     A child of the chat window, so it hides with it while the scroll is rolled up. ]]
+
+local copyButton
+
+local function placeButton()
+	local cf = ChatFrame1
+	if not cf then return end
+	if not copyButton then
+		local b = CreateFrame("Button", nil, cf)
+		b.icon = b:CreateTexture(nil, "ARTWORK")
+		b.icon:SetPoint("TOPLEFT", 1, -1)
+		b.icon:SetPoint("BOTTOMRIGHT", -1, 1)
+		b.icon:SetTexture("Interface\\Icons\\INV_Misc_Note_01")
+		b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+		b.rim = {}
+		local pts = { { "TOPLEFT", "TOPRIGHT" }, { "BOTTOMLEFT", "BOTTOMRIGHT" }, { "TOPLEFT", "BOTTOMLEFT" }, { "TOPRIGHT", "BOTTOMRIGHT" } }
+		for i, p in ipairs(pts) do
+			local t = b:CreateTexture(nil, "OVERLAY")
+			t:SetPoint(p[1]); t:SetPoint(p[2])
+			if i <= 2 then t:SetHeight(1) else t:SetWidth(1) end
+			b.rim[i] = t
+		end
+		b:SetAlpha(0.8)
+		b:SetScript("OnClick", function() CH:ShowCopy() end)
+		b:SetScript("OnEnter", function(self)
+			self:SetAlpha(1)
+			GameTooltip:SetOwner(self, "ANCHOR_TOP")
+			GameTooltip:SetText("Copy chat")
+			GameTooltip:AddLine("The last lines of this window, ready to copy. Also /hui copy.", 1, 1, 1, true)
+			GameTooltip:Show()
+		end)
+		b:SetScript("OnLeave", function(self)
+			self:SetAlpha(0.8)
+			GameTooltip:Hide()
+		end)
+		copyButton = b
+	end
+	local b, db = copyButton, CH.db
+	local s = db.tabSize + 4
+	b:SetSize(s, s)
+	b:ClearAllPoints()
+	-- on the tab row, level with the tabs (the same offsets as CH:PlaceDock)
+	b:SetPoint("BOTTOMRIGHT", cf, "TOPRIGHT", 0, 5 + db.tabGap)
+	b:SetFrameLevel(cf:GetFrameLevel() + 10)
+	H.Themes:Paint(b.icon)
+	local r, g, bl = H.Themes:Accent()
+	if not r then r, g, bl = 0.79, 0.64, 0.29 end
+	for _, t in ipairs(b.rim) do t:SetColorTexture(r, g, bl, 0.9) end
+end
+
+hooksecurefunc(CH, "Layout", placeButton)
