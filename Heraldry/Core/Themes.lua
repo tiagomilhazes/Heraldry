@@ -193,6 +193,10 @@ Themes.FORM_DEFAULTS = {
 		[768] = "DRUID_CAT",                            -- Cat Form
 		[24858] = "DRUID_MOONKIN",                      -- Moonkin Form
 	},
+	WARRIOR = {                                         -- Battle Stance keeps the main theme
+		[71] = "WARRIOR_DEFENSIVE",                     -- Defensive Stance
+		[2458] = "WARRIOR_BERSERKER",                   -- Berserker Stance
+	},
 }
 
 -- the character's form -> theme table (or the class's defaults)

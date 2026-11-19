@@ -53,10 +53,13 @@ AU.CLASS_DEFAULTS = {
 	PALADIN = { "Seal of Righteousness", "Seal of Command", "Seal of Wisdom", "Seal of Light" },
 	PRIEST = { "Inner Fire", "Power Word: Fortitude", "Divine Spirit", "Shadow Protection" },
 	DRUID = { "Mark of the Wild", "Thorns", "Omen of Clarity", "Rejuvenation" },
+	WARRIOR = { "Battle Shout", "Bloodrage", "Sweeping Strikes", "Enrage" },
 }
 -- themes that change the defaults (a shadow priest keeps other auras up)
 AU.THEME_DEFAULTS = {
 	PRIEST_SHADOW = { "Shadowform", "Vampiric Embrace", "Inner Fire", "Power Word: Fortitude" },
+	WARRIOR_DEFENSIVE = { "Battle Shout", "Shield Block", "Last Stand", "Shield Wall" },
+	WARRIOR_BERSERKER = { "Battle Shout", "Berserker Rage", "Recklessness", "Death Wish" },
 }
 
 local preview = false
